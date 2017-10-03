@@ -1,14 +1,19 @@
 const Lang = imports.lang;
 const St = imports.gi.St;
-const PopupMenu = imports.ui.popupMenu;		//apps menu item arc
-const Clutter = imports.gi.Clutter;			//apps menu item arc
-const DND = imports.ui.dnd;					//apps menu item arc
-const Shell = imports.gi.Shell;				//AppsListButton
+const PopupMenu = imports.ui.popupMenu;								//apps menu item arc
+const Clutter = imports.gi.Clutter;									//apps menu item arc
+const DND = imports.ui.dnd;											//apps menu item arc
+const Shell = imports.gi.Shell;										//AppsListButton
+const GLib = imports.gi.GLib;										//Places & UserMenuItem
+const AccountsService = imports.gi.AccountsService;					//UserMenuItem
+const Util = imports.misc.util;										//UserMenuItem
+const Gio = imports.gi.Gio;											//UserMenuItem
 
 
 // Put in settings!
 const CATEGORY_ICON_SIZE = 32;
 const APPLICATION_ICON_SIZE = 32;
+const USER_ICON_SIZE = 64;
 
 // DELETEME!
 const ApplicationType = {
@@ -16,6 +21,10 @@ const ApplicationType = {
 	    PLACE: 1,
 	    RECENT: 2
 	};
+
+
+
+
 
 
 
@@ -642,6 +651,17 @@ _onKeyPressEvent: function (actor, event) {
 }
 });
 
+/*
+//User Home directories
+const DEFAULT_DIRECTORIES = [
+    GLib.UserDirectory.DIRECTORY_DOCUMENTS,
+    GLib.UserDirectory.DIRECTORY_DOWNLOAD,
+    GLib.UserDirectory.DIRECTORY_MUSIC,
+    GLib.UserDirectory.DIRECTORY_PICTURES,
+    GLib.UserDirectory.DIRECTORY_VIDEOS,	
+];
+*/
+
 
 
 //Menu Category item class ARCMENU
@@ -916,5 +936,140 @@ const ApplicationMenuItem = new Lang.Class({
         this.parent();
         this._removeMenuTimeout();
     }
-    
+});
+
+
+
+/*
+//Menu shortcut item class
+const ShortcutMenuItem = new Lang.Class({
+ Name: 'ShortcutMenuItem',
+ Extends: BaseMenuItem,
+
+ // Initialize the menu item
+ _init: function(button, name, icon, command) {
+	      this.parent();
+     this._button = button;
+     this._command = command;
+     this._icon = new St.Icon({ icon_name: icon,
+                                style_class: 'popup-menu-icon',
+                                icon_size: 16});
+     this.actor.add_child(this._icon);
+     let label = new St.Label({ text: name, y_expand: true,
+                                   y_align: Clutter.ActorAlign.CENTER });
+     this.actor.add_child(label, { expand: true });
+ },
+
+ // Activate the menu item (Launch the shortcut)
+ activate: function(event) {
+     Util.spawnCommandLine(this._command);
+     this._button.menu.toggle();
+	    this.parent(event);
+ }
+});
+*/
+
+
+
+//Menu item to go back to category view (for arcmenu compatibility)
+const BackMenuItem = new Lang.Class({
+    Name: 'BackMenuItem',
+    Extends: BaseMenuItem,
+
+    // Initialize the button
+    _init: function(button) {
+	    this.parent();
+        this._button = button;
+
+        this._icon = new St.Icon({ icon_name: 'go-previous-symbolic',
+                                   style_class: 'popup-menu-icon',
+                                   icon_size: APPLICATION_ICON_SIZE});
+        this.actor.add_child(this._icon);
+        let backLabel = new St.Label({ text: _("Back"), y_expand: true,
+                                      y_align: Clutter.ActorAlign.CENTER });
+        this.actor.add_child(backLabel, { expand: true });
+    },
+
+    // Activate the button (go back to category view)
+    activate: function(event) {
+        this._button._selectCategory(null);
+        if (this._button.searchActive) this._button.resetSearch();
+	    this.parent(event);
+    },
+});
+
+
+
+// MOVE ELSEWHERE!
+//Sets icon asynchronously (user icon)
+function setIconAsync(icon, gioFile, fallback_icon_name) {
+	  gioFile.load_contents_async(null, function(source, result) {
+	    try {
+	      let bytes = source.load_contents_finish(result)[1];
+	      icon.gicon = Gio.BytesIcon.new(bytes);
+	    }
+	    catch(err) {
+	      icon.icon_name = fallback_icon_name;
+	    }
+	  });
+	}
+
+
+//Menu item which displays the current user
+const UserMenuItem = new Lang.Class({
+ Name: 'UserMenuItem',
+ Extends: BaseMenuItem,
+
+ // Initialize the menu item
+ _init: function(button) {
+	    this.parent();
+     this._button = button;
+     let username = GLib.get_user_name();
+     this._user = AccountsService.UserManager.get_default().get_user(username);
+     this._userIcon = new St.Icon({ style_class: 'popup-menu-icon',
+                                icon_size: USER_ICON_SIZE});
+     this.actor.add_child(this._userIcon);
+     this._userLabel = new St.Label({ text: username, 
+                                      y_expand: true,
+                                      //font size changing?
+                                      y_align: Clutter.ActorAlign.CENTER, 
+                                   });
+     this.actor.add_child(this._userLabel, { expand: true });
+     this._userLoadedId = this._user.connect('notify::is_loaded', Lang.bind(this, this._onUserChanged));
+     this._userChangedId = this._user.connect('changed', Lang.bind(this, this._onUserChanged));
+     this.actor.connect('destroy', Lang.bind(this, this._onDestroy));
+     this._onUserChanged();
+ },
+
+ // Activate the menu item (Open user account settings)
+ activate: function(event) {
+     Util.spawnCommandLine("gnome-control-center user-accounts");
+     this._button.menu.toggle();
+	    this.parent(event);
+ },
+
+ // Handle changes to user information (redisplay new info)
+ _onUserChanged: function() {
+     if (this._user.is_loaded) {
+         this._userLabel.set_text (this._user.get_real_name());
+         if (this._userIcon) {
+             let iconFileName = this._user.get_icon_file();
+             let iconFile = Gio.file_new_for_path(iconFileName);
+             setIconAsync(this._userIcon, iconFile, 'avatar-default');
+         }
+     }
+ },
+
+ // Destroy the menu item
+ _onDestroy: function() {
+     if (this._userLoadedId != 0) {
+         this._user.disconnect(this._userLoadedId);
+         this._userLoadedId = 0;
+     }
+
+     if (this._userChangedId != 0) {
+         this._user.disconnect(this._userChangedId);
+         this._userChangedId = 0;
+     }
+ }
 });

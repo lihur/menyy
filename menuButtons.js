@@ -151,7 +151,7 @@ const AppListButton = new Lang.Class({
             if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
             this.label = new St.Label({ text: app.name, style_class: 'gnomenu-application-list-button-label' });
         }
-
+        
         this._dot = new St.Widget({ style_class: 'app-well-app-running-dot',
                                     layout_manager: new Clutter.BinLayout(),
                                     x_expand: true, y_expand: true,
@@ -277,6 +277,10 @@ const AppGridButton = new Lang.Class({
         let styleButton = "popup-menu-item gnomenu-application-grid-button";
 
         let styleLabel = "gnomenu-application-grid-button-label";
+        
+        //DELETEME!
+        styleButton += ".col3"
+        /*
         if (settings.get_int('apps-grid-column-count') == 3) {
             styleButton += " col3";
         } else if (settings.get_int('apps-grid-column-count') == 4) {
@@ -288,14 +292,21 @@ const AppGridButton = new Lang.Class({
         } else if (settings.get_int('apps-grid-column-count') == 7) {
             styleButton += " col7";
         }
+        */
+        
+        /*
         if (settings.get_boolean('hide-categories')) {
             styleButton += " no-categories";
             styleLabel += " no-categories";
         }
+        */
 
         this.actor = new St.Button({reactive: true, style_class: styleButton, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
         this.actor._delegate = this;
+        /*
         this._iconSize = (settings.get_int('apps-grid-icon-size') > 0) ? settings.get_int('apps-grid-icon-size') : 64;
+        */
+        this._iconSize = 64;
 
         // appType 0 = application, appType 1 = place, appType 2 = recent
         if (appType == ApplicationType.APPLICATION) {
@@ -423,17 +434,121 @@ const AppGridButton = new Lang.Class({
 
 
 
+/* =========================================================================
+/* name:    ShortcutButton
+ * @desc    A button with an icon that holds app info
+ * ========================================================================= */
+
+const ShortcutButton = new Lang.Class({
+    Name: 'GnoMenu.ShortcutButton',
+
+    _init: function (app, appType) {
+        this._app = app;
+        this._type = appType;
+        let style = "popup-menu-item menyy-shortcut-button";
+        this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.START });
+        this.actor._delegate = this;
+        //this._iconSize = (settings.get_int('shortcuts-icon-size') > 0) ? settings.get_int('shortcuts-icon-size') : 32;
+        this._iconSize = 16;
+
+        // appType 0 = application, appType 1 = place, appType 2 = recent
+        if (appType == ApplicationType.APPLICATION) {
+            this.icon = app.create_icon_texture(this._iconSize);
+            this.label = new St.Label({ text: app.get_name(), style_class: 'menyy-application-grid-button-label' });
+        } else if (appType == ApplicationType.PLACE) {
+            // Adjust 'places' symbolic icons by reducing their size
+            // and setting a special class for button padding
+            this._iconSize -= 4;
+            this.actor.add_style_class_name('menyy-shortcut-symbolic-button');
+            this.icon = new St.Icon({gicon: app.icon, icon_size: this._iconSize, style_class: 'menyy-shortcut-icon'});
+            if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
+            this.label = new St.Label({ text: app.name, style_class: 'menyy-shortcut-label' });
+        } else if (appType == ApplicationType.RECENT) {
+            let gicon = Gio.content_type_get_icon(app.mime);
+            this.icon = new St.Icon({gicon: gicon, icon_size: this._iconSize, style_class: 'menyy-shortcut-icon'});
+            if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
+            this.label = new St.Label({ text: app.name, style_class: 'menyy-shortcut-label' });
+        }
+        //this.label = new St.Label({ text: app.get_name(), style_class: 'gnomenu-shortcut-button-label' });
 
+        this.buttonbox = new St.BoxLayout();
+        this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
+        this.buttonbox.add(this.label, {x_fill: false, y_fill: true, x_align: St.Align.START, y_align: St.Align.MIDDLE});
 
+        this.actor.set_child(this.buttonbox);
 
+        // Connect signals
+        this.actor.connect('touch-event', Lang.bind(this, this._onTouchEvent));
 
+        // Connect drag-n-drop signals
+        this._draggable = DND.makeDraggable(this.actor);
+        this._draggable.connect('drag-begin', Lang.bind(this,
+            function () {
+                //this._removeMenuTimeout();
+                Main.overview.beginItemDrag(this);
+                if (GnoMenu.appsMenuButton) {
+                    if (GnoMenu.appsMenuButton._categoryWorkspaceMode == CategoryWorkspaceMode.CATEGORY)
+                        GnoMenu.appsMenuButton.toggleCategoryWorkspaceMode();
+                }
+            }));
+        this._draggable.connect('drag-cancelled', Lang.bind(this,
+            function () {
+                Main.overview.cancelledItemDrag(this);
+            }));
+        this._draggable.connect('drag-end', Lang.bind(this,
+            function () {
+               Main.overview.endItemDrag(this);
+            }));
+    },
 
+    _onTouchEvent : function (actor, event) {
+        return Clutter.EVENT_PROPAGATE;
+    },
 
+    getDragActor: function() {
+        let appIcon;
+        if (this._type == ApplicationType.APPLICATION) {
+            appIcon = this._app.create_icon_texture(this._iconSize);
+        } else if (this._type == ApplicationType.PLACE) {
+            appIcon = new St.Icon({gicon: this._app.icon, icon_size: this._iconSize});
+        } else if (this._type == ApplicationType.RECENT) {
+            let gicon = Gio.content_type_get_icon(this._app.mime);
+            appIcon = new St.Icon({gicon: gicon, icon_size: this._iconSize});
+        }
+        return appIcon;
+    },
 
+    // Returns the original actor that should align with the actor
+    // we show as the item is being dragged.
+    getDragActorSource: function() {
+        return this.icon;
+    },
 
+    shellWorkspaceLaunch : function(params) {
+        params = Params.parse(params, { workspace: -1,
+                                        timestamp: 0 });
 
+        if (this._type == ApplicationType.APPLICATION) {
+            this._app.open_new_window(params.workspace);
+        } else if (this._type == ApplicationType.PLACE) {
+           if (this._app.uri) {
+               this._app.app.launch_uris([this._app.uri], null);
+           } else {
+               this._app.launch();
+           }
+        } else if (this._type == ApplicationType.RECENT) {
+            Gio.app_info_launch_default_for_uri(this._app.uri, global.create_app_launch_context(0, -1));
+        }
 
+        this.actor.remove_style_pseudo_class('pressed');
+        this.actor.remove_style_class_name('selected');
 
+        if (GnoMenu.appsMenuButton) {
+            if (GnoMenu.appsMenuButton.menu.isOpen)
+                GnoMenu.appsMenuButton.menu.toggle();
+        }
+    }
+});
 
 
 
@@ -499,6 +614,33 @@ const AppGridButton = new Lang.Class({
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+//DELETEME!
+//Removing the default behaviour which selects a hovered item if the space key is pressed.
+//This avoids issues when searching for an app with a space character in its name.
+const BaseMenuItem = new Lang.Class({
+Name: 'BaseMenuItem',
+Extends: PopupMenu.PopupBaseMenuItem,
+_onKeyPressEvent: function (actor, event) {
+ let symbol = event.get_key_symbol();
+
+ if (symbol == Clutter.KEY_Return) {
+     this.activate(event);
+     return Clutter.EVENT_STOP;
+ }
+ return Clutter.EVENT_PROPAGATE;
+}
+});
 
 
 
@@ -548,27 +690,50 @@ const CategoryMenuItem = new Lang.Class({
 
 
 
+//arcmenu
+//Menu Place Shortcut item class
 
-// DELETEME!
-//Removing the default behaviour which selects a hovered item if the space key is pressed.
-//This avoids issues when searching for an app with a space character in its name.
-const BaseMenuItem = new Lang.Class({
-Name: 'BaseMenuItem',
-Extends: PopupMenu.PopupBaseMenuItem,
-_onKeyPressEvent: function (actor, event) {
-   let symbol = event.get_key_symbol();
+const PlaceMenuItem = new Lang.Class({
+    Name: 'PlaceMenuItem',
+    Extends: BaseMenuItem,
 
-   if (symbol == Clutter.KEY_Return) {
-       this.activate(event);
-       return Clutter.EVENT_STOP;
-   }
-   return Clutter.EVENT_PROPAGATE;
-}
+    // Initialize menu item
+    _init: function(button, info) {
+	    this.parent();
+	    this._button = button;
+	    this._info = info;
+        this._icon = new St.Icon({ gicon: info.icon,
+                                   icon_size: 16 });
+	    this.actor.add_child(this._icon);
+        this._label = new St.Label({ text: info.name, y_expand: true,
+                                      y_align: Clutter.ActorAlign.CENTER });
+        this.actor.add_child(this._label, { expand: true });
+        this._changedId = this._info.connect('changed',
+                                       Lang.bind(this, this._propertiesChanged));
+    },
+
+    // Destroy menu item
+    destroy: function() {
+        if (this._changedId) {
+            this._info.disconnect(this._changedId);
+            this._changedId = 0;
+        }
+        this.parent();
+    },
+
+    // Activate (launch) the shortcut
+    activate: function(event) {
+	    this._info.launch(event.get_time());
+      this._button.menu.toggle();
+	    this.parent(event);
+    },
+
+    // Handle changes in place info (redisplay new info)
+    _propertiesChanged: function(info) {
+        this._icon.gicon = info.icon;
+        this._label.text = info.name;
+    },
 });
-
-
-
-
 
 
 // Menu Application Item from ArcMenu
@@ -753,4 +918,3 @@ const ApplicationMenuItem = new Lang.Class({
     }
     
 });
-

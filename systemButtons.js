@@ -25,7 +25,7 @@ const PowerButton = new Lang.Class({
     // Activate the button (Shutdown)
     _onClick: function() {
         this._button.menu.toggle();
-        this._button._session.ShutdownRemote(0);
+        this._button._session.ShutdownRemote(0);  // why 0?
     }
 });
 
@@ -44,7 +44,7 @@ const ShellButton = new Lang.Class({
             accessible_name: _("Restart Gnome Shell"),
             style_class: 'system-menu-action'
         });
-        this.actor.child = new St.Icon({ icon_name: 'system-refresh-symbolic' });
+        this.actor.child = new St.Icon({ icon_name: 'refresh-symbolic' });
         this.actor.connect('clicked', Lang.bind(this, this._onClick));
     },
 
@@ -127,6 +127,7 @@ const LockButton = new Lang.Class({
             style_class: 'system-menu-action'
         });
         this.actor.child = new St.Icon({ icon_name: 'changes-prevent-symbolic' });
+        //Icons: user-lock-symbolic
         this.actor.connect('clicked', Lang.bind(this, this._onClick));
     },
 
@@ -140,7 +141,3 @@ const LockButton = new Lang.Class({
         }
     }
 });
-
-
-
-

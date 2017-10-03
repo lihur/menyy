@@ -1,9 +1,9 @@
-.menyy-spacing {
-	padding: 0px;
-	-natural-hpadding: 0px;
-	-minimum-hpadding: 0px;
-	padding-left: 0px;
-	padding-right: 0px;
+.menyy-shortcut-icon {
+}
+
+
+.menyy-shortcut-label {
+	padding-left: 1em;
 }
 
 .menyy-category-button {
@@ -88,6 +88,16 @@
 	max-width:27em;
 	height: 57em;
 }
+
+/*
+.menyy-applications-box-grid {
+	min-width: 27em;
+	max-width:27em;
+	height: 57em;
+}
+*/
+
+
 
 .menyy-places-box {
 	min-width: 15em;

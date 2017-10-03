@@ -1,3 +1,9 @@
+const Lang = imports.lang;
+const St = imports.gi.St;
+const PopupMenu = imports.ui.popupMenu;
+const Clutter = imports.gi.Clutter;
+
+
 /**
  * This class is responsible for the appearance of the menu button.
  */

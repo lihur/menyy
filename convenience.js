@@ -54,6 +54,34 @@ function initTranslations(domain) {
         Gettext.bindtextdomain(domain, Config.LOCALEDIR);
 }
 
+
+
+
+
+
+
+
+/*
+function get_settings() {
+    let schema_id = "org.gnome.shell.extensions.menyy";
+    let schema_path = ExtensionUtils.getCurrentExtension().path + "/schemas";
+    let schema_source = Gio.SettingsSchemaSource.new_from_directory(schema_path,
+								    Gio.SettingsSchemaSource.get_default(),
+								    false);
+    if (!schema_source) {
+        throw new Error("Local schema directory for " + schema_id + " is missing");
+    }
+    let schema = schema_source.lookup(schema_id, true);
+    if (!schema) {
+        throw new Error("Schema " + schema_id + " is missing.  Has glib-compile-schemas been called for it?");
+    }
+    return new Gio.Settings({settings_schema: schema});
+}
+*/
+
+
+
+
 /**
  * getSettings:
  * @schema: (optional): the GSettings schema id

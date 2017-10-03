@@ -8,6 +8,9 @@ const GLib = imports.gi.GLib;										//Places & UserMenuItem
 const AccountsService = imports.gi.AccountsService;					//UserMenuItem
 const Util = imports.misc.util;										//UserMenuItem
 const Gio = imports.gi.Gio;											//UserMenuItem
+const AppDisplay = imports.ui.appDisplay;							//SetPopupTimeout
+const Main = imports.ui.main;
+
 
 
 // Put in settings!
@@ -24,7 +27,7 @@ const ApplicationType = {
 
 
 
-
+//let menyy;
 
 
 
@@ -140,7 +143,7 @@ const AppListButton = new Lang.Class({
         this._app = app;
         this._type = appType;
         this._stateChangedId = 0;
-        let style = "popup-menu-item gnomenu-application-list-button";
+        let style = "popup-menu-item menyy-application-list-button";
         this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.MIDDLE});
         this.actor._delegate = this;
         this._iconSize = APPLICATION_ICON_SIZE;
@@ -149,16 +152,16 @@ const AppListButton = new Lang.Class({
         // appType 0 = application, appType 1 = place, appType 2 = recent
         if (appType == ApplicationType.APPLICATION) {
             this.icon = app.create_icon_texture(this._iconSize);
-            this.label = new St.Label({ text: app.get_name(), style_class: 'gnomenu-application-list-button-label' });
+            this.label = new St.Label({ text: app.get_name(), style_class: 'menyy-application-list-button-label' });
         } else if (appType == ApplicationType.PLACE) {
             this.icon = new St.Icon({gicon: app.icon, icon_size: this._iconSize});
             if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
-            this.label = new St.Label({ text: app.name, style_class: 'gnomenu-application-list-button-label' });
+            this.label = new St.Label({ text: app.name, style_class: 'menyy-application-list-button-label' });
         } else if (appType == ApplicationType.RECENT) {
             let gicon = Gio.content_type_get_icon(app.mime);
             this.icon = new St.Icon({gicon: gicon, icon_size: this._iconSize});
             if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
-            this.label = new St.Label({ text: app.name, style_class: 'gnomenu-application-list-button-label' });
+            this.label = new St.Label({ text: app.name, style_class: 'menyy-application-list-button-label' });
         }
         
         this._dot = new St.Widget({ style_class: 'app-well-app-running-dot',
@@ -168,7 +171,7 @@ const AppListButton = new Lang.Class({
                                     y_align: Clutter.ActorAlign.END });
 
         this._iconContainer = new St.BoxLayout({vertical: true});
-        this._iconContainer.add_style_class_name('gnomenu-application-list-button-icon');
+        this._iconContainer.add_style_class_name('menyy-application-list-button-icon');
 
         this._iconContainer.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.END, y_align: St.Align.END});
         this._iconContainer.add(this._dot, {x_fill: false, y_fill: false, x_align: St.Align.END, y_align: St.Align.END});
@@ -191,9 +194,9 @@ const AppListButton = new Lang.Class({
             function () {
                 //this._removeMenuTimeout();
                 Main.overview.beginItemDrag(this);
-                if (GnoMenu.appsMenuButton) {
-                    if (GnoMenu.appsMenuButton._categoryWorkspaceMode == CategoryWorkspaceMode.CATEGORY)
-                        GnoMenu.appsMenuButton.toggleCategoryWorkspaceMode();
+                if (menyy.appsMenuButton) {
+                    if (menyy.appsMenuButton._categoryWorkspaceMode == CategoryWorkspaceMode.CATEGORY)
+                        menyy.appsMenuButton.toggleCategoryWorkspaceMode();
                 }
             }));
         this._draggable.connect('drag-cancelled', Lang.bind(this,
@@ -262,9 +265,9 @@ const AppListButton = new Lang.Class({
         this.actor.remove_style_pseudo_class('pressed');
         this.actor.remove_style_class_name('selected');
 
-        if (GnoMenu.appsMenuButton) {
-            if (GnoMenu.appsMenuButton.menu.isOpen)
-                GnoMenu.appsMenuButton.menu.toggle();
+        if (menyy.appsMenuButton) {
+            if (menyy.appsMenuButton.menu.isOpen)
+                menyy.appsMenuButton.menu.toggle();
         }
     }
 });
@@ -277,15 +280,15 @@ const AppListButton = new Lang.Class({
  * ========================================================================= */
 
 const AppGridButton = new Lang.Class({
-    Name: 'GnoMenu.AppGridButton',
+    Name: 'Menyy.AppGridButton',
 
     _init: function(app, appType, includeText) {
         this._app = app;
         this._type = appType;
         this._stateChangedId = 0;
-        let styleButton = "popup-menu-item gnomenu-application-grid-button";
+        let styleButton = "popup-menu-item menyy-application-grid-button";
 
-        let styleLabel = "gnomenu-application-grid-button-label";
+        let styleLabel = "menyy-application-grid-button-label";
         
         //DELETEME!
         styleButton += ".col3"
@@ -361,9 +364,9 @@ const AppGridButton = new Lang.Class({
             function () {
                 //this._removeMenuTimeout();
                 Main.overview.beginItemDrag(this);
-                if (GnoMenu.appsMenuButton) {
-                    if (GnoMenu.appsMenuButton._categoryWorkspaceMode == CategoryWorkspaceMode.CATEGORY)
-                        GnoMenu.appsMenuButton.toggleCategoryWorkspaceMode();
+                if (menyy.appsMenuButton) {
+                    if (menyy.appsMenuButton._categoryWorkspaceMode == CategoryWorkspaceMode.CATEGORY)
+                        menyy.appsMenuButton.toggleCategoryWorkspaceMode();
                 }
             }));
         this._draggable.connect('drag-cancelled', Lang.bind(this,
@@ -432,9 +435,9 @@ const AppGridButton = new Lang.Class({
         this.actor.remove_style_pseudo_class('pressed');
         this.actor.remove_style_class_name('selected');
 
-        if (GnoMenu.appsMenuButton) {
-            if (GnoMenu.appsMenuButton.menu.isOpen)
-                GnoMenu.appsMenuButton.menu.toggle();
+        if (menyy.appsMenuButton) {
+            if (menyy.appsMenuButton.menu.isOpen)
+                menyy.appsMenuButton.menu.toggle();
         }
     }
 });
@@ -449,7 +452,7 @@ const AppGridButton = new Lang.Class({
  * ========================================================================= */
 
 const ShortcutButton = new Lang.Class({
-    Name: 'GnoMenu.ShortcutButton',
+    Name: 'Menyy.ShortcutButton',
 
     _init: function (app, appType) {
         this._app = app;
@@ -478,7 +481,7 @@ const ShortcutButton = new Lang.Class({
             if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
             this.label = new St.Label({ text: app.name, style_class: 'menyy-shortcut-label' });
         }
-        //this.label = new St.Label({ text: app.get_name(), style_class: 'gnomenu-shortcut-button-label' });
+        //this.label = new St.Label({ text: app.get_name(), style_class: 'menyy-shortcut-button-label' });
 
         this.buttonbox = new St.BoxLayout();
         this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
@@ -495,9 +498,9 @@ const ShortcutButton = new Lang.Class({
             function () {
                 //this._removeMenuTimeout();
                 Main.overview.beginItemDrag(this);
-                if (GnoMenu.appsMenuButton) {
-                    if (GnoMenu.appsMenuButton._categoryWorkspaceMode == CategoryWorkspaceMode.CATEGORY)
-                        GnoMenu.appsMenuButton.toggleCategoryWorkspaceMode();
+                if (menyy.appsMenuButton) {
+                    if (menyy.appsMenuButton._categoryWorkspaceMode == CategoryWorkspaceMode.CATEGORY)
+                        menyy.appsMenuButton.toggleCategoryWorkspaceMode();
                 }
             }));
         this._draggable.connect('drag-cancelled', Lang.bind(this,
@@ -552,9 +555,9 @@ const ShortcutButton = new Lang.Class({
         this.actor.remove_style_pseudo_class('pressed');
         this.actor.remove_style_class_name('selected');
 
-        if (GnoMenu.appsMenuButton) {
-            if (GnoMenu.appsMenuButton.menu.isOpen)
-                GnoMenu.appsMenuButton.menu.toggle();
+        if (menyy.appsMenuButton) {
+            if (menyy.appsMenuButton.menu.isOpen)
+                menyy.appsMenuButton.menu.toggle();
         }
     }
 });

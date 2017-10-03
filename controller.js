@@ -1,3 +1,5 @@
+//Menyy
+
 /*
  * Arc Menu: The new applications menu for Gnome 3.
  *
@@ -36,7 +38,7 @@ const Helper = Me.imports.helper;
  * the settings changes of the Arc Menu.
  */
  const MenuSettingsController = new Lang.Class({
-    Name: 'ArcMenu.MenuSettingsController',
+    Name: 'Menyy.MenuSettingsController',
 
     _init: function(settings, menuButton) {
         this._settings = settings;
@@ -47,7 +49,7 @@ const Helper = Me.imports.helper;
         // Create a Hot Corner Manager, a Menu Keybinder as well as a Keybinding Manager
         this._hotCornerManager = new Helper.HotCornerManager();
         this._menuHotKeybinder = new Helper.MenuHotKeybinder(Lang.bind(this, function() {
-                this._menuButton.toggleMenu();
+                this._menuButton._toggleMenu();
             }));
         this._keybindingManager = new Helper.KeybindingManager(this._settings);
 
@@ -103,7 +105,7 @@ const Helper = Me.imports.helper;
        if (this._settings.get_boolean('enable-menu-keybinding')) {
             this._keybindingManager.bind('menu-keybinding-text', 'menu-keybinding',
                 Lang.bind(this, function() {
-                    this._menuButton.toggleMenu();
+                    this._menuButton._toggleMenu();
                 }));
         } else {
             this._keybindingManager.unbind('menu-keybinding-text');
@@ -120,7 +122,7 @@ const Helper = Me.imports.helper;
 
     // Change the menu button appearance as specified in the settings
     _setButtonAppearance: function() {
-        let menuButtonWidget = this._menuButton.getWidget();
+        let menuButtonWidget = this._menuButton._getWidget();
         switch (this._settings.get_enum('menu-button-appearance')) {
             case Constants.MENU_APPEARANCE.Text:
                 menuButtonWidget.hidePanelIcon();
@@ -147,7 +149,7 @@ const Helper = Me.imports.helper;
     },
 
     _setMenuButtonArrow: function() {
-        let menuButtonWidget = this._menuButton.getWidget();
+        let menuButtonWidget = this._menuButton._getWidget();
         if (this._settings.get_boolean('enable-menu-button-arrow')){
             menuButtonWidget.hideArrowIcon();
             menuButtonWidget.showArrowIcon();
@@ -159,7 +161,7 @@ const Helper = Me.imports.helper;
     // Update the text of the menu button as specified in the settings
     _setButtonText: function() {
         // Update the text of the menu button
-        let menuButtonWidget = this._menuButton.getWidget();
+        let menuButtonWidget = this._menuButton._getWidget();
         let label = menuButtonWidget.getPanelLabel();
 
         switch (this._settings.get_enum('menu-button-text')) {
@@ -177,7 +179,7 @@ const Helper = Me.imports.helper;
     // Update the icon of the menu button as specified in the settings
     _setButtonIcon: function() {
         let iconFilepath = this._settings.get_string('custom-menu-button-icon');
-        let menuButtonWidget = this._menuButton.getWidget();
+        let menuButtonWidget = this._menuButton._getWidget();
         let stIcon = menuButtonWidget.getPanelIcon();
 
         if (stIcon.has_style_class_name('popup-menu-icon')) {
@@ -206,7 +208,7 @@ const Helper = Me.imports.helper;
     // Update the icon of the menu button as specified in the settings
     _setButtonIconSize: function() {
         let scaleFactor = St.ThemeContext.get_for_stage(global.stage).scale_factor;
-        let menuButtonWidget = this._menuButton.getWidget();
+        let menuButtonWidget = this._menuButton._getWidget();
         let stIcon = menuButtonWidget.getPanelIcon();
         let iconSize = this._settings.get_double('custom-menu-button-icon-size');
         let size = iconSize*scaleFactor;

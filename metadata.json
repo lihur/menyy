@@ -1,1 +1,12 @@
-{"description": "Yet another menu for gnome 3", "name": "Men\u00fc\u00fc", "uuid": "menyy@lihurp.gmail.com", "shell-version": ["3.24.2"]}
+{
+  "description": "Yet another menu for gnome 3", 
+  "gettext-domain": "gnome-shell-extension-arc-menu", 
+  "name": "Men\u00fc\u00fc", 
+  "settings-schema": "org.gnome.shell.extensions.menyy", 
+  "shell-version": [
+    "3.24 2"
+  ], 
+  "url": "https://github.com/LinxGem33/Arc-Menu.git", 
+  "uuid": "menyy@lihurp.gmail.com", 
+  "version": 0.1
+}

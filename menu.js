@@ -360,7 +360,11 @@ const ApplicationsMenu = new Lang.Class({
         this._loadPlaces();
     },
     
-    getWidget: function() {
+    _toggleMenu: function() {
+    	this.menu.toggle();
+    },
+
+    _getWidget: function() {
         return this._menuButtonWidget;
     },
     

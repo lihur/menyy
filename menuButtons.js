@@ -13,10 +13,10 @@ const Main = imports.ui.main;
 
 
 
-// Put in settings!
-const CATEGORY_ICON_SIZE = 32;
-const APPLICATION_ICON_SIZE = 32;
-const USER_ICON_SIZE = 64;
+// My stuff
+const Menyy = imports.misc.extensionUtils.getCurrentExtension();
+const convenience = Menyy.imports.convenience;
+const settings = convenience.getSettings('org.gnome.shell.extensions.menyy');
 
 // DELETEME!
 const ApplicationType = {
@@ -26,8 +26,252 @@ const ApplicationType = {
 	};
 
 
+//MOVE ELSEWHERE!
+//Sets icon asynchronously (user icon)
+function setIconAsync(icon, gioFile, fallback_icon_name) {
+	  gioFile.load_contents_async(null, function(source, result) {
+	    try {
+	      let bytes = source.load_contents_finish(result)[1];
+	      icon.gicon = Gio.BytesIcon.new(bytes);
+	    }
+	    catch(err) {
+	      icon.icon_name = fallback_icon_name;
+	    }
+	  });
+	}
+
+
+
+
+
 
 //let menyy;
+
+
+
+/* =========================================================================
+/* name:    UserMenuItem
+ * @desc    A button with an icon and label that holds app info
+ * From GnoMenu project
+ * ========================================================================= */
+const UserMenuItem = new Lang.Class({
+    Name: 'Menyy.UserMenuItem',
+    
+    // Initialize the menu item
+    _init: function(menyy) {
+   	    this.parent();
+    	this._iconSize = 64; //(settings.get_int('user-icon-size') > 0) ? settings.get_int('user-icon-size') : 64;
+    	this._showIcon = true; //(settings.get_int('user-icon-size') > 0) ? true : false;
+    	let username = GLib.get_user_name();
+        this._user = AccountsService.UserManager.get_default().get_user(username);
+        this._userIcon = new St.Icon({ style_class: 'popup-menu-icon',
+                                   icon_size: this._iconSize});
+        this._userLabel = new St.Label({ text: username, 
+            y_expand: true,
+            y_align: Clutter.ActorAlign.CENTER, 
+         });
+    	
+        let style = "popup-menu-item popup-submenu-menu-item";
+        this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.START });
+        this.actor._delegate = this;
+
+        this.buttonEnterCallback = (Lang.bind(this, function() {
+        	//global.log("menyy: user button enter callback");
+            this.actor.add_style_class_name('selected');
+    	}));
+        this.buttonLeaveCallback = (Lang.bind(this, function() {
+        	//global.log("menyy: user button leave callback");
+            this.actor.remove_style_class_name('selected');
+    	}));
+        this.buttonPressCallback = (Lang.bind(this, function() {
+        	this.actor.add_style_pseudo_class('pressed');
+        }));
+        this.buttonReleaseCallback = (Lang.bind(this, function() {
+        	this.actor.remove_style_pseudo_class('pressed');
+            this.actor.remove_style_class_name('selected');
+            this.activate();
+    	}));
+    	
+    	
+        	
+        	
+
+        this.buttonbox = new St.BoxLayout();
+        this.buttonbox.add_child(this._userIcon);
+        this.buttonbox.add_child(this._userLabel, { expand: true });
+        
+        this.actor.set_child(this.buttonbox);
+
+        // Connect signals
+        this.actor.connect('touch-event', Lang.bind(this, this._onTouchEvent));
+        
+        this._button = menyy;
+        this._userLoadedId = this._user.connect('notify::is_loaded', Lang.bind(this, this._onUserChanged));
+        this._userChangedId = this._user.connect('changed', Lang.bind(this, this._onUserChanged));
+        this.actor.connect('destroy', Lang.bind(this, this._onDestroy));
+        
+        // Callbacks to events
+        this.actor.connect('enter-event', Lang.bind(this, this.buttonEnterCallback));
+        this.actor.connect('leave-event', Lang.bind(this, this.buttonLeaveCallback));
+        this.actor.connect('button-press-event', Lang.bind(this, this.buttonPressCallback));
+        this.actor.connect('button-release-event', Lang.bind(this, this.buttonReleaseCallback));
+        this._onUserChanged();
+    },
+    
+    
+    
+    
+    // Activate the menu item (Open user account settings)
+    activate: function(event) {
+    	//global.log('menyy: activate function')
+        Util.spawnCommandLine("gnome-control-center user-accounts");
+        this._button.menu.toggle();
+   	    //this.parent(event);  // What was that anyway???
+    },
+
+    // Handle changes to user information (redisplay new info)
+    _onUserChanged: function() {
+    	//global.log('menyy: user changed')
+        if (this._user.is_loaded) {
+            this._userLabel.set_text (this._user.get_real_name());
+            if (this._userIcon) {
+                let iconFileName = this._user.get_icon_file();
+                let iconFile = Gio.file_new_for_path(iconFileName);
+                setIconAsync(this._userIcon, iconFile, 'avatar-default');
+            }
+        }
+    },
+
+    // Destroy the menu item
+    _onDestroy: function() {
+    	global.log('menyy: destroy')
+        if (this._userLoadedId != 0) {
+            this._user.disconnect(this._userLoadedId);
+            this._userLoadedId = 0;
+        }
+
+        if (this._userChangedId != 0) {
+            this._user.disconnect(this._userChangedId);
+            this._userChangedId = 0;
+        }
+    },
+    
+    select: function() {
+    	global.log('menyy: Select')
+        this._ignoreHoverSelect = true;
+        this.buttonEnterCallback.call();
+    },
+
+    unSelect: function() {
+    	global.log('menyy: unselect')
+        this._ignoreHoverSelect = false;
+        this.buttonLeaveCallback.call();
+    },
+
+    click: function() {
+    	global.log('menyy: click')
+        this.buttonPressCallback.call();
+        this.buttonReleaseCallback.call();
+    },
+    
+    _onTouchEvent : function (actor, event) {
+    	global.log('menyy: touch')
+        return Clutter.EVENT_PROPAGATE;
+    }
+    
+});
+
+
+
+//Menu item to go back to category view (for arcmenu compatibility)
+const BackMenuItem = new Lang.Class({
+    Name: 'Menyy.BackMenuItem',
+    
+    
+    // Initialize the menu item
+    _init: function(menyy, purpose) {
+   	    this.parent();
+    	this._iconSize = (settings.get_int('apps-icon-size') > 0) ? settings.get_int('apps-icon-size') : 64;
+    	this._showIcon = (settings.get_int('apps-icon-size') > 0) ? true : false;
+    	this.purpose = purpose;
+    	if (this.purpose == 'backtoCategories') {
+    		this._icon = new St.Icon({ icon_name: 'go-previous-symbolic',
+	            style_class: 'popup-menu-icon',
+	            icon_size: this._iconSize});
+        	this._label = new St.Label({ text: _("Back"), y_expand: true,
+        		y_align: Clutter.ActorAlign.CENTER });
+		} else if (this.purpose == 'backToHome'){
+			this._icon = new St.Icon({ icon_name: 'go-previous-symbolic',
+		        style_class: 'popup-menu-icon',
+		        icon_size: this._iconSize});
+		 	this._label = new St.Label({ text: _("Back"), y_expand: true,
+		 		y_align: Clutter.ActorAlign.CENTER });
+    	} else {
+    		this._icon = new St.Icon({ icon_name: 'go-next-symbolic',
+	            style_class: 'popup-menu-icon',
+	            icon_size: this._iconSize});
+        	this._label = new St.Label({ text: _("Show Categories"), y_expand: true,
+        		y_align: Clutter.ActorAlign.CENTER });
+    	}
+        
+        let style = "popup-menu-item popup-submenu-menu-item";
+        this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.START });
+        this.actor._delegate = this;
+
+		this.buttonEnterCallback = (Lang.bind(this, function() {
+			//global.log("menyy: user button enter callback");
+		    this.actor.add_style_class_name('selected');
+		}));
+		this.buttonLeaveCallback = (Lang.bind(this, function() {
+			//global.log("menyy: user button leave callback");
+		    this.actor.remove_style_class_name('selected');
+		}));
+		this.buttonPressCallback = (Lang.bind(this, function() {
+			this.actor.add_style_pseudo_class('pressed');
+		}));
+		this.buttonReleaseCallback = (Lang.bind(this, function() {
+			this.actor.remove_style_pseudo_class('pressed');
+			this.actor.remove_style_class_name('selected');
+			this.activate();
+    	}));
+    	
+    	
+        	
+        	
+
+        this.buttonbox = new St.BoxLayout();
+        this.buttonbox.add_child(this._icon);
+        this.buttonbox.add_child(this._label, { expand: true });
+        
+        this.actor.set_child(this.buttonbox);
+
+        // Connect signals
+        //this.actor.connect('touch-event', Lang.bind(this, this._onTouchEvent));
+        
+        this._button = menyy;
+        //this.actor.connect('destroy', Lang.bind(this, this._onDestroy));
+        
+        // Callbacks to events
+		this.actor.connect('enter-event', Lang.bind(this, this.buttonEnterCallback));
+		this.actor.connect('leave-event', Lang.bind(this, this.buttonLeaveCallback));
+		this.actor.connect('button-press-event', Lang.bind(this, this.buttonPressCallback));
+		this.actor.connect('button-release-event', Lang.bind(this, this.buttonReleaseCallback));
+    },
+    // Activate the button (go back to category view)
+    activate: function(event) {
+    	if (this.purpose == 'backToHome') {
+    		this._button._openDefaultCategory();
+    	} else {
+    		this._button._selectCategory('categories');
+    	}
+        //this._button._openDefaultCategory();
+        if (this._button.searchActive) this._button.resetSearch();
+	    //this.parent(event);
+    },
+});
+
+
+
 
 
 
@@ -41,6 +285,10 @@ const CategoryListButton = new Lang.Class({
     Name: 'Menyy.CategoryListButton',
 
     _init: function (dir, altNameText, altIconName) {
+    	//this.iconSize = settings.get_int('categories-icon-size');
+    	this._iconSize = (settings.get_int('categories-icon-size') > 0) ? settings.get_int('categories-icon-size') : 24;
+    	this._showIcon = (settings.get_int('categories-icon-size') > 0) ? true : false;
+    	
         this.buttonEnterCallback = null;
         this.buttonLeaveCallback = null;
         this.buttonPressCallback = null;
@@ -51,7 +299,6 @@ const CategoryListButton = new Lang.Class({
         this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.START });
         this.actor._delegate = this;
         this.buttonbox = new St.BoxLayout();
-        let iconSize = CATEGORY_ICON_SIZE;
 
         this._dir = dir;
         let categoryNameText = "";
@@ -63,18 +310,12 @@ const CategoryListButton = new Lang.Class({
         } else {
             categoryNameText = dir.get_name() ? dir.get_name() : "";
             categoryIconName = dir.get_icon() ? dir.get_icon().get_names().toString() : "error";
-        }
-        /*
-        if (this._userIcon) {
-            let iconFileName = this._user.get_icon_file();
-            let iconFile = Gio.file_new_for_path(iconFileName);
-            setIconAsync(this._userIcon, iconFile, 'avatar-default');
-        }
-        */
-        if (categoryIconName) {
+        }        
+        
+        if (categoryIconName && this._showIcon) {
         	//let iconFileName = categoryIconName;
         	//let iconFile = Gio.file_new_for_path(iconFileName);
-            this.icon = new St.Icon({icon_name: categoryIconName, icon_size: iconSize});
+            this.icon = new St.Icon({icon_name: categoryIconName, icon_size: this._iconSize});
             //setIconAsync(this.icon, iconFile, 'applications-other');
             this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
         }
@@ -140,28 +381,29 @@ const AppListButton = new Lang.Class({
     Name: 'Menyy.AppListButton',
 
     _init: function (app, appType) {
+    	//this._iconSize = settings.get_int('apps-icon-size');
+    	this._iconSize = (settings.get_int('apps-icon-size') > 0) ? settings.get_int('apps-icon-size') : 28;
+    	this._showIcon = (settings.get_int('apps-icon-size') > 0) ? true : false;
         this._app = app;
         this._type = appType;
         this._stateChangedId = 0;
-        let style = "popup-menu-item menyy-application-list-button";
+        let style = "popup-menu-item popup-submenu-menu-item menyy-apps-button";
         this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.MIDDLE});
         this.actor._delegate = this;
-        this._iconSize = APPLICATION_ICON_SIZE;
-        //this._iconSize = (settings.get_int('apps-list-icon-size') > 0) ? settings.get_int('apps-list-icon-size') : 28;
-
+        
         // appType 0 = application, appType 1 = place, appType 2 = recent
         if (appType == ApplicationType.APPLICATION) {
-            this.icon = app.create_icon_texture(this._iconSize);
-            this.label = new St.Label({ text: app.get_name(), style_class: 'menyy-application-list-button-label' });
+        	this.icon = app.create_icon_texture(this._iconSize);
+            this.label = new St.Label({ text: app.get_name(), style_class: 'menyy-apps-button-label' });
         } else if (appType == ApplicationType.PLACE) {
             this.icon = new St.Icon({gicon: app.icon, icon_size: this._iconSize});
             if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
-            this.label = new St.Label({ text: app.name, style_class: 'menyy-application-list-button-label' });
+            this.label = new St.Label({ text: app.name, style_class: 'menyy-apps-button-label' });
         } else if (appType == ApplicationType.RECENT) {
             let gicon = Gio.content_type_get_icon(app.mime);
             this.icon = new St.Icon({gicon: gicon, icon_size: this._iconSize});
             if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
-            this.label = new St.Label({ text: app.name, style_class: 'menyy-application-list-button-label' });
+            this.label = new St.Label({ text: app.name, style_class: 'menyy-apps-button-label' });
         }
         
         this._dot = new St.Widget({ style_class: 'app-well-app-running-dot',
@@ -170,11 +412,14 @@ const AppListButton = new Lang.Class({
                                     x_align: Clutter.ActorAlign.CENTER,
                                     y_align: Clutter.ActorAlign.END });
 
-        this._iconContainer = new St.BoxLayout({vertical: true});
-        this._iconContainer.add_style_class_name('menyy-application-list-button-icon');
-
-        this._iconContainer.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.END, y_align: St.Align.END});
-        this._iconContainer.add(this._dot, {x_fill: false, y_fill: false, x_align: St.Align.END, y_align: St.Align.END});
+        
+        //if (this._showIcon) {
+	        this._iconContainer = new St.BoxLayout({vertical: true});
+	        this._iconContainer.add_style_class_name('menyy-application-list-button-icon');
+	    if (this._showIcon) {
+	        this._iconContainer.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.END, y_align: St.Align.END});
+        }
+	    this._iconContainer.add(this._dot, {x_fill: false, y_fill: false, x_align: St.Align.END, y_align: St.Align.END});
 
         this.buttonbox = new St.BoxLayout();
         this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
@@ -283,16 +528,17 @@ const AppGridButton = new Lang.Class({
     Name: 'Menyy.AppGridButton',
 
     _init: function(app, appType, includeText) {
+    	this._settings = convenience.getSettings('org.gnome.shell.extensions.menyy');
+    	this._iconSize = this._settings.get_int('apps-icon-size');
+    	
         this._app = app;
         this._type = appType;
         this._stateChangedId = 0;
-        let styleButton = "popup-menu-item menyy-application-grid-button";
+        let styleButton = "popup-menu-item popup-submenu-menu-item menyy-apps-grid-button";
 
-        let styleLabel = "menyy-application-grid-button-label";
+        let styleLabel = "menyy-apps-grid-button-label";
         
         //DELETEME!
-        styleButton += ".col3"
-        /*
         if (settings.get_int('apps-grid-column-count') == 3) {
             styleButton += " col3";
         } else if (settings.get_int('apps-grid-column-count') == 4) {
@@ -304,7 +550,7 @@ const AppGridButton = new Lang.Class({
         } else if (settings.get_int('apps-grid-column-count') == 7) {
             styleButton += " col7";
         }
-        */
+        
         
         /*
         if (settings.get_boolean('hide-categories')) {
@@ -318,7 +564,7 @@ const AppGridButton = new Lang.Class({
         /*
         this._iconSize = (settings.get_int('apps-grid-icon-size') > 0) ? settings.get_int('apps-grid-icon-size') : 64;
         */
-        this._iconSize = 64;
+        //this._iconSize = 64;
 
         // appType 0 = application, appType 1 = place, appType 2 = recent
         if (appType == ApplicationType.APPLICATION) {
@@ -455,13 +701,15 @@ const ShortcutButton = new Lang.Class({
     Name: 'Menyy.ShortcutButton',
 
     _init: function (app, appType) {
+    	this._iconSize = (settings.get_int('places-icon-size') > 0) ? settings.get_int('places-icon-size') : 16;
+    	this._showIcon = (settings.get_int('places-icon-size') > 0) ? true : false;
         this._app = app;
         this._type = appType;
         let style = "popup-menu-item menyy-shortcut-button";
         this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.START });
         this.actor._delegate = this;
         //this._iconSize = (settings.get_int('shortcuts-icon-size') > 0) ? settings.get_int('shortcuts-icon-size') : 32;
-        this._iconSize = 16;
+        //this._iconSize = 16;
 
         // appType 0 = application, appType 1 = place, appType 2 = recent
         if (appType == ApplicationType.APPLICATION) {
@@ -484,7 +732,7 @@ const ShortcutButton = new Lang.Class({
         //this.label = new St.Label({ text: app.get_name(), style_class: 'menyy-shortcut-button-label' });
 
         this.buttonbox = new St.BoxLayout();
-        this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
+        if (this._showIcon) this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
         this.buttonbox.add(this.label, {x_fill: false, y_fill: true, x_align: St.Align.START, y_align: St.Align.MIDDLE});
 
         this.actor.set_child(this.buttonbox);
@@ -666,7 +914,7 @@ const DEFAULT_DIRECTORIES = [
 */
 
 
-
+/*
 //Menu Category item class ARCMENU
 const CategoryMenuItem = new Lang.Class({
     Name: 'CategoryMenuItem',
@@ -715,7 +963,7 @@ const CategoryMenuItem = new Lang.Class({
 
 //arcmenu
 //Menu Place Shortcut item class
-
+/*
 const PlaceMenuItem = new Lang.Class({
     Name: 'PlaceMenuItem',
     Extends: BaseMenuItem,
@@ -940,7 +1188,7 @@ const ApplicationMenuItem = new Lang.Class({
         this._removeMenuTimeout();
     }
 });
-
+*/
 
 
 /*
@@ -973,7 +1221,7 @@ const ShortcutMenuItem = new Lang.Class({
 */
 
 
-
+/*
 //Menu item to go back to category view (for arcmenu compatibility)
 const BackMenuItem = new Lang.Class({
     Name: 'BackMenuItem',
@@ -986,7 +1234,7 @@ const BackMenuItem = new Lang.Class({
 
         this._icon = new St.Icon({ icon_name: 'go-previous-symbolic',
                                    style_class: 'popup-menu-icon',
-                                   icon_size: APPLICATION_ICON_SIZE});
+                                   icon_size: 32});
         this.actor.add_child(this._icon);
         let backLabel = new St.Label({ text: _("Back"), y_expand: true,
                                       y_align: Clutter.ActorAlign.CENTER });
@@ -1000,24 +1248,12 @@ const BackMenuItem = new Lang.Class({
 	    this.parent(event);
     },
 });
+*/
 
 
 
-// MOVE ELSEWHERE!
-//Sets icon asynchronously (user icon)
-function setIconAsync(icon, gioFile, fallback_icon_name) {
-	  gioFile.load_contents_async(null, function(source, result) {
-	    try {
-	      let bytes = source.load_contents_finish(result)[1];
-	      icon.gicon = Gio.BytesIcon.new(bytes);
-	    }
-	    catch(err) {
-	      icon.icon_name = fallback_icon_name;
-	    }
-	  });
-	}
 
-
+/*
 //Menu item which displays the current user
 const UserMenuItem = new Lang.Class({
  Name: 'UserMenuItem',
@@ -1076,3 +1312,4 @@ const UserMenuItem = new Lang.Class({
      }
  }
 });
+*/

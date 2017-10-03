@@ -44,7 +44,7 @@ const ShellButton = new Lang.Class({
             accessible_name: _("Restart Gnome Shell"),
             style_class: 'system-menu-action'
         });
-        this.actor.child = new St.Icon({ icon_name: 'refresh-symbolic' });
+        this.actor.child = new St.Icon({ icon_name: 'system-refresh-symbolic' });
         this.actor.connect('clicked', Lang.bind(this, this._onClick));
     },
 

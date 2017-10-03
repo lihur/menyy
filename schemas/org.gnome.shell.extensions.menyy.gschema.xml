@@ -25,10 +25,49 @@
     <value value="1" nick="Custom_Text"/>
   </enum>
   <enum id='org.gnome.shell.extensions.menyy.menu-button-icon'>
-    <value value="0" nick="Arc_Menu_Icon"/>
+    <value value="0" nick="Menyy_Icon"/>
     <value value="1" nick="System_Icon"/>
     <value value="2" nick="Custom_Icon"/>
   </enum>
+  <enum id='org.gnome.shell.extensions.menyy.categories-label'>
+    <value value="0" nick="Left"/>
+    <value value="1" nick="Right"/>
+    <value value="2" nick="Hide"/>
+  </enum>
+  <enum id='org.gnome.shell.extensions.menyy.categories-viewmode'>
+    <value value="0" nick="Left"/>
+    <value value="1" nick="Right"/>
+    <value value="2" nick="Combined"/>
+    <value value="3" nick="Accordion" />
+  </enum>
+  <enum id='org.gnome.shell.extensions.menyy.categories-selection-method'>
+    <value value="0" nick="Hover"/>
+    <value value="1" nick="Click"/>
+  </enum>
+  <enum id='org.gnome.shell.extensions.menyy.categories-collapsible'>
+    <value value="0" nick="True"/>
+    <value value="1" nick="False"/>
+  </enum>
+    <enum id='org.gnome.shell.extensions.menyy.apps-viewmode'>
+    <value value='0' nick='List'/>
+    <value value='1' nick='Grid'/>
+    <value value='2' nick='SmartList'/>
+    <value value='3' nick='SmartGrid'/>
+  </enum>
+  <enum id='org.gnome.shell.extensions.menyy.places-location'>
+    <value value="0" nick="Left"/>
+    <value value="1" nick="Right"/>
+    <value value="2" nick="Hide"/>
+  </enum>
+    <enum id='org.gnome.shell.extensions.menyy.search-mode'>
+    <value value="0" nick="Show"/>
+    <value value="1" nick="Smart"/>
+    <value value="2" nick="Hide"/>
+  </enum>
+  
+  
+  
+  
   <schema id="org.gnome.shell.extensions.menyy" path="/org/gnome/shell/extensions/menyy/">
     <key name="icon" type="b">
       <default>false</default>
@@ -96,7 +135,7 @@
       <description>Text of the menu button.</description>
     </key>
     <key name="menu-button-icon" enum="org.gnome.shell.extensions.menyy.menu-button-icon">
-      <default>'Arc_Menu_Icon'</default>
+      <default>'Menyy_Icon'</default>
       <summary>Icon of the menu button.</summary>
       <description>Icon of the menu button.</description>
     </key>
@@ -109,5 +148,164 @@
       <default>22</default>
       <summary>Size of the icon in percentage.</summary>
     </key>
+    
+    
+    
+    
+    <key type="i" name="categories-icon-size">
+      <default>32</default>
+      <summary>Size of the categories icon.</summary>
+    </key>
+    <key name="categories-label" enum="org.gnome.shell.extensions.menyy.categories-label">
+      <default>'Right'</default>
+      <summary>Location of categories label</summary>
+    </key>
+    <key name="categories-viewmode" enum="org.gnome.shell.extensions.menyy.categories-viewmode">
+      <default>'Left'</default>
+      <summary>Location of categories</summary>
+    </key>
+    <key type="i" name="categories-size">
+      <default>30</default>
+      <summary>Categories Pane size in percent</summary>
+    </key>
+    <key name="categories-selection-method" enum="org.gnome.shell.extensions.menyy.categories-selection-method">
+      <default>'Hover'</default>
+      <summary>Hover or click</summary>
+    </key>
+    <key type="i" name="categories-hover-delay">
+      <default>250</default>
+      <summary>Categories Hover selection delay</summary>
+    </key>
+    <key name="categories-collapsible" enum="org.gnome.shell.extensions.menyy.categories-collapsible">
+      <default>'False'</default>
+      <summary>Categories turn small if not hovered</summary>
+    </key>
+    <key type="i" name="categories-collapse-time">
+      <default>250</default>
+      <summary>Collapsed categories pane hover expand time</summary>
+    </key>
+    
+    
+    
+    <key type="i" name="apps-icon-size">
+      <default>32</default>
+      <summary>Size of the apps icon.</summary>
+    </key>
+    <key type="i" name="apps-grid-column-count">
+      <default>5</default>
+      <summary>Number of columns in apps grid</summary>
+      <description>Number of columns in apps grid</description>
+    </key>
+    <key name="apps-label" enum="org.gnome.shell.extensions.menyy.categories-label">
+      <default>'Right'</default>
+      <summary>Location of applications label</summary>
+    </key>
+    <key enum="org.gnome.shell.extensions.menyy.apps-viewmode" name="apps-viewmode">
+      <default>'List'</default>
+      <summary>Startup applications view mode</summary>
+      <description>Startup applications view mode</description>
+    </key>
+    <key type="i" name="apps-size">
+      <default>60</default>
+      <summary>Apps and Categories together Pane size in percent</summary>
+    </key>
+    
+    
+    <key type="i" name="places-icon-size">
+      <default>16</default>
+      <summary>Size of the apps icon.</summary>
+    </key>
+    <key name="places-label" enum="org.gnome.shell.extensions.menyy.categories-label">
+      <default>'Left'</default>
+      <summary>Location of places label</summary>
+    </key>
+    <key name="places-location" enum="org.gnome.shell.extensions.menyy.places-location">
+      <default>'Right'</default>
+      <summary>Location of places box</summary>
+    </key>
+    
+    
+    
+    <key type="i" name="search-places">
+      <default>0</default>
+      <summary>Search places names</summary>
+    </key>
+    <key type="i" name="search-files">
+      <default>1</default>
+      <summary>Search files and folders</summary>
+    </key>
+    <key type="i" name="search-terminal">
+      <default>1</default>
+      <summary>Search terminal commands</summary>
+    </key>
+    <key type="i" name="search-recent">
+      <default>0</default>
+      <summary>Search recent files</summary>
+    </key>
+    <key type="i" name="search-calculator">
+      <default>1</default>
+      <summary>Search places names</summary>
+    </key>
+    <key type="i" name="search-webmarks">
+      <default>0</default>
+      <summary>Search places names</summary>
+    </key>
+    <key type="i" name="search-wiki">
+      <default>0</default>
+      <summary>Search terminal commands</summary>
+    </key>
+    <key type="i" name="search-google">
+      <default>0</default>
+      <summary>Search google pages</summary>
+    </key>
+    
+    <key type="i" name="search-horizontal">
+      <default>0</default>
+      <summary>Searchbar horizontal location</summary>
+    </key>
+    <key type="i" name="search-vertical">
+      <default>0</default>
+      <summary>Searchbar horizontal location</summary>
+    </key>
+    
+    <key name="search-mode" enum="org.gnome.shell.extensions.menyy.search-mode">
+      <default>'Show'</default>
+      <summary>Show search or not</summary>
+    </key>
+    
+    
+    
+    <key type="s" name="menu-size-unit">
+      <default>'em'</default>
+      <summary>Menu size unit</summary>
+    </key>
+    <key type="i" name="menu-height">
+      <default>60</default>
+      <summary>Menu height</summary>
+    </key>
+    <key type="i" name="menu-width">
+      <default>60</default>
+      <summary>Menu width</summary>
+    </key>
+    <key type="i" name="menubox-height">
+      <default>58</default>
+      <summary>Menu height</summary>
+    </key>
+    <key type="i" name="appsbox-width">
+      <default>27</default>
+      <summary>Menu width</summary>
+    </key>
+    <key type="i" name="categoriesbox-width">
+      <default>18</default>
+      <summary>Menu width</summary>
+    </key>
+    <key type="i" name="placesbox-width">
+      <default>15</default>
+      <summary>Menu width</summary>
+    </key>
+    
+    
+    
+    
   </schema>
 </schemalist>

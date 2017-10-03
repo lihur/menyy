@@ -9,13 +9,14 @@
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    id="svg2"
    version="1"
-   width="64"
-   height="64"
-   inkscape:version="0.91 r13725"
-   sodipodi:docname="ark-panel-button-light.svg"
+   width="128"
+   height="128"
+   inkscape:version="0.92.1 r15371"
+   sodipodi:docname="icon.svg"
    inkscape:export-filename="/media/andy/Seagate/ups/ark-game3.svg.png"
    inkscape:export-xdpi="327.12424"
-   inkscape:export-ydpi="327.12424">
+   inkscape:export-ydpi="327.12424"
+   viewBox="0 0 119.99999 119.99999">
   <sodipodi:namedview
      pagecolor="#ffffff"
      bordercolor="#666666"
@@ -26,14 +27,14 @@
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
      inkscape:window-width="1920"
-     inkscape:window-height="1026"
+     inkscape:window-height="1016"
      id="namedview21"
      showgrid="false"
-     inkscape:zoom="7.375"
-     inkscape:cx="-4.8135593"
-     inkscape:cy="48.327804"
+     inkscape:zoom="0.921875"
+     inkscape:cx="119.16792"
+     inkscape:cy="16.893977"
      inkscape:window-x="0"
-     inkscape:window-y="26"
+     inkscape:window-y="0"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg2" />
   <metadata
@@ -53,7 +54,7 @@
     <linearGradient
        gradientTransform="matrix(2,0,0,2,0,-1)"
        x1="12.897"
-       x2="16.213"
+       x2="16.212999"
        y1="18.858"
        gradientUnits="userSpaceOnUse"
        y2="20.316"
@@ -69,7 +70,7 @@
     <filter
        inkscape:menu="Shadows and Glows"
        inkscape:menu-tooltip="Cut out, add inner shadow and colorize some parts of an image"
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        inkscape:label="Drop Shadow"
        id="filter3415">
       <feColorMatrix
@@ -167,40 +168,29 @@
          result="composite2" />
     </filter>
   </defs>
-  <ellipse
-     style="fill:none;fill-opacity:1;stroke-width:3;stroke-miterlimit:4;stroke-dasharray:none;stroke:#ffffff;stroke-opacity:1;opacity:1"
+  <circle
+     style="opacity:1;fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:5.64285755;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
      id="path3375"
-     cx="31.932203"
-     cy="32.199944"
-     rx="28.40678"
-     ry="28.403334"
+     cx="59.999996"
+     cy="59.999996"
      inkscape:export-xdpi="327.12424"
-     inkscape:export-ydpi="327.12424" />
+     inkscape:export-ydpi="327.12424"
+     r="53.428566" />
   <polygon
      id="polygon15"
      style="display:none;fill:#5a0e00"
      display="none"
-     transform="matrix(0.063142,0,0,0.063142,-131,7.97)"
-     points="664 430.5 588 333 517.5 214 500 192 386 355 328 328 304 332.5 299.5 366 318.5 403.5 338 431 309.5 462 275.5 507 300 533 304 551 318.5 569.5 340.5 583 351.5 604.5 373.5 617 395 637.5 452.5 723 488.5 788.5 502 812.5 551.5 721.5 612.5 637 628.5 616 668 619.5 707 615 713 603 688.5 578 676.5 569.5 693.5 560.5 693.5 540 732.5 497.5" />
+     transform="matrix(0.063142,0,0,0.063142,-131,63.969993)"
+     points="304,332.5 299.5,366 318.5,403.5 338,431 309.5,462 275.5,507 300,533 304,551 318.5,569.5 340.5,583 351.5,604.5 373.5,617 395,637.5 452.5,723 488.5,788.5 502,812.5 551.5,721.5 612.5,637 628.5,616 668,619.5 707,615 713,603 688.5,578 676.5,569.5 693.5,560.5 693.5,540 732.5,497.5 664,430.5 588,333 517.5,214 500,192 386,355 328,328 " />
   <polygon
      id="polygon17"
      style="display:none;fill:#5a0e00"
      display="none"
-     transform="matrix(0.063142,0,0,0.063142,-187.14,4.387)"
-     points="386 355 328 328 304 332.5 299.5 366 318.5 403.5 338 431 309.5 462 275.5 507 300 533 304 551 318.5 569.5 340.5 583 351.5 604.5 373.5 617 395 637.5 452.5 723 488.5 788.5 502 812.5 551.5 721.5 612.5 637 628.5 616 668 619.5 707 615 713 603 688.5 578 676.5 569.5 693.5 560.5 693.5 540 732.5 497.5 664 430.5 588 333 517.5 214 500 192" />
+     transform="matrix(0.063142,0,0,0.063142,-187.14,60.386993)"
+     points="309.5,462 275.5,507 300,533 304,551 318.5,569.5 340.5,583 351.5,604.5 373.5,617 395,637.5 452.5,723 488.5,788.5 502,812.5 551.5,721.5 612.5,637 628.5,616 668,619.5 707,615 713,603 688.5,578 676.5,569.5 693.5,560.5 693.5,540 732.5,497.5 664,430.5 588,333 517.5,214 500,192 386,355 328,328 304,332.5 299.5,366 318.5,403.5 338,431 " />
   <path
-     id="path19"
-     d="M 8.6904812,49.746307 20.296487,49.679795 31.755648,23.021113 43.508499,49.546762 55.114507,49.48024 37.490878,10.71454 25.884871,10.781062 Z"
-     style="opacity:1;fill:#ffffff"
-     inkscape:connector-curvature="0" />
-  <path
-     id="path29"
-     d="m 29.054365,28.77328 -6.372658,12.047684 9.691733,-0.07201 -0.08916,-11.999669 -3.229911,0.024 z"
-     style="opacity:1;fill:#ffffff"
-     inkscape:connector-curvature="0" />
-  <path
-     id="path35"
-     d="m -66.366567,-18.927869 0.583984,1 12.832032,0 0.583984,-1 -14,0 z m -14.398438,25.9999998 -6.601561,12.0000002 0.550781,0 6.05078,-11.0000002 0.01563,0.02539 0.291015,-0.527344 -0.306641,-0.498047 z m 42.796876,0 -0.306641,0.498047 0.291015,0.527344 0.01563,-0.02539 6.050781,11.0000002 0.550781,0 -6.601562,-12.0000002 z m -41.90625,1.443359 -0.291016,0.527344 6.18164,10.0292972 0.617188,0 -6.507812,-10.5566412 z m 41.015624,0 -6.507812,10.5566412 0.617188,0 6.18164,-10.0292972 -0.291016,-0.527344 z"
-     style="opacity:0.2;fill:#ffffff"
+     style="font-style:normal;font-weight:normal;font-size:92.59093475px;line-height:0;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:2.6834209"
+     d="M 56.463633,32.287625 24.668224,81.240542 h 8.526748 L 59.966031,39.685115 86.936623,81.240542 h 8.395143 L 63.40475,32.287625 Z"
+     id="text845"
      inkscape:connector-curvature="0" />
 </svg>

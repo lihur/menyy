@@ -81,6 +81,33 @@ const Helper = Me.imports.helper;
         this._settings.connect('changed::custom-menu-button-icon', Lang.bind(this, this._setButtonIcon));
         this._settings.connect('changed::custom-menu-button-icon-size', Lang.bind(this, this._setButtonIconSize));
         this._settings.connect('changed::enable-menu-button-arrow', Lang.bind(this, this._setMenuButtonArrow));
+        
+        
+        
+        // Layout size changes
+        this._settings.connect('changed::menu-size-unit', Lang.bind(this, this._setLayoutSizes));
+        this._settings.connect('changed::menubox-height', Lang.bind(this, this._setLayoutSizes));
+        this._settings.connect('changed::appsbox-width', Lang.bind(this, this._setLayoutSizes));
+        this._settings.connect('changed::categoriesbox-width', Lang.bind(this, this._setLayoutSizes));
+        this._settings.connect('changed::placesbox-width', Lang.bind(this, this._setLayoutSizes));
+        
+        // Layout mode changes
+        this._settings.connect('changed::apps-viewmode', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::apps-grid-column-count', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::apps-icon-size', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::categories-icon-size', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::places-icon-size', Lang.bind(this, this._setLayoutChanges));
+        
+        
+    },
+    
+    // Update the text of the menu button as specified in the settings
+    _setLayoutSizes: function() {
+    	this._menuButton._setLayoutSizes();
+    },
+    
+    _setLayoutChanges: function() {
+    	this._menuButton._reCreateLayout();
     },
 
     _updateHotCornerManager: function() {

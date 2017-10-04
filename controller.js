@@ -1,7 +1,7 @@
-//Menyy
-
 /*
- * Arc Menu: The new applications menu for Gnome 3.
+ * Menüü
+ *
+ * Based on Arc Menu: The new applications menu for Gnome 3 by: 
  *
  * Copyright (C) 2017 LinxGem33
  *
@@ -33,16 +33,21 @@ const Me = ExtensionUtils.getCurrentExtension();
 const Constants = Me.imports.constants;
 const Helper = Me.imports.helper;
 
+const Shell = imports.gi.Shell;
+const appSys = Shell.AppSystem.get_default();
+const AppFavorites = imports.ui.appFavorites;
+
+
 /**
  * The Menu Settings Controller class is responsible for changing and handling
- * the settings changes of the Arc Menu.
+ * the settings changes of the Menüü.
  */
  const MenuSettingsController = new Lang.Class({
     Name: 'Menyy.MenuSettingsController',
 
     _init: function(settings, menuButton) {
+    	this._menuButton = menuButton;
         this._settings = settings;
-        this._menuButton = menuButton;
         this._activitiesButtonIsRemoved = false;
         this._activitiesButton = Main.panel.statusArea['activities'];
 
@@ -56,7 +61,7 @@ const Helper = Me.imports.helper;
         this._applySettings();
     },
 
-    // Load and apply the settings from the arc-menu settings
+    // Load and apply the settings from the menyy settings
     _applySettings: function() {
         this._updateHotCornerManager();
         this._setMenuKeybinding();
@@ -99,6 +104,20 @@ const Helper = Me.imports.helper;
         this._settings.connect('changed::places-icon-size', Lang.bind(this, this._setLayoutChanges));
         
         
+        
+        // Favorites change _loadFavorites();
+        //global.settings.connect('changed::favorite-apps', Lang.bind(this, this._menuButton._loadFavorites));
+        AppFavorites.getAppFavorites().connect('changed', Lang.bind(this, this._loadFavorites));
+        // All Apps Change _loadAllApps();
+        appSys.connect('installed-changed', Lang.bind(this, this._menuButton._loadAllAppsList));
+        // Frequent change _loadFrequent();
+        
+    },
+    
+    _loadFavorites: function() {
+    	//global.log("menyy: favorites changed");
+    	this._menuButton._loadFavorites();
+    	if (this._menuButton.currentCategory == 'favorites') this._menuButton._selectCategory('favorites');
     },
     
     // Update the text of the menu button as specified in the settings
@@ -219,10 +238,10 @@ const Helper = Me.imports.helper;
                     stIcon.set_gicon(Gio.icon_new_for_string(iconFilepath));
                     break;
                 }
-            case Constants.MENU_BUTTON_ICON.Arc_Menu:
-                let arcMenuIconPath = Me.path + Constants.MENU_ICON_PATH.Arc_Menu;
-                if (GLib.file_test(arcMenuIconPath, GLib.FileTest.EXISTS)) {
-                    stIcon.set_gicon(Gio.icon_new_for_string(arcMenuIconPath));
+            case Constants.MENU_BUTTON_ICON.Menyy:
+                let menyyIconPath = Me.path + Constants.MENU_ICON_PATH.Menyy;
+                if (GLib.file_test(menyyIconPath, GLib.FileTest.EXISTS)) {
+                    stIcon.set_gicon(Gio.icon_new_for_string(menyyIconPath));
                     break;
                 }
             case Constants.MENU_BUTTON_ICON.System:
@@ -276,13 +295,13 @@ const Helper = Me.imports.helper;
     // Add the menu button to the main panel
     _addMenuButtonToMainPanel: function() {
         let [menuPosition, order] = this._getMenuPositionTuple();
-        Main.panel.addToStatusArea('arc-menu', this._menuButton, order, menuPosition);
+        Main.panel.addToStatusArea('menyy', this._menuButton, order, menuPosition);
     },
 
     // Remove the menu button from the main panel
     _removeMenuButtonFromMainPanel: function() {
         Main.panel.menuManager.removeMenu(this._menuButton.menu);
-        Main.panel.statusArea['arc-menu'] = null;
+        Main.panel.statusArea['menyy'] = null;
     },
 
     // Enable the menu button
@@ -298,7 +317,7 @@ const Helper = Me.imports.helper;
     },
 
     _isButtonEnabled: function() {
-        return Main.panel.statusArea['arc-menu'] !== null;
+        return Main.panel.statusArea['menyy'] !== null;
     },
 
     // Destroy this object

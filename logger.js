@@ -1,5 +1,7 @@
 /*
- * Arc Menu: The new applications menu for Gnome 3.
+ * Menüü
+ *
+ * Based on Arc Menu: The new applications menu for Gnome 3 by:
  *
  * Copyright (C) 2017 LinxGem33, lexruee
  *
@@ -34,7 +36,7 @@ const Level = {
  * A basic Logger class that supports multiple logging levels.
  */
 const Logger = new Lang.Class({
-    Name: 'ArcMenu.Logger',
+    Name: 'Menyy.Logger',
 
     _init: function(params) {
         this._level = params['level'] | Level.All;
@@ -61,4 +63,3 @@ const Logger = new Lang.Class({
 });
 
 const logger = new Logger({ level: Level.All });
-

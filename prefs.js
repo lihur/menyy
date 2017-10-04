@@ -8,7 +8,7 @@
 
 
 /*
- * Arc Menu: The new applications menu for Gnome 3.
+ * Based on Arc Menu: The new applications menu for Gnome 3 by
  *
  * Copyright (C) 2017 LinxGem33, Alexander Rüedlinger
  *
@@ -44,7 +44,7 @@ const Gettext = imports.gettext.domain(Menyy.metadata['gettext-domain']);
 const _ = Gettext.gettext;
 
 /*
- * Arc Menu Preferences Widget
+ * Menyy Preferences Widget
  */
 const MenyyPreferencesWidget= new GObject.Class({
     Name: 'Menyy.MenyyPreferencesWidget',
@@ -479,25 +479,29 @@ const AboutPage = new Lang.Class({
 
         // Create GUI elements
         // Create the image box
-        let logoPath = Menyy.path + constants.ARC_MENU_LOGO.Path;
-        let [imageWidth, imageHeight] = constants.ARC_MENU_LOGO.Size;
+        let logoPath = Menyy.path + constants.MENYY_LOGO.Path;
+        let [imageWidth, imageHeight] = constants.MENYY_LOGO.Size;
         let pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(logoPath, imageWidth, imageHeight);
-        let arcMenuImage = new Gtk.Image({ pixbuf: pixbuf });
-        let arcMenuImageBox = new Gtk.VBox({
+        let menyyImage = new Gtk.Image({ pixbuf: pixbuf });
+        let menyyImageBox = new Gtk.VBox({
             margin_top:5,
             margin_bottom: 5,
             expand: false
         });
-        arcMenuImageBox.add(arcMenuImage);
+        menyyImageBox.add(menyyImage);
 
         // Create the info box
-        let arcMenuInfoBox = new Gtk.VBox({
+        let menyyInfoBox = new Gtk.VBox({
             margin_top:5,
             margin_bottom: 5,
             expand: false
         });
-        let arcMenuLabel = new Gtk.Label({
-            label: '<b>' + _('Arc-Menu') + '</b>',
+	
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
+	//	  Load from json	//
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
+        let menyyLabel = new Gtk.Label({
+            label: '<b>' + _('Menüü') + '</b>',
             use_markup: true,
             expand: false
         });
@@ -514,10 +518,10 @@ const AboutPage = new Lang.Class({
             uri: projectUrl,
             expand: false
         });
-        arcMenuInfoBox.add(arcMenuLabel);
-        arcMenuInfoBox.add(versionLabel);
-        arcMenuInfoBox.add(projectDescriptionLabel);
-        arcMenuInfoBox.add(projectLinkButton);
+        menyyInfoBox.add(menyyLabel);
+        menyyInfoBox.add(versionLabel);
+        menyyInfoBox.add(projectDescriptionLabel);
+        menyyInfoBox.add(projectLinkButton);
 
         // Create the GNU software box
         let gnuSofwareLabel = new Gtk.Label({
@@ -529,8 +533,8 @@ const AboutPage = new Lang.Class({
         let gnuSofwareLabelBox = new Gtk.VBox({});
         gnuSofwareLabelBox.pack_end(gnuSofwareLabel,false, false, 0);
 
-        this.add(arcMenuImageBox);
-        this.add(arcMenuInfoBox);
+        this.add(menyyImageBox);
+        this.add(menyyInfoBox);
         this.add(gnuSofwareLabel);
     }
 });

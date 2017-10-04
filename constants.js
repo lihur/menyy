@@ -1,6 +1,8 @@
 /*
- * Arc Menu: The new applications menu for Gnome 3.
+ * Menüü
  *
+ * Based on: Arc Menu: The new applications menu for Gnome 3 By:
+ * 
  * Copyright (C) 2017 LinxGem33, 
  * 
  * Copyright (C) 2017 Alexander Rüedlinger
@@ -23,7 +25,7 @@
 const EMPTY_STRING = '';
 const SUPER_L = 'Super_L';
 const SUPER_R = 'Super_R';
-const HOT_KEY = { // See: org.gnome.shell.extensions.arc-menu.menu-hotkey
+const HOT_KEY = { // See: org.gnome.shell.extensions.menyy.menu-hotkey
     Undefined: 0,
     Super_L: 1,
     Super_R: 2,
@@ -32,32 +34,32 @@ const HOT_KEY = { // See: org.gnome.shell.extensions.arc-menu.menu-hotkey
     1: SUPER_L,
     2: SUPER_R
 };
-const MENU_POSITION = { // See: org.gnome.shell.extensions.arc-menu.menu-position
+const MENU_POSITION = { // See: org.gnome.shell.extensions.menyy.menu-position
     Left: 0,
     Center: 1,
     Right: 2
 };
-const MENU_APPEARANCE = { // See: org.gnome.shell.extensions.arc-menu.menu-button-icon
+const MENU_APPEARANCE = { // See: org.gnome.shell.extensions.menyy.menu-button-icon
     Icon: 0,
     Text: 1,
     Icon_Text: 2,
     Text_Icon: 3
 };
-const MENU_BUTTON_TEXT = { // See: org.gnome.shell.extensions.arc-menu.menu-button-text
+const MENU_BUTTON_TEXT = { // See: org.gnome.shell.extensions.menyy.menu-button-text
     System: 0,
     Custom: 1
 };
-const MENU_BUTTON_ICON = { // See: org.gnome.shell.extensions.arc-menu.menu-button-icon
-    Arc_Menu: 0,
+const MENU_BUTTON_ICON = { // See: org.gnome.shell.extensions.menyy.menu-button-icon
+    Menyy: 0,
     System: 1,
     Custom: 2
 };
 const MENU_ICON_PATH = {
-    Arc_Menu: '/media/icon.svg'
+    Menyy: '/media/icon.svg'
 };
 const ICON_SIZES = [ 16, 24, 32, 40, 48 ];
 const DEFAULT_ICON_SIZE = 22;
-const ARC_MENU_LOGO = {
+const MENYY_LOGO = {
     Path: '/media/logo.png',
     Size: [216, 229] // width, height
 };

@@ -1,5 +1,7 @@
 /*
- * Arc Menu: The new applications menu for Gnome 3.
+ * Menüü
+ *
+ * Based on Arc Menu: The new applications menu for Gnome 3 by: 
  *
  * Copyright (C) 2017 LinxGem33
  *
@@ -35,11 +37,11 @@ const Lang = imports.lang;
  */
 
 /**
- * Arc Menu Notebook
+ * Menu Notebook
  */
 const Notebook = new GObject.Class({
-    Name: 'ArcMenu.ArcMenuNotebook',
-    GTypeName: 'ArcMenuNotebook',
+    Name: 'Menyy.MenyyNotebook',
+    GTypeName: 'MenyyNotebook',
     Extends: Gtk.Notebook,
 
     _init: function() {
@@ -51,11 +53,11 @@ const Notebook = new GObject.Class({
 });
 
 /**
- * Arc Menu Notebook Page
+ * Notebook Page
  */
 const NotebookPage = new GObject.Class({
-    Name: 'ArcMenu.ArcMenuNotebookPage',
-    GTypeName: 'ArcMenuNotebookPage',
+    Name: 'Menyy.MenyyNotebookPage',
+    GTypeName: 'MenyyNotebookPage',
     Extends: Gtk.Box, // Don't know why but Gtk.VBox does not work here...
 
     _init: function(title) {
@@ -74,11 +76,11 @@ const NotebookPage = new GObject.Class({
 });
 
 /**
- * Arc Menu icon Button
+ * Icon Button
  */
 const IconButton = new GObject.Class({
-    Name: 'ArcMenu.ArcMenuIconButton',
-    GTypeName: 'ArcMenuIconButton',
+    Name: 'Menyy.MenyyIconButton',
+    GTypeName: 'MenyyIconButton',
     Extends: Gtk.Button,
 
     _init: function(params) {
@@ -98,11 +100,11 @@ const IconButton = new GObject.Class({
 });
 
 /**
- * Arc Menu Dialog Window
+ * Dialog Window
  */
 const DialogWindow = new Lang.Class({
-    Name: 'ArcMenu.DialogWindow',
-    GTypeName: 'ArcMenuDialogWindow',
+    Name: 'Menyy.DialogWindow',
+    GTypeName: 'MenyyDialogWindow',
     Extends: Gtk.Dialog,
 
     _init: function(title, parent) {
@@ -128,11 +130,11 @@ const DialogWindow = new Lang.Class({
 });
 
 /**
- * Arc Menu Frame Box
+ * Frame Box
  */
 const FrameBox = new Lang.Class({
-    Name: 'ArcMenu.FrameBox',
-    GTypeName: 'ArcMenuFrameBox',
+    Name: 'Menyy.FrameBox',
+    GTypeName: 'MenyyFrameBox',
     Extends: Gtk.Frame,
 
     _init: function() {
@@ -150,11 +152,11 @@ const FrameBox = new Lang.Class({
 });
 
 /**
- * Arc Menu Frame Box Row
+ * Frame Box Row
  */
 const FrameBoxRow = new Lang.Class({
-    Name: 'ArcMenu.FrameBoxRow',
-    GTypeName: 'ArcMenuFrameBoxRow',
+    Name: 'Menyy.FrameBoxRow',
+    GTypeName: 'MenyyFrameBoxRow',
     Extends: Gtk.ListBoxRow,
 
     _init: function() {

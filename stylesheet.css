@@ -2,41 +2,61 @@
 }
 
 
+.menyy-apps-grid-button {
+	padding: 20px;
+}
+.menyy-categories-grid-button {
+	padding-bottom: 26px;
+}
+
+.menyy-apps-grid-button-label {
+	padding: 0px;
+}
+
+
+
+
 .menyy-shortcut-label {
-	padding-left: 1em;
+	padding: 0px;
+	padding-left: 20px;
 }
 
 .menyy-category-button {
-    /*border-radius: 3px;*/
-    /*border-width: 1px;*/
-    /*padding: 0px */
-    padding-left: 1em;
+	padding-left: 20px;
+	padding-right: 20px;
+	padding-top: 6px;
+	padding-bottom: 11px;
 }
 
 .menyy-apps-button {
-    /*border-radius: 3px;*/
-    /*border-width: 1px;*/
-    /*padding: 0px */
-    padding-left: 1em;
+	padding-top:6px;
+	padding-left: 20px;
+	padding-right: 20px;
+}
+.menyy-back-button {
+	padding-left: 20px;
+	padding-right: 20px;
+	padding-top: 6px;
+	padding-bottom: 6px;
 }
 
 .menyy-category-button-label {
-	/*font-size: 9pt;*/
-	padding-left: 1em;
-	/*background-color: #0000ff;*/
-	/*vertical-align: middle;*/
+	padding: 0px;
+	padding-left: 20px;
+	padding-right: 20px;
 }
 
 .menyy-apps-button-label {
-    /*border-radius: 3px;*/
-    /*border-width: 1px;*/
-    /*padding: 0px */
-    padding-left: 1em;
+	padding: 0px;
+	padding-left: 20px;
+	padding-right: 20px;
+	margin-bottom: 6px;
 }
 
-.menyy-category-button.popup-sub-menu {
-    font-weight: bold;
-    box-shadow: 0 1px 0 rgba(255,255,255,0.04) 
+.menyy-back-button-label {
+	padding: 0px;
+	padding-left: 20px;
+	padding-right: 20px;
 }
 
 
@@ -85,42 +105,9 @@
 	icon-size: 2em;
 }
 
-.menyy-search-box {
-	padding-left:1em;
-	padding-right: 1em;
+.menyy-bottom-box {
+	padding-left: 20px;
+	padding-right: 20px;
 	/*padding-bottom: 0.5em;*/
 }
 
-.menyy-categories-box-scrollview {
-	/*min-width: 18em;*/
-	/*max-width:18em;*/
-	/*height:57em;*/
-}
-
-.menyy-applications-box-scrollview {
-	/*min-width: 27em;*/
-	/*max-width:27em;*/
-	/*height: 57em;*/
-}
-
-/*
-.menyy-applications-box-grid {
-	min-width: 27em;
-	max-width:27em;
-	height: 57em;
-}
-*/
-
-
-
-.menyy-places-box {
-	/*min-width: 15em;*/
-	/*max-width: 15em;*/
-	/*height:57em;*/
-	/*background-color: #ff0000;*/
-}
-
-.menyy-system-box{
-	padding: 0em;
-	padding-right: 1em;
-}

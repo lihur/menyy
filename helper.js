@@ -1,5 +1,7 @@
 /*
- * Arc Menu: The new applications menu for Gnome 3.
+ * Menüü
+ *
+ * Based on Arc Menu: The new applications menu for Gnome 3 by:
  *
  * Copyright (C) 2017 LinxGem33
  * Copyright (C) 2017 Alexander Rüedlinger
@@ -36,10 +38,10 @@ const WM_KEYBINDINGS_SCHEMA = 'org.gnome.desktop.wm.keybindings';
 
 /**
  * The Menu HotKeybinder class helps us to bind and unbind a menu hotkey
- * to the Arc Menu. Currently, valid hotkeys are Super_L and Super_R.
+ * to the Menüü. Currently, valid hotkeys are Super_L and Super_R.
  */
 const MenuHotKeybinder = new Lang.Class({
-    Name: 'ArcMenu.MenuHotKeybinder',
+    Name: 'Menyy.MenuHotKeybinder',
 
     _init: function(menuToggler) {
         this._menuToggler = menuToggler;
@@ -116,7 +118,7 @@ const MenuHotKeybinder = new Lang.Class({
  * to a keybinding handler.
  */
 const KeybindingManager = new Lang.Class({
-    Name: 'ArcMenu.KeybindingManager',
+    Name: 'Menyy.KeybindingManager',
 
     _init: function(settings) {
         this._settings = settings;
@@ -140,7 +142,7 @@ const KeybindingManager = new Lang.Class({
         return false;
     },
 
-    // Set or update a keybinding in the Arc Menu settings
+    // Set or update a keybinding in the Menüü settings
     _setKeybinding: function(keybindingNameKey, keybinding) {
         if (this._keybindings.has(keybindingNameKey)) {
             let keybindingValueKey = this._keybindings.get(keybindingNameKey);
@@ -181,7 +183,7 @@ const KeybindingManager = new Lang.Class({
  * the gnome-shell hot corners.
  */
 const HotCornerManager = new Lang.Class({
-    Name: 'ArcMenu.HotCornerManager',
+    Name: 'Menyy.HotCornerManager',
 
     _init: function() {
         this._hotCornersChangedId = null;

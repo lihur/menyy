@@ -73,6 +73,20 @@ const ApplicationType = {
 		RECENT: 2,
 		TERMINAL:3
 };
+
+/*
+const AppType = {
+		APPLICATION: 0,
+		TERMINAL: 1,
+		FILE: 2,
+		FOLDER:3,
+		PLACE:4,
+		WEBBOOKMARK: 6,
+		OTHER: 7
+};
+ */
+
+
 const visibleMenus = {
 		ALL: 0,
 		APPS_ONLY: 1,
@@ -360,10 +374,10 @@ const ApplicationsMenu = new Lang.Class({
 		this._favorites = new Array();																	// Favorite Apps List
 		this._places = new Array();																		// Places List
 		this._recent = new Array();																		// Recent Files List
-		this._menyy_favorites = new Array();															// Custom Favorites List (for use later)
+		//this._menyy_favorites = new Array();															// Custom Favorites List (for use later)
 
 		// Settings
-		this._searchWaitTime = 500;																		// Put in setting, this is used to determine how long search waits for new input
+		this._searchWaitTime = 250;																		// Put in setting, this is used to determine how long search waits for new input
 		this._appGridColumns = this._settings.get_int('apps-grid-column-count');						// Grid Column Count
 		this._appsViewMode = this._settings.get_enum('apps-viewmode');									// Apps View Mode (grid or list or other)
 		this._categoriesViewMode = this._settings.get_enum('categories-viewmode');						// Categories View Mode (left, right, combined with apps or accordion)
@@ -396,22 +410,7 @@ const ApplicationsMenu = new Lang.Class({
 				item.setDragEnabled(this._desktopTarget.hasDesktop);
 			});
 		});
-
-
-
-
-		//Main.panel.menuManager.addMenu(this.menu);													// What was this line for?
-		//this.actor.accessible_role = Atk.Role.LABEL;													// What was this line for?
-		//this.actor.name = 'panelApplications';														// Was it necessary at all?
-		//this.actor.connect('captured-event', Lang.bind(this, this._onCapturedEvent));					// Was it necessary at all?
-		//this._showingId = Main.overview.connect('showing', Lang.bind(this, function() {				// What was this line for?
-		//	this.actor.add_accessible_state (Atk.StateType.CHECKED);									// What was this line for?
-		//}));																							// What was this line for?
-		//this._hidingId = Main.overview.connect('hiding', Lang.bind(this, function() {					// What was this line for?
-		//	this.actor.remove_accessible_state (Atk.StateType.CHECKED);									// What was this line for?
-		//}));																							// What was this line for?
-
-
+		
 		// Run functions
 		this._firstCreateLayout();
 		this._display();																				// 
@@ -479,7 +478,7 @@ const ApplicationsMenu = new Lang.Class({
 		// ADDS menu and right click menu to the button
 		section.actor.add_actor(this.mainBox);
 		section.actor.add_actor(this.altBox, {expand: true, x_fill: true, y_fill: true});
-		//this.altBox.hide();
+		this.altBox.hide();																		//maybe it'll fix the bug of both boxes showing sometimes?
 
 		this._createLayout();
 		//this._createAltLayout();
@@ -1205,34 +1204,9 @@ const ApplicationsMenu = new Lang.Class({
                 // Launch application or Nautilus place or Recent document
                 let item_actor = children[this._selectedItemIndex];
             	item_actor._delegate.activate();
-                	
-                /*
-                if (item_actor._delegate._type == ApplicationType.APPLICATION) {
-                    this.menu.close();
-                    item_actor._delegate.app.open_new_window(-1);
-                } else if (item_actor._delegate._type == ApplicationType.PLACE) {
-                    this.menu.close();
-                    if (item_actor._delegate.app.uri) {
-                       item_actor._delegate.app.app.launch_uris([item_actor._delegate.app.uri], null);
-                    } else {
-                       item_actor._delegate.app.launch();
-                    }
-                } else if (item_actor._delegate._type == ApplicationType.RECENT) {
-                    this.menu.close();
-                    Gio.app_info_launch_default_for_uri(item_actor._delegate.app.uri, global.create_app_launch_context(0, -1));
-                }
-                */
                 return true;
             } else if (this._activeContainer == this.systemBox || this._activeContainer == this.categoryBox) {
-            	//  || this._activeContainer == this.powerGroupBox || this._activeContainer == this.viewModeBox
-                // Simulate button click
                 if (index>=children.length) {
-                    //if (this._activeContainer == this.systemBox) {
-                    //    let prefButton = this.extensionPreferences;
-                    //    prefButton.actor._delegate.click();
-                    //} else {
-                    //    return false;
-                    //}
                 } else {
                     let item_actor = children[this._selectedItemIndex];
                     item_actor._delegate.click();
@@ -1243,7 +1217,6 @@ const ApplicationsMenu = new Lang.Class({
             }
         } else {
             if ((code && code == 23) || isFromSearch) {
-                // Continue
                 index = 0;
             } else {
                 return false;
@@ -1804,6 +1777,159 @@ const ApplicationsMenu = new Lang.Class({
 		} else {
 			this.categoryBox.add_actor(freqAppCategory.actor);
 		}
+		
+		
+		
+		
+		
+		
+		
+		
+		// Recent Files Category
+		let recentFilesCategory;
+		if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.GRID)) {
+			recentFilesCategory = new CategoryGridButton('recent', _('Recent Files'), 'applications-other');
+			recentFilesCategory.buttonbox.width = this._appGridButtonWidth;
+			gridLayout.pack(recentFilesCategory.actor, column, rownum);
+			column ++;
+			if (column > this._appGridColumns-1) {
+				column = 0;
+				rownum ++;
+			}
+		} else {
+			recentFilesCategory = new CategoryListButton('recent', _('Recent Files'), 'applications-other', this);
+		}
+
+
+		recentFilesCategory.setButtonEnterCallback(Lang.bind(this, function() {
+			recentFilesCategory.actor.add_style_class_name('selected');
+			// this.selectedAppTitle.set_text(freqAppCategory.label.get_text());
+			// this.selectedAppDescription.set_text('');
+
+			if (recentFilesCategory._ignoreHoverSelect)
+				return;
+
+			if (this.selectionMethod == SelectMethod.HOVER ) {
+				this._hoverTimeoutId = Mainloop.timeout_add((this.hoverDelay >0) ? this.hoverDelay : 0, Lang.bind(this, function() {
+					this._selectCategory(recentFilesCategory);
+					this._hoverTimeoutId = 0;
+				}));
+			}
+		}));
+		recentFilesCategory.setButtonLeaveCallback(Lang.bind(this, function() {
+			recentFilesCategory.actor.remove_style_class_name('selected');
+			// this.selectedAppTitle.set_text('');
+			// this.selectedAppDescription.set_text('');
+
+
+			if (this.selectionMethod == SelectMethod.HOVER ) {
+				if (this._hoverTimeoutId > 0) {
+					Mainloop.source_remove(this._hoverTimeoutId);
+				}
+			}
+		}));
+		recentFilesCategory.setButtonPressCallback(Lang.bind(this, function() {
+			recentFilesCategory.actor.add_style_pseudo_class('pressed');
+		}));
+		recentFilesCategory.setButtonReleaseCallback(Lang.bind(this, function() {
+			recentFilesCategory.actor.remove_style_pseudo_class('pressed');
+			recentFilesCategory.actor.remove_style_class_name('selected');
+			// this._startupAppsView = StartupAppsDisplay.FREQUENT;
+			this._selectCategory(recentFilesCategory);
+			// this.selectedAppTitle.set_text(freqAppCategory.label.get_text());
+			// this.selectedAppDescription.set_text('');
+		}));
+		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
+			this.appsBox.add_actor(recentFilesCategory.actor);
+		} else {
+			this.categoryBox.add_actor(recentFilesCategory.actor);
+		}
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		// Web Bookmarks Category
+		let webBookmarksCategory;
+		if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.GRID)) {
+			webBookmarksCategory = new CategoryGridButton('webBookmarks', _('Web Bookmarks'), 'applications-other');
+			webBookmarksCategory.buttonbox.width = this._appGridButtonWidth;
+			gridLayout.pack(webBookmarksCategory.actor, column, rownum);
+			column ++;
+			if (column > this._appGridColumns-1) {
+				column = 0;
+				rownum ++;
+			}
+		} else {
+			webBookmarksCategory = new CategoryListButton('webBookmarks', _('Web Bookmarks'), 'applications-other', this);
+		}
+
+
+		webBookmarksCategory.setButtonEnterCallback(Lang.bind(this, function() {
+			webBookmarksCategory.actor.add_style_class_name('selected');
+			// this.selectedAppTitle.set_text(freqAppCategory.label.get_text());
+			// this.selectedAppDescription.set_text('');
+
+			if (webBookmarksCategory._ignoreHoverSelect)
+				return;
+
+			if (this.selectionMethod == SelectMethod.HOVER ) {
+				this._hoverTimeoutId = Mainloop.timeout_add((this.hoverDelay >0) ? this.hoverDelay : 0, Lang.bind(this, function() {
+					this._selectCategory(webBookmarksCategory);
+					this._hoverTimeoutId = 0;
+				}));
+			}
+		}));
+		webBookmarksCategory.setButtonLeaveCallback(Lang.bind(this, function() {
+			webBookmarksCategory.actor.remove_style_class_name('selected');
+			// this.selectedAppTitle.set_text('');
+			// this.selectedAppDescription.set_text('');
+
+
+			if (this.selectionMethod == SelectMethod.HOVER ) {
+				if (this._hoverTimeoutId > 0) {
+					Mainloop.source_remove(this._hoverTimeoutId);
+				}
+			}
+		}));
+		webBookmarksCategory.setButtonPressCallback(Lang.bind(this, function() {
+			webBookmarksCategory.actor.add_style_pseudo_class('pressed');
+		}));
+		webBookmarksCategory.setButtonReleaseCallback(Lang.bind(this, function() {
+			webBookmarksCategory.actor.remove_style_pseudo_class('pressed');
+			webBookmarksCategory.actor.remove_style_class_name('selected');
+			// this._startupAppsView = StartupAppsDisplay.FREQUENT;
+			this._selectCategory(webBookmarksCategory);
+			// this.selectedAppTitle.set_text(freqAppCategory.label.get_text());
+			// this.selectedAppDescription.set_text('');
+		}));
+		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
+			this.appsBox.add_actor(webBookmarksCategory.actor);
+		} else {
+			this.categoryBox.add_actor(webBookmarksCategory.actor);
+		}
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 
 
 
@@ -1964,36 +2090,6 @@ const ApplicationsMenu = new Lang.Class({
 			
 			let shortcutButton = new AppListButton(app, this, shortcutType, 'places');
 			this.placesBox.add_actor(shortcutButton.actor);
-			
-			
-			/*
-			// TODO( ADD FUNCTIONALITY TO THE BUTTON INSTEAD OR USE APPLICATION BUTTON!)
-			let shortcutButton = new ShortcutButton(app, shortcutType);
-			this.placesBox.add_actor(shortcutButton.actor);
-			shortcutButton.actor.connect('enter-event', Lang.bind(this, function() {
-				shortcutButton.actor.add_style_class_name('selected');
-			}));
-			shortcutButton.actor.connect('leave-event', Lang.bind(this, function() {
-				shortcutButton.actor.remove_style_class_name('selected');
-			}));
-			shortcutButton.actor.connect('button-press-event', Lang.bind(this, function() {
-				shortcutButton.actor.add_style_pseudo_class('pressed');
-			}));
-			shortcutButton.actor.connect('button-release-event', Lang.bind(this, function() {
-				shortcutButton.actor.remove_style_pseudo_class('pressed');
-				shortcutButton.actor.remove_style_class_name('selected');
-				if (true){
-					if (app.uri) {
-						shortcutButton.app.app.launch_uris([app.uri], null);
-					} else {
-						shortcutButton.app.launch();
-					}
-				} else {
-					shortcutButton.app.open_new_window(-1);
-				}
-				this.menu.close();
-			}));
-			*/
 		}
 	},
 
@@ -2085,7 +2181,7 @@ const ApplicationsMenu = new Lang.Class({
         //global.log("menyy -> listwebbookmarks -> bookmarks: " + bookmarks);
 
         for (let id = 0; id < bookmarks.length; id++) {
-            if (!pattern || bookmarks[id].name.toLowerCase().indexOf(pattern)!=-1) {
+            if ((!pattern) || (bookmarks[id].name.toLowerCase().indexOf(pattern)!=-1)) {
                 res.push({
                     app:   bookmarks[id].appInfo,
                     name:   bookmarks[id].name,
@@ -2136,7 +2232,7 @@ const ApplicationsMenu = new Lang.Class({
 	},
 
 	// Display application menu items
-	// TODO (STOP THE NONSENCE AND HAVE (APPS, LOCATION) only and have the appslist contain its type
+	// TODO (STOP THE NONSENCE AND HAVE (APPS, LOCATION) only and have the appslist items contain its type, and location literally be a reference to the box
 	_displayButtons: function(apps, home, places, recent, terminal, refresh) {
 		// get from settings!
 		// let viewMode = this._appsViewMode;
@@ -2159,38 +2255,20 @@ const ApplicationsMenu = new Lang.Class({
 			for (let i in home) {
 				let app = home[i];
 				if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
-					let appListButton = new AppListButton(app, this, appType, 'apps');
-					this.homeBox.add_actor(appListButton.actor);
+					let appButton = new AppListButton(app, this, appType, 'apps');
+					this.homeBox.add_actor(appButton.actor);
 				} else {
-					//TODO(ADD GRID FUNCTIONALITY TO THE BUTTON INSTEAD)
-					let includeTextLabel = true;
-					let appGridButton = new AppGridButton(app, appType, includeTextLabel);
-					this._appGridButtonWidth = 64;
-					appGridButton.buttonbox.width = this._appGridButtonWidth;
-					appGridButton.actor.connect('enter-event', Lang.bind(this, function() {
-						appGridButton.actor.add_style_class_name('selected');
-					}));
-					appGridButton.actor.connect('leave-event', Lang.bind(this, function() {
-						appGridButton.actor.remove_style_class_name('selected');
-					}));
-					appGridButton.actor.connect('button-press-event', Lang.bind(this, function() {
-						appGridButton.actor.add_style_pseudo_class('pressed');
-					}));
-					appGridButton.actor.connect('button-release-event', Lang.bind(this, function() {
-						appGridButton.actor.remove_style_pseudo_class('pressed');
-						appGridButton.actor.remove_style_class_name('selected');
-						appGridButton.app.open_new_window(-1);
-						this.menu.close();
-					}));
+					let appButton = new AppListButton(app, this, appType, 'apps');
+					//this.homeBox.add_actor(appListButton.actor);
+					appButton.buttonbox.width = this._appGridButtonWidth;
 					let gridLayout = this.homeBox.layout_manager;
-					gridLayout.pack(appGridButton.actor, column, rownum);
+					gridLayout.pack(appButton.actor, column, rownum);
 					column ++;
 					if (column > this._appGridColumns-1) {
 						column = 0;
 						rownum ++;
 					}
 				}
-				//if (!refresh) this._applications[app] = app;
 			}
 		}
 
@@ -2198,146 +2276,67 @@ const ApplicationsMenu = new Lang.Class({
 			appType = ApplicationType.APPLICATION;
 			for (let i in apps) {
 				let app = apps[i];
+				//let appListButton = new AppListButton(app, this, appType, 'apps');
+				//this.appsBox.add_actor(appListButton.actor);
 				if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
-					let appListButton = new AppListButton(app, this, appType, 'apps');
-					this.appsBox.add_actor(appListButton.actor);
-				} else { // GridView
-					// let includeTextLabel =
-					// (settings.get_int('apps-grid-label-width') > 0) ? true :
-					// false;
-					let includeTextLabel = true;
-					let appGridButton = new AppGridButton(app, appType, includeTextLabel);
-					this._appGridButtonWidth = 64;
-					appGridButton.buttonbox.width = this._appGridButtonWidth;
-					appGridButton.actor.connect('enter-event', Lang.bind(this, function() {
-						appGridButton.actor.add_style_class_name('selected');
-					}));
-					appGridButton.actor.connect('leave-event', Lang.bind(this, function() {
-						appGridButton.actor.remove_style_class_name('selected');
-					}));
-					appGridButton.actor.connect('button-press-event', Lang.bind(this, function() {
-						appGridButton.actor.add_style_pseudo_class('pressed');
-					}));
-					appGridButton.actor.connect('button-release-event', Lang.bind(this, function() {
-						appGridButton.actor.remove_style_pseudo_class('pressed');
-						appGridButton.actor.remove_style_class_name('selected');
-						appGridButton.app.open_new_window(-1);
-						this.menu.close();
-					}));
+					let appButton = new AppListButton(app, this, appType, 'apps');
+					this.appsBox.add_actor(appButton.actor);
+				} else {
+					let appButton = new AppListButton(app, this, appType, 'apps');
+					//this.appsBox.add_actor(appButton.actor);
+					appButton.buttonbox.width = this._appGridButtonWidth;
 					let gridLayout = this.appsBox.layout_manager;
-					gridLayout.pack(appGridButton.actor, column, rownum);
+					gridLayout.pack(appButton.actor, column, rownum);
 					column ++;
 					if (column > this._appGridColumns-1) {
 						column = 0;
 						rownum ++;
 					}
 				}
-				//if (!refresh) this._applications[app] = app;
 			}
 		}
 		
         if (terminal){
             appType = ApplicationType.TERMINAL;
-            //global.log("menyy: places searched");
             for (let i in terminal) {
-            	//global.log("menyy: place : " + places[i]);
                 let app = terminal[i];
-                // only add if not already in this._places or refreshing
-                //if (!this._places[app.name]) {
                     if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
-                    	//global.log("menyy: place placed");
-                    	let appListButton = new AppListButton(app, this, appType, 'apps');
-    					this.appsBox.add_actor(appListButton.actor);
+                    	let appButton = new AppListButton(app, this, appType, 'apps');
+    					this.appsBox.add_actor(appButton.actor);
                     } else { // GridView
-                        let appGridButton = new AppGridButton(app, appType, true);
-                        appGridButton.buttonbox.width = this._appGridButtonWidth;
-                        appGridButton.actor.connect('enter-event', Lang.bind(this, function() {
-                          appGridButton.actor.add_style_class_name('selected');
-                           this.selectedAppTitle.set_text(appGridButton.app.name);
-                           if (appGridButton.app.description) this.selectedAppDescription.set_text(appGridButton.app.description);
-                           else this.selectedAppDescription.set_text("");
-                        }));
-                        appGridButton.actor.connect('leave-event', Lang.bind(this, function() {
-                          appGridButton.actor.remove_style_class_name('selected');
-                           this.selectedAppTitle.set_text("");
-                           this.selectedAppDescription.set_text("");
-                        }));
-                        appGridButton.actor.connect('button-press-event', Lang.bind(this, function() {
-                            appGridButton.actor.add_style_pseudo_class('pressed');
-                        }));
-                        appGridButton.actor.connect('button-release-event', Lang.bind(this, function() {
-                           appGridButton.actor.remove_style_pseudo_class('pressed');
-                          appGridButton.actor.remove_style_class_name('selected');
-                           this.selectedAppTitle.set_text("");
-                           this.selectedAppDescription.set_text("");
-                           if (app.uri) {
-                               appGridButton.app.app.launch_uris([app.uri], null);
-                           } else {
-                               appGridButton.app.launch();
-                           }
-                           this.menu.close();
-                        }));
-                        let gridLayout = this.applicationsGridBox.layout_manager;
-                        gridLayout.pack(appGridButton.actor, column, rownum);
-                        column ++;
-                        if (column > this._appGridColumns-1) {
-                            column = 0;
-                            rownum ++;
-                        }
+                    	let appButton = new AppListButton(app, this, appType, 'apps');
+    					//this.appsBox.add_actor(appButton.actor);
+    					appButton.buttonbox.width = this._appGridButtonWidth;
+    					let gridLayout = this.appsBox.layout_manager;
+    					gridLayout.pack(appButton.actor, column, rownum);
+    					column ++;
+    					if (column > this._appGridColumns-1) {
+    						column = 0;
+    						rownum ++;
+    					}
                     }
-                //}
                 if (!refresh) this._places[app.name] = app;
             }
         }
 
         if (places){
             appType = ApplicationType.PLACE;
-            //global.log("menyy: places searched");
             for (let i in places) {
-            	//global.log("menyy: place : " + places[i]);
                 let app = places[i];
-                // only add if not already in this._places or refreshing
-                //if (!this._places[app.name]) {
                     if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
-                    	//global.log("menyy: place placed");
-                    	let appListButton = new AppListButton(app, this, appType, 'apps');
-    					this.appsBox.add_actor(appListButton.actor);
+                    	let appButton = new AppListButton(app, this, appType, 'apps');
+    					this.appsBox.add_actor(appButton.actor);
                     } else { // GridView
-                        let appGridButton = new AppGridButton(app, appType, true);
-                        appGridButton.buttonbox.width = this._appGridButtonWidth;
-                        appGridButton.actor.connect('enter-event', Lang.bind(this, function() {
-                          appGridButton.actor.add_style_class_name('selected');
-                           this.selectedAppTitle.set_text(appGridButton.app.name);
-                           if (appGridButton.app.description) this.selectedAppDescription.set_text(appGridButton.app.description);
-                           else this.selectedAppDescription.set_text("");
-                        }));
-                        appGridButton.actor.connect('leave-event', Lang.bind(this, function() {
-                          appGridButton.actor.remove_style_class_name('selected');
-                           this.selectedAppTitle.set_text("");
-                           this.selectedAppDescription.set_text("");
-                        }));
-                        appGridButton.actor.connect('button-press-event', Lang.bind(this, function() {
-                            appGridButton.actor.add_style_pseudo_class('pressed');
-                        }));
-                        appGridButton.actor.connect('button-release-event', Lang.bind(this, function() {
-                           appGridButton.actor.remove_style_pseudo_class('pressed');
-                          appGridButton.actor.remove_style_class_name('selected');
-                           this.selectedAppTitle.set_text("");
-                           this.selectedAppDescription.set_text("");
-                           if (app.uri) {
-                               appGridButton.app.app.launch_uris([app.uri], null);
-                           } else {
-                               appGridButton.app.launch();
-                           }
-                           this.menu.close();
-                        }));
-                        let gridLayout = this.applicationsGridBox.layout_manager;
-                        gridLayout.pack(appGridButton.actor, column, rownum);
-                        column ++;
-                        if (column > this._appGridColumns-1) {
-                            column = 0;
-                            rownum ++;
-                        }
+                    	let appButton = new AppListButton(app, this, appType, 'apps');
+    					//this.appsBox.add_actor(appButton.actor);
+    					appButton.buttonbox.width = this._appGridButtonWidth;
+    					let gridLayout = this.appsBox.layout_manager;
+    					gridLayout.pack(appButton.actor, column, rownum);
+    					column ++;
+    					if (column > this._appGridColumns-1) {
+    						column = 0;
+    						rownum ++;
+    					}
                     }
                 //}
                 if (!refresh) this._places[app.name] = app;
@@ -2351,40 +2350,19 @@ const ApplicationsMenu = new Lang.Class({
                 // only add if not already in this._recent or refreshing
                 if (!this._recent[app.name]) {
                     if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
-                    	let appListButton = new AppListButton(app, this, appType, 'apps');
-    					this.appsBox.add_actor(appListButton.actor);
+                    	let appButton = new AppListButton(app, this, appType, 'apps');
+    					this.appsBox.add_actor(appButton.actor);
                     } else { // GridView
-                        let appGridButton = new AppGridButton(app, appType, true);
-                        appGridButton.buttonbox.width = this._appGridButtonWidth;
-                        appGridButton.actor.connect('enter-event', Lang.bind(this, function() {
-                          appGridButton.actor.add_style_class_name('selected');
-                           this.selectedAppTitle.set_text(appGridButton.app.name);
-                           if (appGridButton.app.description) this.selectedAppDescription.set_text(appGridButton.app.description);
-                           else this.selectedAppDescription.set_text("");
-                        }));
-                        appGridButton.actor.connect('leave-event', Lang.bind(this, function() {
-                          appGridButton.actor.remove_style_class_name('selected');
-                           this.selectedAppTitle.set_text("");
-                           this.selectedAppDescription.set_text("");
-                        }));
-                        appGridButton.actor.connect('button-press-event', Lang.bind(this, function() {
-                            appGridButton.actor.add_style_pseudo_class('pressed');
-                        }));
-                        appGridButton.actor.connect('button-release-event', Lang.bind(this, function() {
-                           appGridButton.actor.remove_style_pseudo_class('pressed');
-                          appGridButton.actor.remove_style_class_name('selected');
-                           this.selectedAppTitle.set_text("");
-                           this.selectedAppDescription.set_text("");
-                           Gio.app_info_launch_default_for_uri(app.uri, global.create_app_launch_context(0, -1));
-                           this.menu.close();
-                        }));
-                        let gridLayout = this.applicationsGridBox.layout_manager;
-                        gridLayout.pack(appGridButton.actor, column, rownum);
-                        column ++;
-                        if (column > this._appGridColumns-1) {
-                            column = 0;
-                            rownum ++;
-                        }
+                    	let appButton = new AppListButton(app, this, appType, 'apps');
+    					//this.appsBox.add_actor(appButton.actor);
+    					appButton.buttonbox.width = this._appGridButtonWidth;
+    					let gridLayout = this.appsBox.layout_manager;
+    					gridLayout.pack(appButton.actor, column, rownum);
+    					column ++;
+    					if (column > this._appGridColumns-1) {
+    						column = 0;
+    						rownum ++;
+    					}
                     }
                 }
                 //if (!refresh) this._recent[app.name] = app;
@@ -2417,8 +2395,10 @@ const ApplicationsMenu = new Lang.Class({
 
 
 	//TODO(CLEAN UP SELECTCATEGORY CODE)
+	// _displayButtons: function(apps, home, places, recent, terminal, refresh) {
 	_selectCategory: function(button) {
 		this._clearAppsBox();
+		this.resetSearch();
 		if (button){
 			let category = button._dir || button;
 			this.currentCategory = category;
@@ -2445,11 +2425,16 @@ const ApplicationsMenu = new Lang.Class({
 					this.backButton.actor.hide();
 					this.goToButton.actor.hide();
 				}
-			} else if (typeof category == 'string') { // For custom categories such as "all categories"
+			} else if (typeof category == 'string') { // For custom categories such as "all categories", "recent", "favorites", "webbookmarks" and "shortcuts"
 				this.homeScrollBox.hide();
 				this.appsScrollBox.show();
-				// this._displayApplications(this._listApplications(category));
-				this._displayButtons(this._listApplications(category));
+				if (category == 'recent') {
+					this._displayButtons(_, _, _, this._listApplications(category));
+				} else if (category == 'webBookmarks'){
+					this._displayButtons(_, _, this._listApplications(category));
+				} else {
+					this._displayButtons(this._listApplications(category));
+				}
 				this.homeScrollBox.hide();
 				this.appsScrollBox.show();
 				if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
@@ -2477,10 +2462,6 @@ const ApplicationsMenu = new Lang.Class({
 
 
 	},
-
-
-
-
 
 
 	// TODO(CLEAN UP APPLICATION LIST CODE, IF POSSIBLE)
@@ -2516,8 +2497,12 @@ const ApplicationsMenu = new Lang.Class({
 				applist = this._frequentApps;
 			} else if (category_menu_id == 'favorites') {
 				applist = this._favorites;
-			} else if (category_menu_id == 'menyy') {
+			} else if (category_menu_id == 'shortcuts') {
 				// do something once done
+			} else if (category_menu_id == 'recent') {
+		        applist = this._listRecent();
+			} else if (category_menu_id == 'webBookmarks') {
+				applist = this._listWebBookmarks();
 			} else  if (category_menu_id) {
 				applist = this.applicationsByCategory[category_menu_id];
 			} else {
@@ -2775,6 +2760,7 @@ const ApplicationsMenu = new Lang.Class({
 				this.reloadFlag = false;
 			}
 			this.mainBox.show();
+			this.altBox.hide();
 		}
 		this._activeContainer = null;
 		this._openDefaultCategory();

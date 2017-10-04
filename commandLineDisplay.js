@@ -20,6 +20,8 @@ const Main = imports.ui.main;
 const Params = imports.misc.params;
 const Search = imports.ui.search;
 const Util = imports.misc.util;
+
+
 const _appSystem = Shell.AppSystem.get_default();
 const _createApp = _appSystem.lookup_desktop_wmclass;
 
@@ -35,6 +37,7 @@ const Gettext = imports.gettext.domain('menyy');
 
 const Menyy = imports.misc.extensionUtils.getCurrentExtension();
 const shell_path     = Menyy.path + "/bash_scripts";
+const cache_path     = Menyy.path + "/cache/";
 
 let UseSymbolicIcons = false;
 
@@ -83,13 +86,7 @@ const CommandLineManager = new Lang.Class({
 		UseSymbolicIcons = useSymbolic;
 
 		this._commands = [];
-		this._getMethods(Shell.AppSystem.search);
-		//this.thingHere = Gio.AppInfo.create_from_commandline("eduke32", null, null);
-		//global.log("menyy this thing here: " + this.thingHere);
-		//+ Gio.AppInfo.Get_all_for_type
-		//+ Gio.AppInfo.Get_default_for_type
-		//+ Gio.AppInfo.create_from_commandline
-		//Gio.DesktopAppInfo
+		//this._getMethods(Shell);	
 	},
 	
 	_getMethods: function (obj) {
@@ -105,10 +102,38 @@ const CommandLineManager = new Lang.Class({
 	    }
 	},
 	
+	createDesktopFile: function(filename, contents) {
+		try {
+			//Creates the file in the cache folder
+			let file = Gio.file_new_for_path(cache_path + filename + ".desktop");
+			
+			{
+	            // Test for the existence of file
+	            if (file.query_exists (null)) {
+	            	// If file exists, delete it (something's probably wrong then)
+	            	file.delete(null);
+	            }
+	            //let fstream = file.replace(null, false, Gio.FileCreateFlags.NONE, null);
+	            let dos = file.create(Gio.FileCreateFlags.NONE, null);
+	            dos.write(contents, null, contents.length);
+	            //dos.write(contents, null, contents.length);
+	            
+	            
+	            //let dos = new Gio.DataOutputStream (file.create (Gio.FileCreateFlags.REPLACE_DESTINATION, null));
+	            //dos.put_string("test", null);
+			} // Streams closed at this point
+        } catch (e) {
+        	Main.notifyError(_("Failed to create file \"%s\"").format(this.name), e.message);
+        }
+	},
+	
 	// Loads right Click menu
 	// TODO(ADD SETTINGS TO CONTROL WHAT TO LOAD)
 	_loadCommands: function(pattern) {
 		// pattern is the terminal command and variables are its inputs
+		
+		// TODO(DELETE THE CASH FOLDER (AS OPTION)
+		
 		let variables;
 		if(pattern.indexOf(' ') !== -1){
 			variables = pattern.substr(pattern.indexOf(' ')+1);
@@ -117,7 +142,7 @@ const CommandLineManager = new Lang.Class({
 		}
 		pattern = pattern.split(" ")[0];
 		
-		global.log("menyy variables " + variables);
+		//global.log("menyy variables " + variables);
 		
 		this._commands = [];
 		let argv = shell_path + "/listAllCommands.sh " + pattern + " 10";
@@ -149,14 +174,50 @@ const CommandLineManager = new Lang.Class({
 	                throw err;
 	            }
 	            commandInfo = commandInfo[1].toString().split("\n");
-	            global.log("menyy terminal app: " );
-	            this._commands.push(new terminalCommandInfo (commandsList[id], commandInfo[0], commandInfo[1], variables));
+	            
+	            
+	            const name = commandsList[id];
+	            const location = commandInfo[0];
+	            const mimeType = commandInfo[1];
+	            
+	            
+	            
+	            // lets try and create from keyfile
+	            const contents =   "[Desktop Entry]\n" +
+	            					  "Name = " + name + "\n" +
+	            					  "Comment = Automatically generated Terminal App\n" +
+	            					  "Terminal = true\n" +
+	            					  "Type = Application\n" +
+	            					  "StartupNotify = True\n" +
+	            					  //"Icon = terminal\n" +
+	            					  "Categories = Other\n" +
+	            					  "Exec = " + name + "\n" +
+	            					  //"StartupWMClass = " + name;
+	            					  "";
+	            
+	            
+
+	            //TODO(CHECK IF DESKTOP FILE EXISTS)
+	            let desktopAppInfo = Gio.DesktopAppInfo.new(name + ".desktop") || Gio.DesktopAppInfo.new_from_filename(cache_path + name + ".desktop");
+	            if (desktopAppInfo == null) {
+	            	this.createDesktopFile(name, contents);
+	            	desktopAppInfo = Gio.DesktopAppInfo.new_from_filename(cache_path + name + ".desktop") || new Gio.DesktopAppInfo({filename: name});
+	            }
+	            const app = new Shell.App({ app_info: desktopAppInfo});
+	            
+	            this._commands.push(new terminalCommandInfo (name, location, mimeType, variables, app));
+	            
+	            
+	            //global.log("menyy terminal app name: " + name);
+	            //global.log("menyy terminal app wmclass: " + _appSystem.lookup_desktop_wmclass(name));
+	            // takes a .desktop as input?
+	            //global.log("menyy terminal app: " + _appSystem.lookup_app(name + '.desktop'));	            
+	            
         	}
         }
 		argv = null;
 		commandsList = null;
 		commandInfo = null;
-		
 		this.emit('rightClick-updated');
 	},
 	

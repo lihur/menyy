@@ -35,20 +35,18 @@ const PanelMenu = imports.ui.panelMenu;
 const GnomeSession = imports.misc.gnomeSession;
 const PopupMenu = imports.ui.popupMenu;
 const AppFavorites = imports.ui.appFavorites;
+const Main = imports.ui.main;
 
 
 
-// To create the right apps?
-const Shell = imports.gi.Shell;
-const _appSystem = Shell.AppSystem.get_default();
-
-
-
+const Menyy = imports.misc.extensionUtils.getCurrentExtension();
+const cache_path = Menyy.path + "/cache/";
 const ApplicationType = {
-	    APPLICATION: 0,
-	    PLACE: 1,
-	    RECENT: 2
-	};
+		APPLICATION: 0,
+		PLACE: 1,
+		RECENT: 2,
+		TERMINAL:3
+};
 
 
 
@@ -69,45 +67,45 @@ const AppItemMenu = new Lang.Class({
     	this.source = source;
     	this.connect('activate', Lang.bind(this, this._onActivate));
         this.parent(source);
-        this._button = this._source._button;
-        this._source.app = this.source.app;
+        this._button = this.source._button;
     },
-
+    
+    
     _addToDesktop: function() {
         //try {
-        	let app = this._source.app;
+        	let app = this.source.app;
         	let path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
         	let file;
         	let destFile;
         	let workItGirl;
         	let shortcut = true;
-        	if (this._source._type == ApplicationType.APPLICATION) {
+        	if (this.source._type == ApplicationType.APPLICATION) {
         		shortcut = false;
         		file = Gio.file_new_for_path(app.get_app_info().get_filename());
         		destFile = Gio.file_new_for_path(path + "/" + app.get_id());
         		global.log("menyy file: " + app.get_app_info().get_filename());
-        	} else if (this._source._type == ApplicationType.RECENT) {
+        	} else if (this.source._type == ApplicationType.RECENT) {
         		shortcut = false;
-        		workItGirl = this._source._get_app_id(ApplicationType.RECENT).replace('file://','');
+        		workItGirl = this.source._get_app_id(ApplicationType.RECENT).replace('file://','');
         		file = Gio.file_new_for_path(workItGirl);
-        		destFile = Gio.file_new_for_path(path + "/" + this._source._get_app_id(ApplicationType.RECENT).replace(/^.*[\\\/]/, ''));
-        		global.log("menyy file: " + this._source._get_app_id(ApplicationType.RECENT));
-        	} else if (this._source._type == ApplicationType.PLACE) {
+        		destFile = Gio.file_new_for_path(path + "/" + this.source._get_app_id(ApplicationType.RECENT).replace(/^.*[\\\/]/, ''));
+        		global.log("menyy file: " + this.source._get_app_id(ApplicationType.RECENT));
+        	} else if (this.source._type == ApplicationType.PLACE) {
         		shortcut = true;
-        		if (this._source.app.uri) {
-        			workItGirl = this._source._get_app_id(ApplicationType.PLACE).replace('file://','');
+        		if (this.source.app.uri) {
+        			workItGirl = this.source._get_app_id(ApplicationType.PLACE).replace('file://','');
             		file = Gio.file_new_for_path(workItGirl);
-            		destFile = Gio.file_new_for_path(path + "/" + this._source.name);
-            		global.log("menyy file: " + this._source._get_app_id(ApplicationType.PLACE));
-        		} else if (this._source.app.file) {
-            		file = this._source.app.file.get_path();
-            		destFile = Gio.file_new_for_path(path + "/" + this._source.app.file.get_basename());
+            		destFile = Gio.file_new_for_path(path + "/" + this.source.name);
+            		global.log("menyy file: " + this.source._get_app_id(ApplicationType.PLACE));
+        		} else if (this.source.app.file) {
+            		file = this.source.app.file.get_path();
+            		destFile = Gio.file_new_for_path(path + "/" + this.source.app.file.get_basename());
         		}
         	} else {
         		global.log("menyy: how have you managed to create a situation without a filetype and gotten so far???");
         	}
         	
-        	//let app = this._source.app;
+        	//let app = this.source.app;
         	
             //let file = Gio.file_new_for_path(app.get_app_info().get_filename());
             //let path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
@@ -136,29 +134,43 @@ const AppItemMenu = new Lang.Class({
             let metaWindow = child._window;
             this.emit('activate-window', metaWindow);
         } else if (child == this._newWindowMenuItem) {
-            this._source.app.open_new_window(-1);
+            this.source.app.open_new_window(-1);
             this.emit('activate-window', null);
         } else if (child == this._toggleFavoriteMenuItem) {
             let favs = AppFavorites.getAppFavorites();
-            let isFavorite = favs.isFavorite(this._source.app.get_id());
+            let isFavorite;
+            if (this.source._type == ApplicationType.APPLICATION) {
+        		isFavorite = favs.isFavorite(this.source.app.get_id());
+            } else {
+            	isFavorite = favs.isFavorite(this.source.app.app.get_id());
+            	global.log("menyy isfav: " + isFavorite);
+            }
             if (isFavorite)
-                favs.removeFavorite(this._source.app.get_id());
+            	if (this.source._type == ApplicationType.APPLICATION) {
+            		favs.removeFavorite(this.source.app.get_id());
+            	} else {
+            		favs.removeFavorite(this.source.app.app.get_id());
+            	}
             else
-                favs.addFavorite(this._source.app.get_id());
+            	if (this.source._type == ApplicationType.APPLICATION) {
+            		favs.addFavoriteAtPos(this.source.app.get_id(), -1);
+            	} else {
+                    let app = cache_path + this.source.app.app.get_id();
+                    // TODO(copy the file to a proper location or monkeypatch to use custom folders)
+            		favs.addFavorite(this.source.app.app.get_id());
+            		
+            	}
         }
         this.close();
         this._button._toggleMenu();
     },
     
     _activateApp: function() {
-    	this._source.activate();
+    	this.source.activate();
     },
     
-    _createDefaultMenu: function() {
-    	let app = _createApp('chromium');
-    	global.log("menyyapp" + app);
+    _createDefaultMenu: function(app) {
     	let windows =  app.get_windows();
-
         // Display the app windows menu items and the separator between windows
         // of the current desktop and other windows.
         let activeWorkspace = global.screen.get_active_workspace();
@@ -179,11 +191,10 @@ const AppItemMenu = new Lang.Class({
 
             let isFavorite = AppFavorites.getAppFavorites().isFavorite(app.get_id());
 
-            this._newWindowMenuItem = this._appendMenuItem(_("New Window"));
-            this._appendSeparator();
+            //this._newWindowMenuItem = this._appendMenuItem(_("New Window"));
+            //this._appendSeparator();
 
-            this._toggleFavoriteMenuItem = this._appendMenuItem(isFavorite ? _("Remove from Favorites")
-                                                                : _("Add to Favorites"));
+            this._toggleFavoriteMenuItem = this._appendMenuItem(isFavorite ? _("Remove from Favorites") : _("Add to Favorites"));
         }
     },
     
@@ -206,18 +217,25 @@ const AppItemMenu = new Lang.Class({
         let path;
         let file;
     	
-        if (this._source._type == ApplicationType.APPLICATION) {
-        	app = this._source.app;
+        if (this.source._type == ApplicationType.APPLICATION) {
+        	app = this.source.app;
+        	//global.log("menyy -> normal app -> " + app);
         	path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-        	file = Gio.file_new_for_path(path + "/" + this._source._get_app_id(ApplicationType.APPLICATION));
+        	file = Gio.file_new_for_path(path + "/" + this.source._get_app_id(ApplicationType.APPLICATION));
         	this.parent();
-    	} else if (this._source._type == ApplicationType.RECENT) {
-        	app = this._source.app;
+    	}  else if (this.source._type == ApplicationType.TERMINAL) {
+        	app = this.source.app.app;
 			path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-    		file = Gio.file_new_for_path(path + "/" + this._source._get_app_id(ApplicationType.RECENT).replace(/^.*[\\\/]/, ''));
+    		//file = Gio.file_new_for_path(path + "/" + this.source._get_app_id(ApplicationType.RECENT).replace(/^.*[\\\/]/, ''));
+    		
+    		//this._createDefaultMenu(app);		
+    	} else if (this.source._type == ApplicationType.RECENT) {
+        	app = this.source.app;
+			path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+    		file = Gio.file_new_for_path(path + "/" + this.source._get_app_id(ApplicationType.RECENT).replace(/^.*[\\\/]/, ''));
     		
     		//this._createDefaultMenu();   		
-    	} else if (this._source._type == ApplicationType.PLACE) {
+    	} else if (this.source._type == ApplicationType.PLACE) {
     		app = this.source.app;
 			path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
 			
@@ -231,18 +249,18 @@ const AppItemMenu = new Lang.Class({
     	}
     	
     	// TODO(REPLACE HACK dealing with empty menus)
-    	if ((this._source._type == ApplicationType.APPLICATION) || (this._source._type == ApplicationType.RECENT)) {
+    	if ((this.source._type == ApplicationType.APPLICATION) || (this.source._type == ApplicationType.RECENT)) {
             if (!file.query_exists(null)){
                 this._appendSeparator();
                 this._addToDesktopItem = this._appendMenuItem("Add to Desktop");
                 this._addToDesktopItem.connect('activate', Lang.bind(this, function() {
                     this._addToDesktop();
                 }));
-            } /*else if (this._source._type == ApplicationType.RECENT) {
+            } /*else if (this.source._type == ApplicationType.RECENT) {
                 this._appendSeparator();
                 this._addToDesktopItem = this._appendMenuItem("Remove from Desktop (unimplemented)");
             }*/
-        } else if ((this._source._type == ApplicationType.PLACE) && !(this.source.app.app)) {
+        } else if ((this.source._type == ApplicationType.PLACE) && !(this.source.app.app)) {
         	if (!file.query_exists(null)) {
 	            this._appendSeparator();
 	            this._addToDesktopItem = this._appendMenuItem("Shortcut to Desktop");

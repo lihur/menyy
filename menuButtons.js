@@ -31,6 +31,11 @@ const ApplicationType = {
 		TERMINAL:3
 };
 
+const ApplicationsViewMode = {
+		LIST: 0,
+		GRID: 1
+};
+
 
 // TODO(MOVE TO A HELPER FILE)
 /*
@@ -327,7 +332,7 @@ const BackMenuItem = new Lang.Class({
     },
     // Activate the button (go back to category view)
     activate: function(event) {
-    	global.log("menyy -> backbutton -> activate");
+    	//global.log("menyy -> backbutton -> activate");
     	if (this.purpose == 'backToHome') {
     		this._button._openDefaultCategory();
     	} else {
@@ -477,8 +482,12 @@ const CategoryGridButton = new Lang.Class({
         this.buttonReleaseCallback = null;
         this._ignoreHoverSelect = null;    	
     	
-        this._dir = dir;
+        
         this._name= altNameText;
+        this._dir = dir;
+        let categoryNameText = "";
+        let categoryIconName = null;
+        
         this._stateChangedId = 0;
         let styleButton = "popup-menu-item popup-submenu-menu-item menyy-apps-grid-button menyy-category-grid-button";
 
@@ -593,13 +602,16 @@ const CategoryGridButton = new Lang.Class({
  * project
  * =========================================================================
  */
-const AppListButton = new Lang.Class({
-    Name: 'Menyy.AppListButton',
+
+
+const AppButton = new Lang.Class({
+    Name: 'Menyy.AppButton',
     Extends: PopupMenu.PopupBaseMenuItem,
 
     
     _init: function (app, button, appType, location) {
 		this.parent();
+		this._appsViewMode = button._appsViewMode;
 		this._button = button;
 		this.app = app;
 		//this.app = app;
@@ -610,7 +622,8 @@ const AppListButton = new Lang.Class({
 		this._isDragged = false;
 		this._labelStyle = null;
 		this._iconStyle = null;
-		let style;		
+		this.includeText = true; //TODO(DETERMINE BY SETTINGS INSTEAD)
+		let style;
 		
 		if (location == 'places') {
 			this._labelStyle = 'menyy-shortcuts-button-label';
@@ -619,18 +632,26 @@ const AppListButton = new Lang.Class({
 			// this._iconSize -= 4;
 	    	this._showIcon = (settings.get_int('places-icon-size') > 0) ? true : false;
 	    	style = "popup-menu-item menyy-shortcut-button";
-		} else {
+		} else if (this._appsViewMode == ApplicationsViewMode.LIST){
 			this._labelStyle = 'menyy-apps-button-label';
 			this._iconStyle = 'menyy-apps-button-icon'
 			this._iconSize = (settings.get_int('apps-icon-size') > 0) ? settings.get_int('apps-icon-size') : 28;
 			this._showIcon = (settings.get_int('apps-icon-size') > 0) ? true : false;
 			style = "popup-menu-item popup-submenu-menu-item menyy-apps-button";
+		} else {
+			this._labelStyle = 'menyy-apps-grid-button-label';
+			this._iconStyle = 'menyy-apps-grid-button-icon'
+			this._iconSize = (settings.get_int('apps-icon-size') > 0) ? settings.get_int('apps-icon-size') : 28;			// ask a spearate grid icon size
+			this._showIcon = (settings.get_int('apps-icon-size') > 0) ? true : false;										// ask a spearate grid icon size
+			style = "popup-menu-item popup-submenu-menu-item menyy-apps-grid-button";
 		}
 		
-		// let style = "popup-menu-item popup-submenu-menu-item
-		// menyy-apps-button";
+		if (this._appsViewMode == ApplicationsViewMode.LIST || location == 'places'){
+			this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.MIDDLE});
+		} else {
+			this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
+		}
 		
-		this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.MIDDLE});
 		this.actor._delegate = this;
 		
 		// actor events
@@ -656,7 +677,6 @@ const AppListButton = new Lang.Class({
         
         
         // Set labels and icons
-        // appType 0 = application, appType 1 = place, appType 2 = recent
         if (appType == ApplicationType.APPLICATION) {
         	this.icon = app.create_icon_texture(this._iconSize);
             this.label = new St.Label({ text: app.get_name(), style_class: this._labelStyle });
@@ -677,8 +697,11 @@ const AppListButton = new Lang.Class({
         
         
         // Create button
-        this.buttonbox = new St.BoxLayout();
-        
+        if (this._appsViewMode == ApplicationsViewMode.LIST || location == 'places') {
+        	this.buttonbox = new St.BoxLayout();
+        } else { 
+        	this.buttonbox = new St.BoxLayout({vertical: true});
+        }
         
         // Create an icon container (for theming and indicator support)
 		this._iconContainer = new St.BoxLayout({vertical: true});
@@ -707,8 +730,18 @@ const AppListButton = new Lang.Class({
         }
 
 	    // Create button and add labol, icon and indicator
-        this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
-        this.buttonbox.add(this.label, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
+        if (this._appsViewMode == ApplicationsViewMode.LIST){
+        	this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
+        	this.buttonbox.add(this.label, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
+        } else {
+        	this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false,x_align: St.Align.MIDDLE, y_align: St.Align.START});
+            if(this.includeText){
+                // Use pango to wrap label text
+                // this.label.clutter_text.line_wrap_mode = Pango.WrapMode.WORD;
+                // this.label.clutter_text.line_wrap = true;
+                this.buttonbox.add(this.label, {x_fill: false, y_fill: true,x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
+            }
+        }
 
         this.actor.set_child(this.buttonbox);
 
@@ -726,7 +759,7 @@ const AppListButton = new Lang.Class({
         
         this._draggable.connect('drag-begin', Lang.bind(this, function () {
         	this._isDragged = true;
-        	global.log("menyy: drag begin: this._isDragged " + this._isDragged);
+        	//global.log("menyy: drag begin: this._isDragged " + this._isDragged);
         	Main.overview.beginItemDrag(this);
         	
         	// if (this._button) {
@@ -752,11 +785,16 @@ const AppListButton = new Lang.Class({
 			Shell.util_set_hidden_from_pick(Main.legacyTray.actor, false);
         }));
     },
+    
+    
     // Gets app id, place or recent file location
     _get_app_id: function(appType) {
     	let appId;
     	if (appType == ApplicationType.APPLICATION) {
     		appId = this.app.get_id();
+    	} else if (appType == ApplicationType.TERMINAL) {
+        		appId = this.app.app.get_id();
+        		global.log("menyy appid:" + appid);
     	} else if (appType == ApplicationType.PLACE) {
 	    	if (this.app.uri) {
 	    		appId = this.app.uri;
@@ -775,6 +813,7 @@ const AppListButton = new Lang.Class({
     	}
         return appId;
     },
+    
 
     // _get_id: function() {
     // return this.app.get_id();
@@ -953,7 +992,7 @@ const AppListButton = new Lang.Class({
 	        	 }
 	         }));
 	     GLib.Source.set_name_by_id(this._menuTimeoutId, '[gnome-shell] this.popupMenu');
-	     global.log("menyy: setpopuptimeout ending")
+	     //global.log("menyy: setpopuptimeout ending")
 	     return false;
 	 },
 	 
@@ -1015,7 +1054,7 @@ const AppListButton = new Lang.Class({
  * for various @desc types of sources (application, places, recent)
  * =========================================================================
  */
-
+/*
 const AppGridButton = new Lang.Class({
     Name: 'Menyy.AppGridButton',
 
@@ -1028,34 +1067,11 @@ const AppGridButton = new Lang.Class({
         this._stateChangedId = 0;
         let styleButton = "popup-menu-item popup-submenu-menu-item menyy-apps-grid-button";
 
-        let styleLabel = "menyy-apps-grid-button-label";
-        
-        // DELETEME!
-        if (settings.get_int('apps-grid-column-count') == 3) {
-            styleButton += " col3";
-        } else if (settings.get_int('apps-grid-column-count') == 4) {
-            styleButton += " col4";
-        } else if (settings.get_int('apps-grid-column-count') == 5) {
-            styleButton += " col5";
-        } else if (settings.get_int('apps-grid-column-count') == 6) {
-            styleButton += " col6";
-        } else if (settings.get_int('apps-grid-column-count') == 7) {
-            styleButton += " col7";
-        }
-        
-        
-        /*
-		 * if (settings.get_boolean('hide-categories')) { styleButton += "
-		 * no-categories"; styleLabel += " no-categories"; }
-		 */
+        let styleLabel = "menyy-apps-grid-button-label";        
 
         this.actor = new St.Button({reactive: true, style_class: styleButton, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
         this.actor._delegate = this;
-        /*
-		 * this._iconSize = (settings.get_int('apps-grid-icon-size') > 0) ?
-		 * settings.get_int('apps-grid-icon-size') : 64;
-		 */
-        // this._iconSize = 64;
+
 
         // appType 0 = application, appType 1 = place, appType 2 = recent
         if (appType == ApplicationType.APPLICATION) {
@@ -1178,7 +1194,10 @@ const AppGridButton = new Lang.Class({
         }
     }
 });
+*/
 
+const AppListButton = AppButton;
+const AppGridButton = AppButton;
 
 
 

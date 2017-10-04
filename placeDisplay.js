@@ -162,39 +162,22 @@ const DEFAULT_DIRECTORIES = [
 const APPLICATION_SOFTWARE = [
 	{   label: _("Software"),
 		symbolic: "org.gnome.Software-symbolic",
-		command: "gnome-software" }
-];
-
-// Application Settings
-const APPLICATION_SETTINGS = [
+		command: "gnome-software" },
 	{   label: _("Settings"),
 		symbolic: "preferences-system-symbolic",
-		command: "gnome-control-center" }
-];
-
-//Application Tweaks
-const APPLICATION_TWEAKS = [
+		command: "gnome-control-center" },
 	{   label: _("Tweak Tool"),
 		symbolic: "gnome-tweak-tool-symbolic",
 		command: "gnome-tweak-tool" },
 	{   label: _("Tweaks"),
 		symbolic: "gnome-tweak-tool-symbolic",
-		command: "gnome-tweaks" }
-];
-
-
-//Application MenuEditor
-const APPLICATION_MENUEDITOR = [
+		command: "gnome-tweaks" },
 	{   label: _("Menu Editor (Alacarte)"),
 		symbolic: "accessories-text-editor-symbolic",
 		command: "alacarte" },
 	{   label: _("Menu Editor (MenuLibre)"),
 		symbolic: "accessories-dictionary-symbolic",
-		command: "menulibre" }
-];
-
-//Application Menyy Settings
-const APPLICATION_MENYYSETTINGS = [
+		command: "menulibre" },
 	{   label: _("Menu Settings"),
 		symbolic: "org.gnome.Books-symbolic",
 		command: "gnome-shell-extension-prefs menyy@lihurp.gmail.com"
@@ -241,9 +224,9 @@ const PlacesManager = new Lang.Class({
 		this._connectVolumeMonitorSignals();
 		this._updateMounts();
 
-		this._bookmarksFile = this._findBookmarksFile(); // Passingthru67 -
-		// Added missing
-		// semi-colon
+		this._bookmarksFile = this._findBookmarksFile();
+		//global.log("menyy -> this._bookmarksFile: + " + this._bookmarksFile);
+		
 		this._bookmarkTimeoutId = 0;
 		this._monitor = null;
 
@@ -273,20 +256,9 @@ const PlacesManager = new Lang.Class({
 	// Loads right Click menu
 	// TODO(ADD SETTINGS TO CONTROL WHAT TO LOAD)
 	_loadRightClick: function() {
-		this._rightClick = [];
+		this._rightClick = APPLICATION_SOFTWARE;
 		this._hasMenuEditor = false;
 		this._places.bookmarks = [];
-		
-		// Add Software Manager
-		this._rightClick = this._rightClick.concat(APPLICATION_SOFTWARE);
-		// Add Settings Manager
-		this._rightClick = this._rightClick.concat(APPLICATION_SETTINGS);
-		// Add Tweaks Manager
-		this._rightClick = this._rightClick.concat(APPLICATION_TWEAKS);
-		// Add Menu Editor
-		this._rightClick = this._rightClick.concat(APPLICATION_MENUEDITOR);
-		// Add Menyy Settings
-		this._rightClick = this._rightClick.concat(APPLICATION_MENYYSETTINGS);
 		
 		
 		
@@ -304,23 +276,11 @@ const PlacesManager = new Lang.Class({
 	// TODO(ADD SETTINGS TO CONTROL WHAT TO LOAD)
 	// TODO(ADD SETTINGS TO ALLOW CUSTOM APPLICATIONS)
 	_loadApplications: function() {
-		this._rightClick = [];
+		this._software = APPLICATION_SOFTWARE;
 		this._places.bookmarks = [];
 		
-		// Add Software Manager
-		this._rightClick = this._rightClick.concat(APPLICATION_SOFTWARE);
-		// Add Settings Manager
-		this._rightClick = this._rightClick.concat(APPLICATION_SETTINGS);
-		// Add Tweaks Manager
-		this._rightClick = this._rightClick.concat(APPLICATION_TWEAKS);
-		// Add Menu Editor
-		this._rightClick = this._rightClick.concat(APPLICATION_MENUEDITOR);
-		// Add Menyy Settings
-		//this._rightClick = this._rightClick.concat(APPLICATION_MENYYSETTINGS);
-		
-		
-		
-		(this._rightClick).forEach(Lang.bind(this, function(shortcut) {
+		// Add all software
+		(this.software).forEach(Lang.bind(this, function(shortcut) {
 			// Check if command exists and if command has space, only the first part!
 			if (GLib.find_program_in_path(shortcut.command.split(" ")[0])) {
 				this._places.applications.push(new PlaceAppInfo('applications', shortcut.command,  shortcut.label, shortcut.symbolic));
@@ -470,6 +430,7 @@ const PlacesManager = new Lang.Class({
 			let duplicate = false;
 			for (let i = 0; i < this._places.special.length; i++) {
 				if (file.equal(this._places.special[i].file)) {
+					//global.log("menyy -> duplicate bookmark: " + bookmark);
 					duplicate = true;
 					break;
 				}
@@ -488,12 +449,24 @@ const PlacesManager = new Lang.Class({
 			let label = null;
 			if (components.length > 1)
 				label = components.slice(1).join(' ');
-
+			//global.log("menyy -> push bookmark: " + bookmark);
 			bookmarks.push(new PlaceInfo('bookmarks', file, label));
 		}
 
 		this._places.bookmarks = bookmarks;
-
+		
+		/*
+		global.log("menyy: ------------------------------------------------------------");
+		for (var i in bookmarks){
+			global.log("menyy -> bookmarksList: " + bookmarks[i].name);
+		}
+		global.log("menyy: ------------------------------------------------------------");
+		for (var i in this._places.bookmarks){
+			global.log("menyy -> bookmarksFinal: " + this._places.bookmarks[i].name);
+		}
+		global.log("menyy: ------------------------------------------------------------");
+		
+		*/
 		this.emit('bookmarks-updated');
 	},
 
@@ -515,6 +488,8 @@ const PlacesManager = new Lang.Class({
 	},
 
 	getBookmarks: function() {
+		//because it asks before generated?
+		this._reloadBookmarks();
 		return this._places['bookmarks'];
 	},
 

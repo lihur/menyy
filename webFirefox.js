@@ -186,7 +186,7 @@ function init() {
     if (! Gda) {
         return;
     }
-
+    
     if (_foundApps == null || _foundApps.length == 0) {
         return;
     }

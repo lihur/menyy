@@ -13,6 +13,7 @@ const Main = imports.ui.main;
 const Mainloop = imports.mainloop;
 
 
+
 // My stuff
 const Menyy = imports.misc.extensionUtils.getCurrentExtension();
 const RightClickMenus = Menyy.imports.rightClickMenu;
@@ -284,6 +285,7 @@ const BackMenuItem = new Lang.Class({
     },
     // Activate the button (go back to category view)
     activate: function(event) {
+    	global.log("menyy -> backbutton -> activate");
     	if (this.purpose == 'backToHome') {
     		this._button._openDefaultCategory();
     	} else {
@@ -309,7 +311,7 @@ const BackMenuItem = new Lang.Class({
 const CategoryListButton = new Lang.Class({
     Name: 'Menyy.CategoryListButton',
 
-    _init: function (dir, altNameText, altIconName) {
+    _init: function (dir, altNameText, altIconName, button) {
     	//this.iconSize = settings.get_int('categories-icon-size');
     	this._iconSize = (settings.get_int('categories-icon-size') > 0) ? settings.get_int('categories-icon-size') : 24;
     	this._showIcon = (settings.get_int('categories-icon-size') > 0) ? true : false;
@@ -323,6 +325,7 @@ const CategoryListButton = new Lang.Class({
         let style = "popup-menu-item popup-submenu-menu-item menyy-category-button";
         this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.START });
         this.actor._delegate = this;
+        this._button = button;
         this.buttonbox = new St.BoxLayout();
 
         this._dir = dir;
@@ -352,6 +355,16 @@ const CategoryListButton = new Lang.Class({
         // Connect signals
         this.actor.connect('touch-event', Lang.bind(this, this._onTouchEvent));
     },
+    
+    
+    // Activate the category
+    activate: function(event) {
+    	this._button._selectCategory(this._dir);
+        this.parent(event);
+        //return Clutter.EVENT_STOP;
+    },
+    
+    
 
     setButtonEnterCallback: function(cb) {
         this.buttonEnterCallback = cb;
@@ -540,7 +553,7 @@ const AppListButton = new Lang.Class({
     Extends: PopupMenu.PopupBaseMenuItem,		//!!!!!!!!!!!!!!!!!!!! check if necessary
 
     
-    _init: function (app, button, appType) {
+    _init: function (app, button, appType, location) {
 		this.parent();
 		this._button = button;
 		this._app = app;
@@ -549,10 +562,29 @@ const AppListButton = new Lang.Class({
 		this._isLeftDown = false;
 		this._isTimeOutOpen = false;
 		this._isDragged = false;
-		this._iconSize = (settings.get_int('apps-icon-size') > 0) ? settings.get_int('apps-icon-size') : 28;
-		this._showIcon = (settings.get_int('apps-icon-size') > 0) ? true : false;
+		this._labelStyle = null;
+		this._iconStyle = null;
 		
-		let style = "popup-menu-item popup-submenu-menu-item menyy-apps-button";
+		let style;
+		
+		
+		
+		if (location == 'places') {
+			this._labelStyle = 'menyy-shortcuts-button-label';
+			this._iconStyle = 'menyy-shortcuts-icon'
+			this._iconSize = (settings.get_int('places-icon-size') > 0) ? settings.get_int('places-icon-size') : 16;
+			//this._iconSize -= 4;
+	    	this._showIcon = (settings.get_int('places-icon-size') > 0) ? true : false;
+	    	style = "popup-menu-item menyy-shortcut-button";
+		} else {
+			this._labelStyle = 'menyy-apps-button-label';
+			this._iconStyle = 'menyy-apps-button-icon'
+			this._iconSize = (settings.get_int('apps-icon-size') > 0) ? settings.get_int('apps-icon-size') : 28;
+			this._showIcon = (settings.get_int('apps-icon-size') > 0) ? true : false;
+			style = "popup-menu-item popup-submenu-menu-item menyy-apps-button";
+		}
+		
+		//let style = "popup-menu-item popup-submenu-menu-item menyy-apps-button";
 		
 		this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.MIDDLE});
 		this.actor._delegate = this;
@@ -583,37 +615,49 @@ const AppListButton = new Lang.Class({
         // appType 0 = application, appType 1 = place, appType 2 = recent
         if (appType == ApplicationType.APPLICATION) {
         	this.icon = app.create_icon_texture(this._iconSize);
-            this.label = new St.Label({ text: app.get_name(), style_class: 'menyy-apps-button-label' });
+            this.label = new St.Label({ text: app.get_name(), style_class: this._labelStyle });
         } else if (appType == ApplicationType.PLACE) {
             this.icon = new St.Icon({gicon: app.icon, icon_size: this._iconSize});
             if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
-            this.label = new St.Label({ text: app.name, style_class: 'menyy-apps-button-label' });
+            this.label = new St.Label({ text: app.name, style_class: this._labelStyle });
         } else if (appType == ApplicationType.RECENT) {
             let gicon = Gio.content_type_get_icon(app.mime);
             this.icon = new St.Icon({gicon: gicon, icon_size: this._iconSize});
             if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
-            this.label = new St.Label({ text: app.name, style_class: 'menyy-apps-button-label' });
+            this.label = new St.Label({ text: app.name, style_class: this._labelStyle });
         }
         
         
-        // Set run indicator
-        this._dot = new St.Widget({ style_class: 'app-well-app-running-dot',
-                                    layout_manager: new Clutter.BinLayout(),
-                                    x_expand: true, y_expand: true,
-                                    x_align: Clutter.ActorAlign.CENTER,
-                                    y_align: Clutter.ActorAlign.END });
+        // Create button
+        this.buttonbox = new St.BoxLayout();
+        
         
         // Create an icon container (for theming and indicator support)
 		this._iconContainer = new St.BoxLayout({vertical: true});
-		this._iconContainer.add_style_class_name('menyy-application-list-button-icon');
+		this._iconContainer.add_style_class_name(this._iconStyle);
 		
 	    if (this._showIcon) {
 	        this._iconContainer.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.END, y_align: St.Align.END});
         }
-	    this._iconContainer.add(this._dot, {x_fill: false, y_fill: false, x_align: St.Align.END, y_align: St.Align.END});
+        
+        // Add possibility to deactivate this function
+	    // Add possibility under button or icon only
+        if (location == 'apps') {
+        	// Set run indicator
+	        this._dot = new St.Widget({ style_class: 'app-well-app-running-dot',
+	                                    layout_manager: new Clutter.BinLayout(),
+	                                    x_expand: true, y_expand: true,
+	                                    x_align: Clutter.ActorAlign.CENTER,
+	                                    y_align: Clutter.ActorAlign.END });
+	        this._iconContainer.add(this._dot, {x_fill: false, y_fill: false, x_align: St.Align.END, y_align: St.Align.END});
+	        //this._iconContainer.add(this._dot, {expand: true ,x_fill: true, y_fill: true, x_align: St.Align.END, y_align: St.Align.END});
+	        
+	        // Check if running state
+	        this._dot.opacity = 0;
+	        this._onStateChanged();
+        }
 
 	    // Create button and add labol, icon and indicator
-        this.buttonbox = new St.BoxLayout();
         this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
         this.buttonbox.add(this.label, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
 
@@ -657,10 +701,6 @@ const AppListButton = new Lang.Class({
 			Main.overview.endItemDrag(this);
 			Shell.util_set_hidden_from_pick(Main.legacyTray.actor, false);
         }));
-        
-        // Check if running state
-        this._dot.opacity = 0;
-        this._onStateChanged();
     },
     
     _get_app_id: function() {
@@ -670,8 +710,15 @@ const AppListButton = new Lang.Class({
     
     // Activate menu item (Launch application)
     activate: function(event) {
-    	// while debugging, don't fucking open anything
-        this._app.open_new_window(-1);
+    	if (this._type == ApplicationType.APPLICATION) {
+    		this._app.open_new_window(-1);
+    	} else if (this._type == ApplicationType.PLACE) {
+	    	if (this._app.uri) {
+	            this._app.app.launch_uris([this._app.uri], null);
+	        } else {
+	            this._app.launch();
+	        }
+    	}
         this.parent(event);
         this._button._toggleMenu();
         return Clutter.EVENT_STOP;
@@ -752,7 +799,8 @@ const AppListButton = new Lang.Class({
         	this._removeMenuTimeout();
             this.activate(event);
         } else if (this._isTimeOutOpen) {
-        	return CLUTTER.EVENT_PROPAGATE;
+        	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        	return Clutter.EVENT_PROPAGATE;
         } else {
         	return GLib.SOURCE_REMOVE;
         }

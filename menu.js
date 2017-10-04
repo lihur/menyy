@@ -313,6 +313,7 @@ const ApplicationsPopupMenu = new Lang.Class({
 		this.parent(animate);
 		if (this._settings.get_enum('visible-menus') != visibleMenus.SYSTEM_ONLY) {
 			global.stage.set_key_focus(this._button.searchEntry);
+			//global.stage.set_key_focus(this._button.searchBox);
 		}
 	},
 
@@ -320,6 +321,7 @@ const ApplicationsPopupMenu = new Lang.Class({
 	// Handle closing the menu
 	close: function(animate) {
 		let size = Main.layoutManager.panelBox.height;
+		global.stage.set_key_focus(null);
 		if (this._button.appsBox) {
 			this._button._selectCategory(null);
 			this._button.resetSearch();
@@ -1487,7 +1489,7 @@ const ApplicationsMenu = new Lang.Class({
 		this.mainBox.show();
 		this.altBox.hide();
 		this.menu.toggle();
-		return Clutter.EVENT_STOP;
+		//return Clutter.EVENT_STOP;
 	},
 
 	// Panel button widget get function
@@ -2479,6 +2481,8 @@ const ApplicationsMenu = new Lang.Class({
 		if (searchString == 'force shell restart') {
 			global.log("menyy: RESTART THROUGH SEARCH")
 			global.reexec_self();
+		} else if (searchString == 'force open activities'){
+			Main.overview.toggle();
 		}
 
 		this.searchActive = searchString != '';

@@ -34,6 +34,13 @@ const Util = imports.misc.util;
 const PanelMenu = imports.ui.panelMenu;
 const GnomeSession = imports.misc.gnomeSession;
 const PopupMenu = imports.ui.popupMenu;
+const AppFavorites = imports.ui.appFavorites;
+
+const ApplicationType = {
+	    APPLICATION: 0,
+	    PLACE: 1,
+	    RECENT: 2
+	};
 
 
 
@@ -51,41 +58,201 @@ const AppItemMenu = new Lang.Class({
     Extends: AppDisplay.AppIconMenu,
 
     _init: function(source) {
+    	this.connect('activate', Lang.bind(this, this._onActivate));
         this.parent(source);
+        this._button = this._source._button;
         this._source.app = this._source._app;											// How did this fix the right click menu????????????
+        //this._source.app = this._source._realApp;
     },
 
     _addToDesktop: function() {
-        try {
-            let app = this._source._app;
+        //try {
+        	let app = this._source._app;
+        	let path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+        	let file;
+        	let destFile;
+        	let workItGirl;
+        	let shortcut = true;
+        	if (this._source._type == ApplicationType.APPLICATION) {
+        		shortcut = false;
+        		file = Gio.file_new_for_path(app.get_app_info().get_filename());
+        		destFile = Gio.file_new_for_path(path + "/" + app.get_id());
+        		global.log("menyy file: " + app.get_app_info().get_filename());
+        	} else if (this._source._type == ApplicationType.RECENT) {
+        		shortcut = false;
+        		workItGirl = this._source._get_app_id(ApplicationType.RECENT).replace('file://','');
+        		file = Gio.file_new_for_path(workItGirl);
+        		destFile = Gio.file_new_for_path(path + "/" + this._source._get_app_id(ApplicationType.RECENT).replace(/^.*[\\\/]/, ''));
+        		global.log("menyy file: " + this._source._get_app_id(ApplicationType.RECENT));
+        	} else if (this._source._type == ApplicationType.PLACE) {
+        		shortcut = true;
+        		if (this._source._app.uri) {
+        			workItGirl = this._source._get_app_id(ApplicationType.PLACE).replace('file://','');
+            		file = Gio.file_new_for_path(workItGirl);
+            		destFile = Gio.file_new_for_path(path + "/" + this._source.name);
+            		global.log("menyy file: " + this._source._get_app_id(ApplicationType.PLACE));
+        		} else if (this._source._app.file) {
+            		file = this._source._app.file.get_path();
+            		destFile = Gio.file_new_for_path(path + "/" + this._source._app.file.get_basename());
+        		}
+        	} else {
+        		global.log("menyy: how have you managed to create a situation without a filetype and gotten so far???");
+        	}
         	
-            let file = Gio.file_new_for_path(app.get_app_info().get_filename());
-            let path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-            let destFile = Gio.file_new_for_path(path + "/" + app.get_id());
-            file.copy(destFile, 0, null, function(){});
-            // Need to find a way to do that using the Gio library, but modifying the access::can-execute attribute on the file object seems unsupported
-            Util.spawnCommandLine("chmod +x \"" + path + "/" + app.get_id() + "\"");
+        	//let app = this._source._app;
+        	
+            //let file = Gio.file_new_for_path(app.get_app_info().get_filename());
+            //let path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+            //let destFile = Gio.file_new_for_path(path + "/" + app.get_id());
+        	if (shortcut) {
+        		//g_file_make_symbolic_link
+        		global.log("menyy destFile: " + destFile);
+        		//file.make_symbolic_link(destFile, null, function(){});
+        		//file.make_symbolic_link(destFile, null);
+        		destFile.make_symbolic_link(file,  null);
+        	} else {
+	            file.copy(destFile, 0, null, function(){});
+	            // Need to find a way to do that using the Gio library, but modifying the access::can-execute attribute on the file object seems unsupported
+	            Util.spawnCommandLine("chmod +x \"" + path + "/" + app.get_id() + "\"");
+        	}
             return true;
-        } catch(e) {
-            global.log(e);
-        }
+        //} catch(e) {
+        //    global.log(e);
+        //}
         return false;
         
     },
-
+    
+    _onActivate: function (actor, child) {
+        if (child._window) {
+            let metaWindow = child._window;
+            this.emit('activate-window', metaWindow);
+        } else if (child == this._newWindowMenuItem) {
+            this._source.app.open_new_window(-1);
+            this.emit('activate-window', null);
+        } else if (child == this._toggleFavoriteMenuItem) {
+            let favs = AppFavorites.getAppFavorites();
+            let isFavorite = favs.isFavorite(this._source.app.get_id());
+            if (isFavorite)
+                favs.removeFavorite(this._source.app.get_id());
+            else
+                favs.addFavorite(this._source.app.get_id());
+        }
+        this.close();
+        this._button._toggleMenu();
+    },
+    
+    
+    // Create a custom one that'll close the menu after activation?
+    /*
+    _onActivate: function (actor, child) {
+        if (child._window) {
+            let metaWindow = child._window;
+            this.emit('activate-window', metaWindow);
+        } else if (child == this._newWindowMenuItem) {
+            this._source.app.open_new_window(-1);
+            this.emit('activate-window', null);
+        } else if (child == this._toggleFavoriteMenuItem) {
+            let favs = AppFavorites.getAppFavorites();
+            let isFavorite = favs.isFavorite(this._source.app.get_id());
+            if (isFavorite)
+                favs.removeFavorite(this._source.app.get_id());
+            else
+                favs.addFavorite(this._source.app.get_id());
+        }
+        this.close();
+    },
+    */
+    
+    
+    /*
     _redisplay: function() {
-        this.parent();
-        let app = this._source._app;
-        let path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-        let file = Gio.file_new_for_path(path + "/" + app.get_id());
-        if (!file.query_exists(null)){
-        	global.log("menyy: file.query_exists " + file.query_exists(null));
-        	global.log("menyy: this " + this);
+        this.removeAll();
+
+        let windows = this._source.app.get_windows();
+
+        // Display the app windows menu items and the separator between windows
+        // of the current desktop and other windows.
+        let activeWorkspace = global.screen.get_active_workspace();
+        let separatorShown = windows.length > 0 && windows[0].get_workspace() != activeWorkspace;
+
+        for (let i = 0; i < windows.length; i++) {
+            if (!separatorShown && windows[i].get_workspace() != activeWorkspace) {
+                this._appendSeparator();
+                separatorShown = true;
+            }
+            let item = this._appendMenuItem(windows[i].title);
+            item._window = windows[i];
+        }
+
+        if (!this._source.app.is_window_backed()) {
+            if (windows.length > 0)
+                this._appendSeparator();
+
+            let isFavorite = AppFavorites.getAppFavorites().isFavorite(this._source.app.get_id());
+
+            this._newWindowMenuItem = this._appendMenuItem(_("New Window"));
             this._appendSeparator();
-            this._addToDesktopItem = this._appendMenuItem("Add to Desktop");
-            this._addToDesktopItem.connect('activate', Lang.bind(this, function() {
-                this._addToDesktop();
-            }));
+
+            this._toggleFavoriteMenuItem = this._appendMenuItem(isFavorite ? _("Remove from Favorites")
+                                                                : _("Add to Favorites"));
+        }
+    },
+    */
+    
+    _redisplay: function() {
+    	this.removeAll();
+    	// this creates the applications own menu stuff
+    	//global.log('menyy -> right click -> get windows: ' + windows);
+    	let app = this._source._app;
+    	let path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+    	let file;
+    	if (this._source._type == ApplicationType.APPLICATION) {
+    		this.parent();
+    		file = Gio.file_new_for_path(path + "/" + this._source._get_app_id(ApplicationType.APPLICATION));
+    	} else if (this._source._type == ApplicationType.RECENT) {
+    		file = Gio.file_new_for_path(path + "/" + this._source._get_app_id(ApplicationType.RECENT).replace(/^.*[\\\/]/, ''));
+    		//global.log("menyy: " + this._source._get_app_id(ApplicationType.RECENT).replace(/^.*[\\\/]/, ''));
+    	} else if (this._source._type == ApplicationType.PLACE) {
+    		file = Gio.file_new_for_path(path + "/" + this._source._app.file.get_basename());
+    	} else {
+    		global.log("menyy: how have you managed to create a situation without a filetype?");
+    	}
+    	
+    	// TODO(REPLACE HACK dealing with empty menus)
+    	if ((this._source._type == ApplicationType.APPLICATION) || (this._source._type == ApplicationType.RECENT)) {
+            if (!file.query_exists(null)){
+                this._appendSeparator();
+                this._addToDesktopItem = this._appendMenuItem("Add to Desktop");
+                this._addToDesktopItem.connect('activate', Lang.bind(this, function() {
+                    this._addToDesktop();
+                }));
+            } else if (this._source._type == ApplicationType.RECENT) {
+                this._appendSeparator();
+                this._addToDesktopItem = this._appendMenuItem("Remove from Desktop (unimplemented)");
+            }
+        } else if (this._source._type == ApplicationType.PLACE) {
+        	if (!file.query_exists(null)){
+	            this._appendSeparator();
+	            this._addToDesktopItem = this._appendMenuItem("Shortcut to Desktop");
+	            this._addToDesktopItem.connect('activate', Lang.bind(this, function() {
+	                this._addToDesktop();
+	            }));
+        	} else {
+        		if (this._source._app.file.get_basename() == '/') {
+        			this._addToDesktopItem = this._appendMenuItem("Nautilus Settings (unimplemented)");
+        		} else {
+	        		global.log("menyy: I have no memory of this place? " + this._source._app.file.get_basename());
+	        		this._addToDesktopItem = this._appendMenuItem("Remove from Desktop (unimplemented)");
+        		}
+        	}
+        } else {
+            this._appendSeparator();
+            this._addToDesktopItem = this._appendMenuItem("(unimplemented)");
+            //this._addToDesktopItem = this._appendMenuItem("Add to Desktop");
+            //this._addToDesktopItem.connect('activate', Lang.bind(this, function() {
+            //    this._addToDesktop();
+            //}));
         }
         
     }

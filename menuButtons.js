@@ -20,13 +20,28 @@ const RightClickMenus = Menyy.imports.rightClickMenu;
 const convenience = Menyy.imports.convenience;
 const settings = convenience.getSettings('org.gnome.shell.extensions.menyy');
 
-// DELETEME!
 const ApplicationType = {
 	    APPLICATION: 0,
 	    PLACE: 1,
 	    RECENT: 2
 	};
 
+
+//TODO(MOVE TO A HELPER FILE)
+/*
+_getMethods: function (obj) {
+    var res = [];
+    for(var m in obj) {
+        if(typeof obj[m] == "function") {
+            res.push(m)
+        }
+    }
+    //return res;
+    for (var i in res) {
+    	global.log("menyyproperties " + res[i]);
+    }
+},
+*/
 
 //TODO(MOVE ELSEWHERE!)
 //Sets icon asynchronously (user icon)
@@ -57,6 +72,33 @@ const BaseMenuItem = new Lang.Class({
      }
      return Clutter.EVENT_PROPAGATE;
  }
+});
+
+//Menu item to launch GNOME activities overview
+// FROM ARCMENU
+const ActivitiesMenuItem = new Lang.Class({
+    Name: 'ActivitiesMenuItem',
+    Extends: BaseMenuItem,
+
+    // Initialize the menu item
+    _init: function(button) {
+	    this.parent();
+        this._button = button;
+        this._icon = new St.Icon({ icon_name: 'view-fullscreen-symbolic',
+                                   style_class: 'popup-menu-icon',
+                                   icon_size: 16});
+        this.actor.add_child(this._icon);
+        let label = new St.Label({ text: _("Activities Overview"), y_expand: true,
+                                      y_align: Clutter.ActorAlign.CENTER });
+        this.actor.add_child(label, { expand: true });
+    },
+
+    // Activate the menu item (Open activities overview)
+    activate: function(event) {
+        this._button.menu.toggle();
+        Main.overview.toggle();
+	    this.parent(event);
+    },
 });
 
 
@@ -550,7 +592,7 @@ const CategoryGridButton = new Lang.Class({
  * ========================================================================= */
 const AppListButton = new Lang.Class({
     Name: 'Menyy.AppListButton',
-    Extends: PopupMenu.PopupBaseMenuItem,		//!!!!!!!!!!!!!!!!!!!! check if necessary
+    Extends: PopupMenu.PopupBaseMenuItem, // So this emit and stuff would work
 
     
     _init: function (app, button, appType, location) {
@@ -564,6 +606,15 @@ const AppListButton = new Lang.Class({
 		this._isDragged = false;
 		this._labelStyle = null;
 		this._iconStyle = null;
+		this._realApp = app;
+		
+		/*
+		 * 						name:   recentInfo.get_display_name(),
+						icon:   recentInfo.get_gicon(),
+						mime:   recentInfo.get_mime_type(),
+						uri:    recentInfo.get_uri()
+		 */
+		
 		
 		let style;
 		
@@ -702,13 +753,38 @@ const AppListButton = new Lang.Class({
 			Shell.util_set_hidden_from_pick(Main.legacyTray.actor, false);
         }));
     },
-    
-    _get_app_id: function() {
-        return this._app.get_id();
+    // Gets app id, place or recent file location
+    _get_app_id: function(appType) {
+    	let appId;
+    	if (appType == ApplicationType.APPLICATION) {
+    		appId = this._app.get_id();
+    	} else if (appType == ApplicationType.PLACE) {
+	    	if (this._app.uri) {
+	    		appId = this._app.uri;
+	    		//global.log("menyy -> placeAppId: " + appId);
+	        } else {
+	            //global.log("menyy -> placeAppId -> path: " + this._app.file.get_path());
+	            //global.log("menyy -> placeAppId -> basename: " + this._app.file.get_basename());
+	            appId = this._app.file.get_path();
+	        }
+    	} else if (appType == ApplicationType.RECENT) {
+    		appId = this._app.uri;
+    	} else {
+    		appId = null;
+    	}
+        return appId;
     },
+
+    //_get_id: function() {
+    //	return this._app.get_id();
+    //},
     
     
-    // Activate menu item (Launch application)
+    // Activate menu item 
+    //(Launch application)
+    //(Open File)
+    //(Open Browser Link)
+    //(Open Folder)
     activate: function(event) {
     	if (this._type == ApplicationType.APPLICATION) {
     		this._app.open_new_window(-1);
@@ -718,6 +794,8 @@ const AppListButton = new Lang.Class({
 	        } else {
 	            this._app.launch();
 	        }
+    	} else if (this._type == ApplicationType.RECENT){
+    		Gio.app_info_launch_default_for_uri(this._app.uri, global.create_app_launch_context(0, -1));
     	}
         this.parent(event);
         this._button._toggleMenu();
@@ -733,7 +811,7 @@ const AppListButton = new Lang.Class({
     //    this.parent(active, params);
     //},
     
-    _popupMenu: function() {
+    popupMenu: function() {
         this._removeMenuTimeout();
 
         if (this._draggable)
@@ -748,7 +826,10 @@ const AppListButton = new Lang.Class({
                 if (!isPoppedUp)
                     this._onMenuPoppedDown();
             }));
-            let id = Main.overview.connect('hiding', Lang.bind(this, function () { this._menu.close(); }));
+            let id = Main.overview.connect('hiding', Lang.bind(this, function () {
+            	//this._menu.close();
+            	//this._button._toggleMenu();
+            	}));
             this.actor.connect('destroy', function() {
                 Main.overview.disconnect(id);
             });
@@ -766,12 +847,11 @@ const AppListButton = new Lang.Class({
     },
     
     _onKeyboardPopupMenu: function() {
-        this._popupMenu();
+        this.popupMenu();
         this._menu.actor.navigate_focus(null, Gtk.DirectionType.TAB_FORWARD, false);
     },
     
     _onButtonPressEvent: function(actor, event) {
-    	global.log("menyy: this._isDragged "  + this._isDragged);
     	if (!this._isDragged){
 	        let button = event.get_button();
 	        if (button == 1) {
@@ -783,7 +863,7 @@ const AppListButton = new Lang.Class({
 	            }
 	        } else if (button == 3) {
 	        	// This side works
-	            if (!this._isLeftDown) this._popupMenu();
+	            if (!this._isLeftDown) this.popupMenu();
 	        }
 	        return Clutter.EVENT_PROPAGATE;
     	}
@@ -799,7 +879,6 @@ const AppListButton = new Lang.Class({
         	this._removeMenuTimeout();
             this.activate(event);
         } else if (this._isTimeOutOpen) {
-        	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         	return Clutter.EVENT_PROPAGATE;
         } else {
         	return GLib.SOURCE_REMOVE;
@@ -839,6 +918,9 @@ const AppListButton = new Lang.Class({
         
         this.actor.sync_hover();
         this.emit('menu-state-changed', false);
+        //this._button._toggleMenu();
+        //return false;
+        //return Clutter.EVENT_PROPAGATE;
         return Clutter.EVENT_STOP;
     },
 	
@@ -857,7 +939,7 @@ const AppListButton = new Lang.Class({
 		        	 this._isTimeOutOpen = true;
 		        	 this._isLeftDown = false;
 		             this._menuTimeoutId = 0;
-		             this._popupMenu();
+		             this.popupMenu();
 	        	 } else {
         	    	this.actor.remove_style_pseudo_class('pressed');
         	        this.actor.remove_style_class_name('selected');

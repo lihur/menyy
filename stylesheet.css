@@ -1,6 +1,8 @@
-.menyy-shortcut-icon {
+.menyy-general-button {
+	padding: 0px;
+	padding-left: 20px;
+	padding-right: 20px;
 }
-
 
 .menyy-apps-grid-button {
 	padding: 20px;
@@ -11,14 +13,6 @@
 
 .menyy-apps-grid-button-label {
 	padding: 0px;
-}
-
-
-
-
-.menyy-shortcut-label {
-	padding: 0px;
-	padding-left: 20px;
 }
 
 .menyy-category-button {
@@ -39,6 +33,17 @@
 	padding-top: 6px;
 	padding-bottom: 6px;
 }
+.menyy-shortcuts-button {
+	padding: 6px;
+	padding-left: 20px;
+	padding-right: 20px;
+	margin: 0px;
+	border: 0px;
+}
+
+
+
+
 
 .menyy-category-button-label {
 	padding: 0px;
@@ -58,6 +63,12 @@
 	padding-left: 20px;
 	padding-right: 20px;
 }
+.menyy-shortcuts-button-label {
+	padding: 0px;
+	padding-left: 20px;
+	padding-right: 20px;
+}
+
 
 
 /*

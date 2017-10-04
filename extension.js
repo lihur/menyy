@@ -20,13 +20,14 @@ var settings = null;
 var button = null;
 var menu_actor = null;
 var timer_id = null;
-
+var activitiesButton = null;
 
 
 
 let menyy;
 let appsMenuButton;
 let settingsController;
+let oldGetAppFromSource;
 
 //Enable the extension
 function enable() {
@@ -45,7 +46,7 @@ function enable() {
 function disable() {
     settingsController.disableButton();
     settingsController.destroy();
-    appsMenuButton.destroy();
+    menyy.destroy();
     settings.run_dispose();
 
     settingsController =  null;

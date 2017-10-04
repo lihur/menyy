@@ -27,7 +27,7 @@ const ApplicationType = {
 	};
 
 
-//MOVE ELSEWHERE!
+//TODO(MOVE ELSEWHERE!)
 //Sets icon asynchronously (user icon)
 function setIconAsync(icon, gioFile, fallback_icon_name) {
 	  gioFile.load_contents_async(null, function(source, result) {
@@ -42,16 +42,13 @@ function setIconAsync(icon, gioFile, fallback_icon_name) {
 	}
 
 
-
-
-
 const BaseMenuItem = new Lang.Class({
  Name: 'BaseMenuItem',
  Extends: PopupMenu.PopupBaseMenuItem,
 
  _onKeyPressEvent: function (actor, event) {
      let symbol = event.get_key_symbol();
-     global.log("menyy: basemenuitem keypress")
+     //global.log("menyy: basemenuitem keypress")
 
      if (symbol == Clutter.KEY_Return) {
          this.activate(event);
@@ -163,7 +160,7 @@ const UserMenuItem = new Lang.Class({
 
     // Destroy the menu item
     _onDestroy: function() {
-    	global.log('menyy: destroy')
+    	//global.log('menyy: destroy')
         if (this._userLoadedId != 0) {
             this._user.disconnect(this._userLoadedId);
             this._userLoadedId = 0;
@@ -176,25 +173,25 @@ const UserMenuItem = new Lang.Class({
     },
     
     select: function() {
-    	global.log('menyy: Select')
+    	//global.log('menyy: Select')
         this._ignoreHoverSelect = true;
         this.buttonEnterCallback.call();
     },
 
     unSelect: function() {
-    	global.log('menyy: unselect')
+    	//global.log('menyy: unselect')
         this._ignoreHoverSelect = false;
         this.buttonLeaveCallback.call();
     },
 
     click: function() {
-    	global.log('menyy: click')
+    	//global.log('menyy: click')
         this.buttonPressCallback.call();
         this.buttonReleaseCallback.call();
     },
     
     _onTouchEvent : function (actor, event) {
-    	global.log('menyy: touch')
+    	//global.log('menyy: touch')
         return Clutter.EVENT_PROPAGATE;
     }
     
@@ -549,6 +546,9 @@ const AppListButton = new Lang.Class({
 		this._app = app;
 		this._type = appType;
 		this._stateChangedId = 0;
+		this._isLeftDown = false;
+		this._isTimeOutOpen = false;
+		this._isDragged = false;
 		this._iconSize = (settings.get_int('apps-icon-size') > 0) ? settings.get_int('apps-icon-size') : 28;
 		this._showIcon = (settings.get_int('apps-icon-size') > 0) ? true : false;
 		
@@ -629,62 +629,38 @@ const AppListButton = new Lang.Class({
         
         
         // Connect drag-n-drop signals
-        //this._draggable = DND.makeDraggable(this.actor);
-        //this._draggable.connect('drag-begin', Lang.bind(this,
-        //    function () {
-        //        //this._removeMenuTimeout();
-        //        Main.overview.beginItemDrag(this);
-        //        if (menyy.appsMenuButton) {
-        //            if (menyy.appsMenuButton._categoryWorkspaceMode == CategoryWorkspaceMode.CATEGORY)
-        //                menyy.appsMenuButton.toggleCategoryWorkspaceMode();
-        //        }
-        //    }));
-        //this._draggable.connect('drag-cancelled', Lang.bind(this,
-        //    function () {
-        //        Main.overview.cancelledItemDrag(this);
-        //    }));
-        //this._draggable.connect('drag-end', Lang.bind(this,
-        //    function () {
-        //       Main.overview.endItemDrag(this);
-        //    }));
-        //
+        this._draggable = DND.makeDraggable(this.actor);
+        
+        this._draggable.connect('drag-begin', Lang.bind(this, function () {
+        	this._isDragged = true;
+        	global.log("menyy: drag begin: this._isDragged " + this._isDragged);
+        	Main.overview.beginItemDrag(this);
+        	
+        	//if (this._button) {
+            //    if (this._button._categoryWorkspaceMode == CategoryWorkspaceMode.CATEGORY)
+            //        this._button.toggleCategoryWorkspaceMode();
+            //}
+        	
+        	
+            Shell.util_set_hidden_from_pick(Main.legacyTray.actor, true);
+        }));
+        this._draggable.connect('drag-cancelled', Lang.bind(this, function () {
+        	this._isDragged = false;
+        	this.actor.remove_style_pseudo_class('pressed');
+	        this.actor.remove_style_class_name('selected');
+        	Main.overview.cancelledItemDrag(this);
+    	}));
+        this._draggable.connect('drag-end', Lang.bind(this, function () {
+        	this._isDragged = false;
+        	this.actor.remove_style_pseudo_class('pressed');
+	        this.actor.remove_style_class_name('selected');
+			Main.overview.endItemDrag(this);
+			Shell.util_set_hidden_from_pick(Main.legacyTray.actor, false);
+        }));
         
         // Check if running state
         this._dot.opacity = 0;
         this._onStateChanged();
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        //this._draggable = DND.makeDraggable(this.actor);
-        //this.isDraggableApp = true;
-        //this._draggable.connect('drag-begin', Lang.bind(this,
-        //    function () {
-        //        this._removeMenuTimeout();
-        //        Main.overview.beginItemDrag(this);
-        //    }));
-        //this._draggable.connect('drag-cancelled', Lang.bind(this,
-        //    function () {
-        //        Main.overview.cancelledItemDrag(this);
-        //    }));
-        //this._draggable.connect('drag-end', Lang.bind(this,
-        //    function () {
-        //        Main.overview.endItemDrag(this);
-        //    }));
-        //
-        
-        
     },
     
     _get_app_id: function() {
@@ -694,27 +670,28 @@ const AppListButton = new Lang.Class({
     
     // Activate menu item (Launch application)
     activate: function(event) {
+    	// while debugging, don't fucking open anything
         this._app.open_new_window(-1);
-        this._button.menu.toggle();
         this.parent(event);
+        this._button._toggleMenu();
         return Clutter.EVENT_STOP;
     },
     
     
     // Set button as active, scroll to the button
-    setActive: function(active, params) {
-        if (active && !this.actor.hover)
-            this._button._scrollToButton(this);
-
-        this.parent(active, params);
-    },
+    //setActive: function(active, params) {
+    //    if (active && !this.actor.hover)
+    //        this._button._scrollToButton(this);
+    //
+    //    this.parent(active, params);
+    //},
     
     _popupMenu: function() {
         this._removeMenuTimeout();
 
         if (this._draggable)
             this._draggable.fakeRelease();
-
+        
         if (!this._menu) {
             this._menu = new RightClickMenus.AppItemMenu(this);
             this._menu.connect('activate-window', Lang.bind(this, function (menu, window) {
@@ -736,8 +713,8 @@ const AppListButton = new Lang.Class({
 
         this.actor.set_hover(true);
         this._menu.popup();
-        this._menuManager.ignoreRelease();
-
+        // Don't close the menu if right button is released and don't require double click if held down left button is released
+        if (!this._isTimeOutOpen) (this._menuManager.ignoreRelease());        
         return false;
     },
     
@@ -747,37 +724,38 @@ const AppListButton = new Lang.Class({
     },
     
     _onButtonPressEvent: function(actor, event) {
-        //this.actor.add_style_pseudo_class ('active');
-        actor.add_style_pseudo_class('pressed');
-        let button = event.get_button();
-        if (button == 1) {
-            this._setPopupTimeout();
-            return Clutter.EVENT_STOP; // Otherwise the last thing will always open
-        } else if (button == 3) {
-            this._popupMenu();
-            return Clutter.EVENT_STOP;
-        }
-        return Clutter.EVENT_PROPAGATE;
+    	global.log("menyy: this._isDragged "  + this._isDragged);
+    	if (!this._isDragged){
+	        let button = event.get_button();
+	        if (button == 1) {
+	        	this._isLeftDown = true;
+	            if (!this._isTimeOutOpen) {
+	            	this._setPopupTimeout();
+	            } else {
+	            	this._isTimeOutOpen = false;
+	            }
+	        } else if (button == 3) {
+	        	// This side works
+	            if (!this._isLeftDown) this._popupMenu();
+	        }
+	        return Clutter.EVENT_PROPAGATE;
+    	}
     },
 
     _onButtonReleaseEvent: function (actor, event) {
-        this._removeMenuTimeout();
-        global.log("menyy release");
-        //this.actor.remove_style_pseudo_class ('active');
-        /*
-        // this.selectedAppTitle.set_text("");
-        // this.selectedAppDescription.set_text("");
-        appListButton._app.open_new_window(-1);
-        // võib-olla this._button.menu.toggle();
-        this.menu.close();
-        */
         actor.remove_style_pseudo_class('pressed');
         actor.remove_style_class_name('selected');
         let button = event.get_button();
-        if (button != 3) {
+        if (button == 1) this._isLeftDown = false;
+        if (button == 1 && (!this._isTimeOutOpen)) {
+        	// This side works!
+        	this._removeMenuTimeout();
             this.activate(event);
+        } else if (this._isTimeOutOpen) {
+        	return CLUTTER.EVENT_PROPAGATE;
+        } else {
+        	return GLib.SOURCE_REMOVE;
         }
-        return Clutter.EVENT_STOP;
     },
 
     _onTouchEvent: function (actor, event) {
@@ -789,16 +767,10 @@ const AppListButton = new Lang.Class({
     
     _onEnterEvent: function(actor, event) {
     	actor.add_style_class_name('selected');
-		// this.selectedAppTitle.set_text(appListButton._app.get_name());
-		// if (appListButton._app.get_description())
-		// this.selectedAppDescription.set_text(appListButton._app.get_description());
-		// else this.selectedAppDescription.set_text("");
     },
     
     _onLeaveEvent: function(actor, event) {
-    	actor.remove_style_class_name('selected');
-        // this.selectedAppTitle.set_text("");
-        // this.selectedAppDescription.set_text("");    	
+    	actor.remove_style_class_name('selected');	
         this._removeMenuTimeout();
     },
 
@@ -813,11 +785,13 @@ const AppListButton = new Lang.Class({
     },
     
     _onMenuPoppedDown: function() {
+    	this._isTimeOutOpen = false;
     	this.actor.remove_style_pseudo_class('pressed');
         this.actor.remove_style_class_name('selected');
         
         this.actor.sync_hover();
         this.emit('menu-state-changed', false);
+        return Clutter.EVENT_STOP;
     },
 	
 	 _removeMenuTimeout: function() {
@@ -831,16 +805,22 @@ const AppListButton = new Lang.Class({
 	     this._removeMenuTimeout();
 	     this._menuTimeoutId = Mainloop.timeout_add(AppDisplay.MENU_POPUP_TIMEOUT,
 	         Lang.bind(this, function() {
-	             this._menuTimeoutId = 0;
-	             this._popupMenu();
-	             
-	             
-	             //return GLib.SOURCE_REMOVE;
+	        	 if (!this._isDragged){
+		        	 this._isTimeOutOpen = true;
+		        	 this._isLeftDown = false;
+		             this._menuTimeoutId = 0;
+		             this._popupMenu();
+	        	 } else {
+        	    	this.actor.remove_style_pseudo_class('pressed');
+        	        this.actor.remove_style_class_name('selected');
+	        		 return false;
+	        	 }
 	         }));
 	     GLib.Source.set_name_by_id(this._menuTimeoutId, '[gnome-shell] this.popupMenu');
+	     global.log("menyy: setpopuptimeout ending")
+	     return false;
 	 },
-
-    
+	 
     getDragActor: function() {
         let appIcon;
         if (this._type == ApplicationType.APPLICATION) {
@@ -853,6 +833,7 @@ const AppListButton = new Lang.Class({
         }
         return appIcon;
     },
+
 
     // Returns the original actor that should align with the actor
     // we show as the item is being dragged.
@@ -891,191 +872,6 @@ const AppListButton = new Lang.Class({
 	    this._removeMenuTimeout();
 	}
 });
-
-
-/*
-//Menu application item class
-const AppListButton = new Lang.Class({
-    Name: 'ApplicationMenuItem',
-    Extends: PopupMenu.PopupBaseMenuItem,
-
-    // Initialize menu item
-    _init: function(button, app, apptype) {
-	    this.parent();
-        this.app = app;
-        this._button = button;
-        this._iconBin = new St.Bin();
-        this.actor.add_child(this._iconBin);
-        this.appName = "fixme"; //app.get_name() || "ERROR!";
-
-        let appLabel = new St.Label({ text: this.appName, y_expand: true,
-                                      y_align: Clutter.ActorAlign.CENTER });
-        this.actor.add_child(appLabel, { expand: true });
-        this.actor.label_actor = appLabel;
-
-        let textureCache = St.TextureCache.get_default();
-        let iconThemeChangedId = textureCache.connect('icon-theme-changed',
-                                                      Lang.bind(this, this._updateIcon));
-        this.actor.connect('destroy', Lang.bind(this,
-            function() {
-                textureCache.disconnect(iconThemeChangedId);
-            }));
-        this.actor.connect('popup-menu', Lang.bind(this, this._onKeyboardPopupMenu));
-        this._updateIcon();
-        this._menu = null;
-        this._menuManager = new PopupMenu.PopupMenuManager(this);
-        this._menuTimeoutId = 0;
-
-        this._draggable = DND.makeDraggable(this.actor);
-        this.isDraggableApp = true;
-        this._draggable.connect('drag-begin', Lang.bind(this,
-            function () {
-                this._removeMenuTimeout();
-                Main.overview.beginItemDrag(this);
-            }));
-        this._draggable.connect('drag-cancelled', Lang.bind(this,
-            function () {
-                Main.overview.cancelledItemDrag(this);
-            }));
-        this._draggable.connect('drag-end', Lang.bind(this,
-            function () {
-                Main.overview.endItemDrag(this);
-            }));
-    },
-
-    get_app_id: function() {
-        return this.app.get_id();
-    },
-
-    getDragActor: function() {
-       //return this.app.create_icon_texture(32);
-    },
-
-    // Returns the original actor that should align with the actor
-    // we show as the item is being dragged.
-    getDragActorSource: function() {
-        return this.actor;
-    },
-
-    // Activate menu item (Launch application)
-    activate: function(event) {
-        this.app.open_new_window(-1);
-        this._button.menu.toggle();
-        this.parent(event);
-    },
-
-    // Set button as active, scroll to the button
-    setActive: function(active, params) {
-        if (active && !this.actor.hover)
-            this._button.scrollToButton(this);
-
-        this.parent(active, params);
-    },
-
-    // Update the app icon in the menu
-    _updateIcon: function() {
-        //this._iconBin.set_child(this.app.create_icon_texture(32));
-    },
-
-    _removeMenuTimeout: function() {
-        if (this._menuTimeoutId > 0) {
-            Mainloop.source_remove(this._menuTimeoutId);
-            this._menuTimeoutId = 0;
-        }
-    },
-
-    _setPopupTimeout: function() {
-        this._removeMenuTimeout();
-        this._menuTimeoutId = Mainloop.timeout_add(AppDisplay.MENU_POPUP_TIMEOUT,
-            Lang.bind(this, function() {
-                this._menuTimeoutId = 0;
-                this.popupMenu();
-                return GLib.SOURCE_REMOVE;
-            }));
-        GLib.Source.set_name_by_id(this._menuTimeoutId, '[gnome-shell] this.popupMenu');
-    },
-
-    _onLeaveEvent: function(actor, event) {
-        this._removeMenuTimeout();
-    },
-
-    popupMenu: function() {
-        this._removeMenuTimeout();
-
-        if (this._draggable)
-            this._draggable.fakeRelease();
-
-        if (!this._menu) {
-            this._menu = new SecondaryMenu.AppItemMenu(this);;
-            this._menu.connect('activate-window', Lang.bind(this, function (menu, window) {
-                this.activateWindow(window);
-            }));
-            this._menu.connect('open-state-changed', Lang.bind(this, function (menu, isPoppedUp) {
-                if (!isPoppedUp)
-                    this._onMenuPoppedDown();
-            }));
-            let id = Main.overview.connect('hiding', Lang.bind(this, function () { this._menu.close(); }));
-            this.actor.connect('destroy', function() {
-                Main.overview.disconnect(id);
-            });
-
-            this._menuManager.addMenu(this._menu);
-        }
-
-        this.emit('menu-state-changed', true);
-
-        this.actor.set_hover(true);
-        this._menu.popup();
-        this._menuManager.ignoreRelease();
-
-        return false;
-    },
-
-    _onMenuPoppedDown: function() {
-        this.actor.sync_hover();
-        this.emit('menu-state-changed', false);
-    },
-
-    _onKeyboardPopupMenu: function() {
-        this.popupMenu();
-        this._menu.actor.navigate_focus(null, Gtk.DirectionType.TAB_FORWARD, false);
-    },
-
-    _onButtonPressEvent: function(actor, event) {
-        this.actor.add_style_pseudo_class ('active');
-        let button = event.get_button();
-        if (button == 1) {
-            this._setPopupTimeout();
-        } else if (button == 3) {
-            this.popupMenu();
-            return Clutter.EVENT_STOP;
-        }
-        return Clutter.EVENT_PROPAGATE;
-    },
-
-    _onButtonReleaseEvent: function (actor, event) {
-        this._removeMenuTimeout();
-        this.actor.remove_style_pseudo_class ('active');
-        let button = event.get_button();
-        if (button != 3) {
-            this.activate(event);
-        }
-        return Clutter.EVENT_STOP;
-    },
-
-    _onTouchEvent: function (actor, event) {
-        if (event.type() == Clutter.EventType.TOUCH_BEGIN)
-            this._setPopupTimeout();
-
-        return Clutter.EVENT_PROPAGATE;
-    },
-
-    _onDestroy: function() {
-        this.parent();
-        this._removeMenuTimeout();
-    }
-});
-*/
 
 /* =========================================================================
 /* name:    AppGridButton
@@ -1273,20 +1069,20 @@ const ShortcutButton = new Lang.Class({
         // appType 0 = application, appType 1 = place, appType 2 = recent
         if (appType == ApplicationType.APPLICATION) {
             this.icon = app.create_icon_texture(this._iconSize);
-            this.label = new St.Label({ text: app.get_name(), style_class: 'menyy-application-grid-button-label' });
+            this.label = new St.Label({ text: app.get_name(), style_class: 'menyy-shortcuts-button-label' });
         } else if (appType == ApplicationType.PLACE) {
             // Adjust 'places' symbolic icons by reducing their size
             // and setting a special class for button padding
             this._iconSize -= 4;
-            this.actor.add_style_class_name('menyy-shortcut-symbolic-button');
-            this.icon = new St.Icon({gicon: app.icon, icon_size: this._iconSize, style_class: 'menyy-shortcut-icon'});
+            this.actor.add_style_class_name('menyy-shortcuts-button');
+            this.icon = new St.Icon({gicon: app.icon, icon_size: this._iconSize, style_class: 'menyy-shortcuts-icon'});
             if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
-            this.label = new St.Label({ text: app.name, style_class: 'menyy-shortcut-label' });
+            this.label = new St.Label({ text: app.name, style_class: 'menyy-shortcuts-button-label' });
         } else if (appType == ApplicationType.RECENT) {
             let gicon = Gio.content_type_get_icon(app.mime);
-            this.icon = new St.Icon({gicon: gicon, icon_size: this._iconSize, style_class: 'menyy-shortcut-icon'});
+            this.icon = new St.Icon({gicon: gicon, icon_size: this._iconSize, style_class: 'menyy-shortcuts-icon'});
             if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
-            this.label = new St.Label({ text: app.name, style_class: 'menyy-shortcut-label' });
+            this.label = new St.Label({ text: app.name, style_class: 'menyy-shortcuts-button-label' });
         }
         //this.label = new St.Label({ text: app.get_name(), style_class: 'menyy-shortcut-button-label' });
 

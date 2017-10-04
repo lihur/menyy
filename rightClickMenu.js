@@ -36,6 +36,14 @@ const GnomeSession = imports.misc.gnomeSession;
 const PopupMenu = imports.ui.popupMenu;
 const AppFavorites = imports.ui.appFavorites;
 
+
+
+// To create the right apps?
+const Shell = imports.gi.Shell;
+const _appSystem = Shell.AppSystem.get_default();
+
+
+
 const ApplicationType = {
 	    APPLICATION: 0,
 	    PLACE: 1,
@@ -58,16 +66,16 @@ const AppItemMenu = new Lang.Class({
     Extends: AppDisplay.AppIconMenu,
 
     _init: function(source) {
+    	this.source = source;
     	this.connect('activate', Lang.bind(this, this._onActivate));
         this.parent(source);
         this._button = this._source._button;
-        this._source.app = this._source._app;											// How did this fix the right click menu????????????
-        //this._source.app = this._source._realApp;
+        this._source.app = this.source.app;
     },
 
     _addToDesktop: function() {
         //try {
-        	let app = this._source._app;
+        	let app = this._source.app;
         	let path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
         	let file;
         	let destFile;
@@ -86,20 +94,20 @@ const AppItemMenu = new Lang.Class({
         		global.log("menyy file: " + this._source._get_app_id(ApplicationType.RECENT));
         	} else if (this._source._type == ApplicationType.PLACE) {
         		shortcut = true;
-        		if (this._source._app.uri) {
+        		if (this._source.app.uri) {
         			workItGirl = this._source._get_app_id(ApplicationType.PLACE).replace('file://','');
             		file = Gio.file_new_for_path(workItGirl);
             		destFile = Gio.file_new_for_path(path + "/" + this._source.name);
             		global.log("menyy file: " + this._source._get_app_id(ApplicationType.PLACE));
-        		} else if (this._source._app.file) {
-            		file = this._source._app.file.get_path();
-            		destFile = Gio.file_new_for_path(path + "/" + this._source._app.file.get_basename());
+        		} else if (this._source.app.file) {
+            		file = this._source.app.file.get_path();
+            		destFile = Gio.file_new_for_path(path + "/" + this._source.app.file.get_basename());
         		}
         	} else {
         		global.log("menyy: how have you managed to create a situation without a filetype and gotten so far???");
         	}
         	
-        	//let app = this._source._app;
+        	//let app = this._source.app;
         	
             //let file = Gio.file_new_for_path(app.get_app_info().get_filename());
             //let path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
@@ -142,34 +150,14 @@ const AppItemMenu = new Lang.Class({
         this._button._toggleMenu();
     },
     
-    
-    // Create a custom one that'll close the menu after activation?
-    /*
-    _onActivate: function (actor, child) {
-        if (child._window) {
-            let metaWindow = child._window;
-            this.emit('activate-window', metaWindow);
-        } else if (child == this._newWindowMenuItem) {
-            this._source.app.open_new_window(-1);
-            this.emit('activate-window', null);
-        } else if (child == this._toggleFavoriteMenuItem) {
-            let favs = AppFavorites.getAppFavorites();
-            let isFavorite = favs.isFavorite(this._source.app.get_id());
-            if (isFavorite)
-                favs.removeFavorite(this._source.app.get_id());
-            else
-                favs.addFavorite(this._source.app.get_id());
-        }
-        this.close();
+    _activateApp: function() {
+    	this._source.activate();
     },
-    */
     
-    
-    /*
-    _redisplay: function() {
-        this.removeAll();
-
-        let windows = this._source.app.get_windows();
+    _createDefaultMenu: function() {
+    	let app = _createApp('chromium');
+    	global.log("menyyapp" + app);
+    	let windows =  app.get_windows();
 
         // Display the app windows menu items and the separator between windows
         // of the current desktop and other windows.
@@ -185,11 +173,11 @@ const AppItemMenu = new Lang.Class({
             item._window = windows[i];
         }
 
-        if (!this._source.app.is_window_backed()) {
+        if (!app.is_window_backed()) {
             if (windows.length > 0)
                 this._appendSeparator();
 
-            let isFavorite = AppFavorites.getAppFavorites().isFavorite(this._source.app.get_id());
+            let isFavorite = AppFavorites.getAppFavorites().isFavorite(app.get_id());
 
             this._newWindowMenuItem = this._appendMenuItem(_("New Window"));
             this._appendSeparator();
@@ -198,23 +186,46 @@ const AppItemMenu = new Lang.Class({
                                                                 : _("Add to Favorites"));
         }
     },
-    */
     
     _redisplay: function() {
     	this.removeAll();
-    	// this creates the applications own menu stuff
-    	//global.log('menyy -> right click -> get windows: ' + windows);
-    	let app = this._source._app;
-    	let path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-    	let file;
-    	if (this._source._type == ApplicationType.APPLICATION) {
-    		this.parent();
-    		file = Gio.file_new_for_path(path + "/" + this._source._get_app_id(ApplicationType.APPLICATION));
+    	
+    	//Add an open button to all apps!
+    	this._activateAppItem = this._appendMenuItem("Open");
+        this._activateAppItem.connect('activate', Lang.bind(this, function() {
+            this._activateApp();
+        }));
+    	
+    	
+    	
+    	//TODO(Add an open with button to all apps!)
+    	
+        
+        
+        let app;
+        let path;
+        let file;
+    	
+        if (this._source._type == ApplicationType.APPLICATION) {
+        	app = this._source.app;
+        	path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+        	file = Gio.file_new_for_path(path + "/" + this._source._get_app_id(ApplicationType.APPLICATION));
+        	this.parent();
     	} else if (this._source._type == ApplicationType.RECENT) {
+        	app = this._source.app;
+			path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
     		file = Gio.file_new_for_path(path + "/" + this._source._get_app_id(ApplicationType.RECENT).replace(/^.*[\\\/]/, ''));
-    		//global.log("menyy: " + this._source._get_app_id(ApplicationType.RECENT).replace(/^.*[\\\/]/, ''));
+    		
+    		//this._createDefaultMenu();   		
     	} else if (this._source._type == ApplicationType.PLACE) {
-    		file = Gio.file_new_for_path(path + "/" + this._source._app.file.get_basename());
+    		app = this.source.app;
+			path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+			
+			
+			// A hack until I Web Bookmarks as a different type
+    		if (!this.source.app.app) {
+    			file = Gio.file_new_for_path(path + "/" + this.source.app.file.get_basename());
+    		}
     	} else {
     		global.log("menyy: how have you managed to create a situation without a filetype?");
     	}
@@ -227,33 +238,18 @@ const AppItemMenu = new Lang.Class({
                 this._addToDesktopItem.connect('activate', Lang.bind(this, function() {
                     this._addToDesktop();
                 }));
-            } else if (this._source._type == ApplicationType.RECENT) {
+            } /*else if (this._source._type == ApplicationType.RECENT) {
                 this._appendSeparator();
                 this._addToDesktopItem = this._appendMenuItem("Remove from Desktop (unimplemented)");
-            }
-        } else if (this._source._type == ApplicationType.PLACE) {
-        	if (!file.query_exists(null)){
+            }*/
+        } else if ((this._source._type == ApplicationType.PLACE) && !(this.source.app.app)) {
+        	if (!file.query_exists(null)) {
 	            this._appendSeparator();
 	            this._addToDesktopItem = this._appendMenuItem("Shortcut to Desktop");
 	            this._addToDesktopItem.connect('activate', Lang.bind(this, function() {
 	                this._addToDesktop();
 	            }));
-        	} else {
-        		if (this._source._app.file.get_basename() == '/') {
-        			this._addToDesktopItem = this._appendMenuItem("Nautilus Settings (unimplemented)");
-        		} else {
-	        		global.log("menyy: I have no memory of this place? " + this._source._app.file.get_basename());
-	        		this._addToDesktopItem = this._appendMenuItem("Remove from Desktop (unimplemented)");
-        		}
         	}
-        } else {
-            this._appendSeparator();
-            this._addToDesktopItem = this._appendMenuItem("(unimplemented)");
-            //this._addToDesktopItem = this._appendMenuItem("Add to Desktop");
-            //this._addToDesktopItem.connect('activate', Lang.bind(this, function() {
-            //    this._addToDesktop();
-            //}));
         }
-        
     }
 });

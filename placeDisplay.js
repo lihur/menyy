@@ -21,9 +21,14 @@ const Params = imports.misc.params;
 const Search = imports.ui.search;
 const Util = imports.misc.util;
 
-const Gettext = imports.gettext.domain('gnomenu');
+const Gettext = imports.gettext.domain('menyy');
 const _ = Gettext.gettext;
 const N_ = function(x) { return x; }
+
+const _appSystem = Shell.AppSystem.get_default();
+const _foundApps = _appSystem.lookup_desktop_wmclass('nautilus');
+
+
 
 let UseSymbolicIcons = false;
 
@@ -31,6 +36,7 @@ const PlaceInfo = new Lang.Class({
 	Name: 'PlaceInfo',
 
 	_init: function(kind, file, name, icon) {
+		//this.app = app || _foundApps;
 		this.kind = kind;
 		this.file = file;
 		// this.name = name || this._getFileName();

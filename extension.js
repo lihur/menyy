@@ -61,7 +61,7 @@ function getAppFromSource(source) {
     if (source instanceof AppDisplay.AppIcon) {
         return source.app;
     } else if (source instanceof Menu.ApplicationMenuItem) {
-        return source._app;
+        return source.app;
     } else {
         return null;
     }

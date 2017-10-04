@@ -26,6 +26,7 @@ const Menyy = imports.misc.extensionUtils.getCurrentExtension();
 const systemButtons = Menyy.imports.systemButtons;
 const menuButtons = Menyy.imports.menuButtons;
 const placeDisplay = Menyy.imports.placeDisplay;
+const commandLineDisplay = Menyy.imports.commandLineDisplay;
 const convenience = Menyy.imports.convenience;
 const MenuButtonWidget = Menyy.imports.menuWidget.MenuButtonWidget;
 
@@ -55,12 +56,6 @@ const ShortcutButton = menuButtons.ShortcutButton;
 const UserMenuItem = menuButtons.UserMenuItem;
 const BackMenuItem = menuButtons.BackMenuItem;
 
-//Old ones
-//const BaseMenuItem = menuButtons.BaseMenuItem;
-
-
-
-
 //LOOK settings
 var LocationHorizontal = 0; 
 var LocationVertical = 0;
@@ -68,11 +63,15 @@ var SearchLocation = 0;
 var CategoryLocation = 0;
 var defaultCategory = 1;
 var searchFixed = false;
-//DELETEME!
+
+
+// ADD ALL OF THIS UNDER THE CONSTANTS FILE AND IMPORT FROM THERE
+// RENAME RECENT WITH FILE OR CREATE FILES/FOLDERS SEPARATELY?
 const ApplicationType = {
 		APPLICATION: 0,
 		PLACE: 1,
-		RECENT: 2
+		RECENT: 2,
+		TERMINAL:3
 };
 const visibleMenus = {
 		ALL: 0,
@@ -166,7 +165,7 @@ const DesktopTarget = new Lang.Class({
 			return null;
 		//if (!(source instanceof ApplicationMenuItem))
 		//	return null;
-		return source._app.app_info;
+		return source.app.app_info;
 	},
 
 	_touchFile: function(file) {
@@ -348,6 +347,7 @@ const ApplicationsMenu = new Lang.Class({
 		this.searchActive = false;																		//
 		this.currentCategory = null;																	// Current Category (for reloading changes)
 		this.placesManager = null;																		// Places Manager
+		this.commandLineManager = null;																	// Terminal Commands Manager
 		this.searchEntryText = null;																	// Search text that will get entered by user
 		this._searchIconClickedId = 0;																	// 
 		this._searchTimeoutId = 0;																		// Used to make search wait for new input
@@ -392,7 +392,7 @@ const ApplicationsMenu = new Lang.Class({
 			this.menu.close();
 		});
 		this._desktopTarget.connect('desktop-changed', () => {
-			this._applicationsButtons.forEach(item => {
+			this._appsButtons.forEach(item => {
 				item.setDragEnabled(this._desktopTarget.hasDesktop);
 			});
 		});
@@ -419,8 +419,7 @@ const ApplicationsMenu = new Lang.Class({
 		this._loadFavorites();																			// Load Favorites into memory
 		this._loadFrequent();																			// Load Frequent into memory
 		this._loadAllAppsList();																		// Load All apps list into memory
-		this._loadHome();																				// Load homescreen applications into memory
-		
+		this._loadHome();																				// Load homescreen applications into memory		
 		/*
 		Main.panel.actor.connect('notify::height', Lang.bind(this,
 				function() {
@@ -554,11 +553,10 @@ const ApplicationsMenu = new Lang.Class({
 
 
 		// System Controls
-		/*
-		 * this.systemBoxContainer = new St.BoxLayout({ vertical: true,
-		 * style_class: 'menyy-system-box-container', y_align: St.Align.END });
-		 */
-		this.systemBox = new PopupMenu.PopupBaseMenuItem({ reactive: false,
+		
+		this.systemBox = new St.BoxLayout({ vertical: false, style_class: 'menyy-system-box', y_align: St.Align.END });
+		
+		this.systemBoxMenu = new PopupMenu.PopupBaseMenuItem({ reactive: false,
 			can_focus: false, style_class: 'menyy-system-box menyy-spacing'});
 
 
@@ -570,9 +568,10 @@ const ApplicationsMenu = new Lang.Class({
 
 
 		// Categories, main display, places and homescreen
-		if (this._categoriesViewMode != CategoriesViewMode.COMBINED) {
+		// Always create the box... it's not like it's gonna slow it down or chug memory
+		//if (this._categoriesViewMode != CategoriesViewMode.COMBINED) {
 			this.categoryBox = new St.BoxLayout({ vertical: true, style_class: 'menyy-categories-box-inside menyy-spacing' });
-		}
+		//}
 		if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
 			// Apps Box
 			this.appsBox = new St.BoxLayout({vertical: true, style_class: 'menyy-applications-box menyy-spacing' });
@@ -674,7 +673,7 @@ const ApplicationsMenu = new Lang.Class({
 		if (LocationHorizontal == 0) {
 			this.bottomBox.add(this.searchBox, {expand: true, x_fill: true, y_fill: false,
 				y_align: St.Align.MIDDLE });
-			this.bottomBox.add(this.systemBox.actor, { expand: false,
+			this.bottomBox.add(this.systemBox, { expand: false,
 				x_fill: true, y_fill: false,
 				y_align: St.Align.END });
 			this.topBox.add(this.leftBox);
@@ -682,7 +681,7 @@ const ApplicationsMenu = new Lang.Class({
 		} else {
 			this.topBox.add(this.searchBox, {expand: true, x_fill: true, y_fill: true,
 				y_align: St.Align.START });
-			this.topBox.add(this.systemBox.actor, { expand: false,
+			this.topBox.add(this.systemBox, { expand: false,
 				x_fill: true, y_fill: false,
 				y_align: St.Align.MIDDLE });
 			this.bottomBox.add(this.leftBox);
@@ -727,29 +726,29 @@ const ApplicationsMenu = new Lang.Class({
 		// Add system buttons to menu
 		/*
 		 * let shellrestart = new ShellButton(this);
-		 * this.systemBox.actor.add(shellrestart.actor, { expand: false, x_fill:
+		 * this.systemBox.add(shellrestart.actor, { expand: false, x_fill:
 		 * false, y_align: St.Align.START });
 		 */
 
 		let logout = new LogoutButton(this);
-		this.systemBox.actor.add(logout.actor, { expand: false,
+		this.systemBox.add(logout.actor, { expand: false,
 			x_fill: false,
 			y_align: St.Align.START
 		});
 
 		/*
-		 * let lock = new LockButton(this); this.systemBox.actor.add(lock.actor, {
+		 * let lock = new LockButton(this); this.systemBox.add(lock.actor, {
 		 * expand: false, x_fill: false, y_align: St.Align.START });
 		 */
 
 		let suspend = new SuspendButton(this);
-		this.systemBox.actor.add(suspend.actor, { expand: false,
+		this.systemBox.add(suspend.actor, { expand: false,
 			x_fill: false,
 			y_align: St.Align.START
 		});
 
 		let power = new PowerButton(this);
-		this.systemBox.actor.add(power.actor, { expand: false,
+		this.systemBox.add(power.actor, { expand: false,
 			x_fill: false,
 			y_align: St.Align.START
 		});
@@ -973,8 +972,8 @@ const ApplicationsMenu = new Lang.Class({
             	// Add fixed choices only for now .... categoryBox -> apps-> -> backContain places -> search -> system
             	case this.categoryBox:
             		if (reverse) {
-            			this._activeContainer = this.systemBox.actor;
-            				if (debugMe) (global.log("menyy -> selected container: categoryBox -> systemBox.actor"));
+            			this._activeContainer = this.systemBox;
+            				if (debugMe) (global.log("menyy -> selected container: categoryBox -> systemBox"));
             		} else {
             			if (this.currentCategory == 'default') {
                 			this._activeContainer = this.homeBox;
@@ -988,8 +987,8 @@ const ApplicationsMenu = new Lang.Class({
             	case this.appsBox:
             		if (reverse) {
             			if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
-            				this._activeContainer = this.systemBox.actor;
-            				if (debugMe) (global.log("menyy -> selected container: appsBox -> systemBox.actor"));
+            				this._activeContainer = this.systemBox;
+            				if (debugMe) (global.log("menyy -> selected container: appsBox -> systemBox"));
             			} else {
             				this._activeContainer = this.categoryBox;
             				if (debugMe) (global.log("menyy -> selected container: appsBox -> categoryBox"));
@@ -1008,8 +1007,8 @@ const ApplicationsMenu = new Lang.Class({
             	case this.homeBox:
             		if (reverse) {
             			if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
-            				this._activeContainer = this.systemBox.actor;
-            					if (debugMe) (global.log("menyy -> selected container: homeBox -> systemBox.actor"));
+            				this._activeContainer = this.systemBox;
+            					if (debugMe) (global.log("menyy -> selected container: homeBox -> systemBox"));
             			} else {
             				this._activeContainer = this.categoryBox;
             					if (debugMe) (global.log("menyy -> selected container: homeBox -> categoryBox"));
@@ -1061,11 +1060,11 @@ const ApplicationsMenu = new Lang.Class({
             			this._activeContainer = this.placesBox;
             					if (debugMe) (global.log("menyy -> selected container: searchBox -> placesBox"));
             		} else {
-            			this._activeContainer = this.systemBox.actor;
-            					if (debugMe) (global.log("menyy -> selected container: searchBox -> systemBox.actor"));
+            			this._activeContainer = this.systemBox;
+            					if (debugMe) (global.log("menyy -> selected container: searchBox -> systemBox"));
             		}
             	break;
-            	case this.systemBox.actor:
+            	case this.systemBox:
             		if (reverse) {
             			this._activeContainer = this.searchBox;
             					if (debugMe) (global.log("menyy -> selected container: systemBox -> searchBox"));
@@ -1090,7 +1089,7 @@ const ApplicationsMenu = new Lang.Class({
             			this._activeContainer = this.placesBox;
             				if (debugMe) (global.log("menyy -> selected container: undefined -> placesBox"));
             		} else {
-            			this._activeContainer = this.systemBox.actor;
+            			this._activeContainer = this.systemBox;
             				if (debugMe) (global.log("menyy -> selected container: undefined -> systemBox"));
             		}
             }
@@ -1122,7 +1121,6 @@ const ApplicationsMenu = new Lang.Class({
     },
     
     selectActiveContainerItem: function(symbol, code, isFromSearch) {
-    	let debugMe = true;
         // Any items in container?
         let children = new Array();
         if (this._activeContainer.get_children) {
@@ -1132,12 +1130,6 @@ const ApplicationsMenu = new Lang.Class({
             this._selectedItemIndex = -1;
         }
         
-        if (debugMe) {
-	        if (this._activeContainer == this.backContainBox){
-	        	global.log("menyy -> backContainBox-> children: " + children.length);
-	        	global.log("menyy -> selectedItemIndex: " + this._selectedItemIndex);
-	        }
-        }
 
         // Get selected item index
         let index = this._selectedItemIndex;
@@ -1206,7 +1198,7 @@ const ApplicationsMenu = new Lang.Class({
                     index = (this._selectedItemIndex + 1 == children.length) ? children.length : this._selectedItemIndex + 1;
                 }
         } else if (symbol && symbol == Clutter.KEY_Return || symbol == Clutter.KP_Enter) {
-            if (this._activeContainer == this.appsBox|| this._activeContainer == this.homeBox || this._activeContainer == this.placesBox || this._activeContainer == this.backContainBox) {
+            if (this._activeContainer == this.appsBox|| this._activeContainer == this.homeBox || this._activeContainer == this.placesBox || this._activeContainer == this.backContainBox || this._activeContainer == this.systemBox) {
             	if (this._activeContainer) {
                     this._clearActiveContainerSelections();
                 }
@@ -1217,30 +1209,30 @@ const ApplicationsMenu = new Lang.Class({
                 /*
                 if (item_actor._delegate._type == ApplicationType.APPLICATION) {
                     this.menu.close();
-                    item_actor._delegate._app.open_new_window(-1);
+                    item_actor._delegate.app.open_new_window(-1);
                 } else if (item_actor._delegate._type == ApplicationType.PLACE) {
                     this.menu.close();
-                    if (item_actor._delegate._app.uri) {
-                       item_actor._delegate._app.app.launch_uris([item_actor._delegate._app.uri], null);
+                    if (item_actor._delegate.app.uri) {
+                       item_actor._delegate.app.app.launch_uris([item_actor._delegate.app.uri], null);
                     } else {
-                       item_actor._delegate._app.launch();
+                       item_actor._delegate.app.launch();
                     }
                 } else if (item_actor._delegate._type == ApplicationType.RECENT) {
                     this.menu.close();
-                    Gio.app_info_launch_default_for_uri(item_actor._delegate._app.uri, global.create_app_launch_context(0, -1));
+                    Gio.app_info_launch_default_for_uri(item_actor._delegate.app.uri, global.create_app_launch_context(0, -1));
                 }
                 */
                 return true;
-            } else if (this._activeContainer == this.systemBox.actor || this._activeContainer == this.categoryBox) {
+            } else if (this._activeContainer == this.systemBox || this._activeContainer == this.categoryBox) {
             	//  || this._activeContainer == this.powerGroupBox || this._activeContainer == this.viewModeBox
                 // Simulate button click
                 if (index>=children.length) {
-                    if (this._activeContainer == this.systemBox.actor) {
-                        let prefButton = this.extensionPreferences;
-                        prefButton.actor._delegate.click();
-                    } else {
-                        return false;
-                    }
+                    //if (this._activeContainer == this.systemBox) {
+                    //    let prefButton = this.extensionPreferences;
+                    //    prefButton.actor._delegate.click();
+                    //} else {
+                    //    return false;
+                    //}
                 } else {
                     let item_actor = children[this._selectedItemIndex];
                     item_actor._delegate.click();
@@ -1310,16 +1302,16 @@ const ApplicationsMenu = new Lang.Class({
         // Set selected app name/description
         if (this._activeContainer == this.placesBox || this._activeContainer == this.appsBox) {
             if (itemActor._delegate._type == ApplicationType.APPLICATION) {
-               this.selectedAppTitle.set_text(itemActor._delegate._app.get_name());
-               if (itemActor._delegate._app.get_description()) this.selectedAppDescription.set_text(itemActor._delegate._app.get_description());
+               this.selectedAppTitle.set_text(itemActor._delegate.app.get_name());
+               if (itemActor._delegate.app.get_description()) this.selectedAppDescription.set_text(itemActor._delegate.app.get_description());
                else this.selectedAppDescription.set_text("");
             } else if (itemActor._delegate._type == ApplicationType.PLACE) {
-               this.selectedAppTitle.set_text(itemActor._delegate._app.name);
-               if (itemActor._delegate._app.description) this.selectedAppDescription.set_text(itemActor._delegate._app.description);
+               this.selectedAppTitle.set_text(itemActor._delegate.app.name);
+               if (itemActor._delegate.app.description) this.selectedAppDescription.set_text(itemActor._delegate.app.description);
                else this.selectedAppDescription.set_text("");
             } else if (itemActor._delegate._type == ApplicationType.RECENT) {
-               this.selectedAppTitle.set_text(itemActor._delegate._app.name);
-               if (itemActor._delegate._app.description) this.selectedAppDescription.set_text(itemActor._delegate._app.description);
+               this.selectedAppTitle.set_text(itemActor._delegate.app.name);
+               if (itemActor._delegate.app.description) this.selectedAppDescription.set_text(itemActor._delegate.app.description);
                else this.selectedAppDescription.set_text("");
             }
 
@@ -1401,22 +1393,39 @@ const ApplicationsMenu = new Lang.Class({
         // Such is the case with the thumbnailsBox
         if (!this._activeContainer.get_children)
             return;
-
-        this._activeContainer.get_children().forEach(function(actor) {
-            if (selectedContainerActor) {
-                if (selectedContainerActor && (actor == selectedContainerActor)) {
-                    actor.add_style_class_name('selected');
-                    if (actor._delegate && actor._delegate.select)
-                        actor._delegate.select();
+        if (this._activeContainer == this.systemBox){
+            this._activeContainer.get_children().forEach(function(actor) {
+                if (selectedContainerActor) {
+                    if (selectedContainerActor && (actor == selectedContainerActor)) {
+                        actor.add_style_pseudo_class('hover');
+                        if (actor._delegate && actor._delegate.select)
+                            actor._delegate.select();
+                    } else {
+                        actor.remove_style_pseudo_class('hover');
+                    }
                 } else {
-                    actor.remove_style_class_name('selected');
+                    actor.remove_style_pseudo_class('hover');
+                    if (actor._delegate && actor._delegate.unSelect)
+                        actor._delegate.unSelect();
                 }
-            } else {
-                actor.remove_style_class_name('selected');
-                if (actor._delegate && actor._delegate.unSelect)
-                    actor._delegate.unSelect();
-            }
-        });
+            });
+        } else {
+	        this._activeContainer.get_children().forEach(function(actor) {
+	            if (selectedContainerActor) {
+	                if (selectedContainerActor && (actor == selectedContainerActor)) {
+	                    actor.add_style_class_name('selected');
+	                    if (actor._delegate && actor._delegate.select)
+	                        actor._delegate.select();
+	                } else {
+	                    actor.remove_style_class_name('selected');
+	                }
+	            } else {
+	                actor.remove_style_class_name('selected');
+	                if (actor._delegate && actor._delegate.unSelect)
+	                    actor._delegate.unSelect();
+	            }
+	        });
+        }
     },
 
     _clearApplicationSelections: function(selectedApplication) {
@@ -1489,16 +1498,20 @@ const ApplicationsMenu = new Lang.Class({
 	// TOGGLE MENU FUNCTION
 	_toggleMenu: function() {
 		this._activeContainer = this.searchBox;
-		this.mainBox.show();
-		this.altBox.hide();
+		//let animationTime = 1000;
 		//TODO(Disable when right click menu open)
 		if (this.toggleMenuFlag) {
 			this.menu.toggle();
+			//Mainloop.timeout_add(animationTime, Lang.bind(this, function() {
+				//if (this.toggleMenuFlag) {
+					this.mainBox.show();
+					this.altBox.hide();
+				//}
+				//}));
 		} else {
 			// Close right click menu somehow
 			// and then Close menu
 		}
-		//return Clutter.EVENT_STOP;
 	},
 
 	// Panel button widget get function
@@ -1902,12 +1915,12 @@ const ApplicationsMenu = new Lang.Class({
 				shortcutButton.actor.remove_style_class_name('selected');
 				if (true){
 					if (app.uri) {
-						shortcutButton._app.app.launch_uris([app.uri], null);
+						shortcutButton.app.app.launch_uris([app.uri], null);
 					} else {
-						shortcutButton._app.launch();
+						shortcutButton.app.launch();
 					}
 				} else {
-					shortcutButton._app.open_new_window(-1);
+					shortcutButton.app.open_new_window(-1);
 				}
 				this.menu.close();
 			}));
@@ -1971,12 +1984,12 @@ const ApplicationsMenu = new Lang.Class({
 				shortcutButton.actor.remove_style_class_name('selected');
 				if (true){
 					if (app.uri) {
-						shortcutButton._app.app.launch_uris([app.uri], null);
+						shortcutButton.app.app.launch_uris([app.uri], null);
 					} else {
-						shortcutButton._app.launch();
+						shortcutButton.app.launch();
 					}
 				} else {
-					shortcutButton._app.open_new_window(-1);
+					shortcutButton.app.open_new_window(-1);
 				}
 				this.menu.close();
 			}));
@@ -2021,6 +2034,20 @@ const ApplicationsMenu = new Lang.Class({
 			if (!pattern || bookmarks[id].name.toLowerCase().indexOf(pattern)!=-1)
 				res.push(bookmarks[id]);
 		}
+		return res;
+	},
+	
+	// LOADS TERMINAL COMMANDS
+	_listTerminalCommands: function(pattern){
+		let debugMe = false;
+		if (commandLineDisplay) {															// if commandlinedisplay imported
+			if (!this.commandLineManager) 													// if the manager is not yet present
+				this.commandLineManager = new commandLineDisplay.CommandLineManager(true);	// create manager
+		} else {																			// if no commandlinedisplay imported
+			this.commandLineManager = null;													// then just ignore this part completely
+		};
+		let res = this.commandLineManager.getCommands(pattern);
+		if (debugMe) global.log("menyy -> _listTerminalCommands '" + pattern + "': " + res);
 		return res;
 	},
 
@@ -2109,7 +2136,8 @@ const ApplicationsMenu = new Lang.Class({
 	},
 
 	// Display application menu items
-	_displayButtons: function(apps, home, places, recent, refresh) {
+	// TODO (STOP THE NONSENCE AND HAVE (APPS, LOCATION) only and have the appslist contain its type
+	_displayButtons: function(apps, home, places, recent, terminal, refresh) {
 		// get from settings!
 		// let viewMode = this._appsViewMode;
 		let appType;
@@ -2151,7 +2179,7 @@ const ApplicationsMenu = new Lang.Class({
 					appGridButton.actor.connect('button-release-event', Lang.bind(this, function() {
 						appGridButton.actor.remove_style_pseudo_class('pressed');
 						appGridButton.actor.remove_style_class_name('selected');
-						appGridButton._app.open_new_window(-1);
+						appGridButton.app.open_new_window(-1);
 						this.menu.close();
 					}));
 					let gridLayout = this.homeBox.layout_manager;
@@ -2193,7 +2221,7 @@ const ApplicationsMenu = new Lang.Class({
 					appGridButton.actor.connect('button-release-event', Lang.bind(this, function() {
 						appGridButton.actor.remove_style_pseudo_class('pressed');
 						appGridButton.actor.remove_style_class_name('selected');
-						appGridButton._app.open_new_window(-1);
+						appGridButton.app.open_new_window(-1);
 						this.menu.close();
 					}));
 					let gridLayout = this.appsBox.layout_manager;
@@ -2207,6 +2235,60 @@ const ApplicationsMenu = new Lang.Class({
 				//if (!refresh) this._applications[app] = app;
 			}
 		}
+		
+        if (terminal){
+            appType = ApplicationType.TERMINAL;
+            //global.log("menyy: places searched");
+            for (let i in terminal) {
+            	//global.log("menyy: place : " + places[i]);
+                let app = terminal[i];
+                // only add if not already in this._places or refreshing
+                //if (!this._places[app.name]) {
+                    if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
+                    	//global.log("menyy: place placed");
+                    	let appListButton = new AppListButton(app, this, appType, 'apps');
+    					this.appsBox.add_actor(appListButton.actor);
+                    } else { // GridView
+                        let appGridButton = new AppGridButton(app, appType, true);
+                        appGridButton.buttonbox.width = this._appGridButtonWidth;
+                        appGridButton.actor.connect('enter-event', Lang.bind(this, function() {
+                          appGridButton.actor.add_style_class_name('selected');
+                           this.selectedAppTitle.set_text(appGridButton.app.name);
+                           if (appGridButton.app.description) this.selectedAppDescription.set_text(appGridButton.app.description);
+                           else this.selectedAppDescription.set_text("");
+                        }));
+                        appGridButton.actor.connect('leave-event', Lang.bind(this, function() {
+                          appGridButton.actor.remove_style_class_name('selected');
+                           this.selectedAppTitle.set_text("");
+                           this.selectedAppDescription.set_text("");
+                        }));
+                        appGridButton.actor.connect('button-press-event', Lang.bind(this, function() {
+                            appGridButton.actor.add_style_pseudo_class('pressed');
+                        }));
+                        appGridButton.actor.connect('button-release-event', Lang.bind(this, function() {
+                           appGridButton.actor.remove_style_pseudo_class('pressed');
+                          appGridButton.actor.remove_style_class_name('selected');
+                           this.selectedAppTitle.set_text("");
+                           this.selectedAppDescription.set_text("");
+                           if (app.uri) {
+                               appGridButton.app.app.launch_uris([app.uri], null);
+                           } else {
+                               appGridButton.app.launch();
+                           }
+                           this.menu.close();
+                        }));
+                        let gridLayout = this.applicationsGridBox.layout_manager;
+                        gridLayout.pack(appGridButton.actor, column, rownum);
+                        column ++;
+                        if (column > this._appGridColumns-1) {
+                            column = 0;
+                            rownum ++;
+                        }
+                    }
+                //}
+                if (!refresh) this._places[app.name] = app;
+            }
+        }
 
         if (places){
             appType = ApplicationType.PLACE;
@@ -2225,8 +2307,8 @@ const ApplicationsMenu = new Lang.Class({
                         appGridButton.buttonbox.width = this._appGridButtonWidth;
                         appGridButton.actor.connect('enter-event', Lang.bind(this, function() {
                           appGridButton.actor.add_style_class_name('selected');
-                           this.selectedAppTitle.set_text(appGridButton._app.name);
-                           if (appGridButton._app.description) this.selectedAppDescription.set_text(appGridButton._app.description);
+                           this.selectedAppTitle.set_text(appGridButton.app.name);
+                           if (appGridButton.app.description) this.selectedAppDescription.set_text(appGridButton.app.description);
                            else this.selectedAppDescription.set_text("");
                         }));
                         appGridButton.actor.connect('leave-event', Lang.bind(this, function() {
@@ -2243,9 +2325,9 @@ const ApplicationsMenu = new Lang.Class({
                            this.selectedAppTitle.set_text("");
                            this.selectedAppDescription.set_text("");
                            if (app.uri) {
-                               appGridButton._app.app.launch_uris([app.uri], null);
+                               appGridButton.app.app.launch_uris([app.uri], null);
                            } else {
-                               appGridButton._app.launch();
+                               appGridButton.app.launch();
                            }
                            this.menu.close();
                         }));
@@ -2276,8 +2358,8 @@ const ApplicationsMenu = new Lang.Class({
                         appGridButton.buttonbox.width = this._appGridButtonWidth;
                         appGridButton.actor.connect('enter-event', Lang.bind(this, function() {
                           appGridButton.actor.add_style_class_name('selected');
-                           this.selectedAppTitle.set_text(appGridButton._app.name);
-                           if (appGridButton._app.description) this.selectedAppDescription.set_text(appGridButton._app.description);
+                           this.selectedAppTitle.set_text(appGridButton.app.name);
+                           if (appGridButton.app.description) this.selectedAppDescription.set_text(appGridButton.app.description);
                            else this.selectedAppDescription.set_text("");
                         }));
                         appGridButton.actor.connect('leave-event', Lang.bind(this, function() {
@@ -2363,7 +2445,7 @@ const ApplicationsMenu = new Lang.Class({
 					this.backButton.actor.hide();
 					this.goToButton.actor.hide();
 				}
-			} else if (typeof category == 'string') {
+			} else if (typeof category == 'string') { // For custom categories such as "all categories"
 				this.homeScrollBox.hide();
 				this.appsScrollBox.show();
 				// this._displayApplications(this._listApplications(category));
@@ -2481,7 +2563,7 @@ const ApplicationsMenu = new Lang.Class({
 	},
 	
 	_removeSearchTimeout: function(){
-		global.log("menyy searchTimeoutId: " + this._searchTimeoutId);
+		//global.log("menyy searchTimeoutId: " + this._searchTimeoutId);
 	     if (this._searchTimeoutId > 0) {
 	         Mainloop.source_remove(this._searchTimeoutId);
 	         this._searchTimeoutId = 0;
@@ -2514,51 +2596,52 @@ const ApplicationsMenu = new Lang.Class({
 		this._removeSearchTimeout();
 		this._searchTimeoutId = Mainloop.timeout_add(this._searchWaitTime,
 				Lang.bind(this, function() {
-					let searchString = this.searchEntry.get_text();
-					//If text is "force shell restart", then restart the shell
-					if (searchString == 'force shell restart') {
-						global.log("menyy: RESTART THROUGH SEARCH")
-						global.reexec_self();
-					} else if (searchString == 'force open activities'){
-						Main.overview.toggle();
-					}
-
-					this.searchActive = searchString != '';
-					if (this.searchActive) {
-						this.searchEntry.set_secondary_icon(this._searchActiveIcon);
-						if (this._searchIconClickedId == 0) {
-							this._searchIconClickedId = this.searchEntry.connect('secondary-icon-clicked',
-									Lang.bind(this, function() {
-										this.resetSearch();
-										this._openDefaultCategory();
-									}));
+					// could be null due ot the timeout and last moment change in text
+					// this prevents the whole shell from crashing due to the weird behaviour
+					if (this.searchEntry.get_text() != null) {
+						let searchString = this.searchEntry.get_text();
+						//If text is "force shell restart", then restart the shell
+						if (searchString == 'force shell restart') {
+							global.reexec_self();
+						} else if (searchString == 'force open activities'){
+							Main.overview.toggle();
 						}
-						
-						this._doSearch();
-					} else {
-						if (this._searchIconClickedId > 0)
-							this.searchEntry.disconnect(this._searchIconClickedId);
-						this._searchIconClickedId = 0;
-						this.searchEntry.set_secondary_icon(null);
-						if (searchString == "" && this._previousSearchPattern != "") {
-							if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
-								this._selectCategory('categories');
-							} else {
-								this._openDefaultCategory();
+	
+						this.searchActive = searchString != '';
+						if (this.searchActive) {
+							this.searchEntry.set_secondary_icon(this._searchActiveIcon);
+							if (this._searchIconClickedId == 0) {
+								this._searchIconClickedId = this.searchEntry.connect('secondary-icon-clicked',
+										Lang.bind(this, function() {
+											this.resetSearch();
+											this._openDefaultCategory();
+										}));
 							}
+							
+							this._doSearch();
+						} else {
+							if (this._searchIconClickedId > 0)
+								this.searchEntry.disconnect(this._searchIconClickedId);
+							this._searchIconClickedId = 0;
+							this.searchEntry.set_secondary_icon(null);
+							if (searchString == "" && this._previousSearchPattern != "") {
+								if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
+									this._selectCategory('categories');
+								} else {
+									this._openDefaultCategory();
+								}
+							}
+							this._previousSearchPattern = "";
 						}
-						this._previousSearchPattern = "";
 					}
 					return false;
 				}
 			)
 		);
 		GLib.Source.set_name_by_id(this._searchTimeoutId, '[gnome-shell] this._doSearch');
-		global.log("menyy: setSearchTimeout ending");
+		//global.log("menyy: setSearchTimeout ending");
 		return false;
 	},
-	
-	
 	
 	// Start search timeout
 	_onSearchTextChanged: function (se, prop) {
@@ -2578,14 +2661,33 @@ const ApplicationsMenu = new Lang.Class({
 		// TODO(Create a custom appResults without! custom categories)
 		// TODO(SET LIMIT THROUGH OPTIONS)
 		let appResults = this._listApplications(null, pattern);
-		appResults = appResults.slice(0, 1000);
+		appResults = appResults.slice(0, 10);
+		
+        // search terminal commands - needs to be muteable
+        // TODO(MAKE THEM LISTABLE AND RUNNABLE)
+        let terminalResults = this._listTerminalCommands(pattern);  
+        // Remove items, that already exist in the all apps menu
+        if (appResults.length > 0) {
+	        for(var i = appResults.length - 1; i >= 0; i--) {
+	        	if (terminalResults.length > 0) {
+		            for(var j = 0; j < terminalResults.length; j++) {
+		                if((appResults[i].get_app_info().get_executable())  == (terminalResults[j].get_executable())) {
+		                    terminalResults.splice(i, 1);
+		                }
+		            }
+	        	}
+	        }
+        }
         
+               
+        
+		
+		let placesResults = new Array();
 		// Search Places
 		// TODO(DISABLE THROUGH OPTIONS)
-		// TODO(SET LIMIT THROUGH OPTIONS - currently 10)
-		let placesResults = new Array();
+		// TODO(SET LIMIT THROUGH OPTIONS - currently 100)
         let places = this._listPlaces(pattern);
-        places = places.slice(0, 1000);
+        places = places.slice(0, 100);
         for (var i in places) placesResults.push(places[i]);
 
         // Search Bookmarks
@@ -2594,9 +2696,9 @@ const ApplicationsMenu = new Lang.Class({
         
         // Search Web Bookmarks
         // TODO(DISABLE THROUGH OPTIONS)
-        // TODO(SET LIMIT THROUGH OPTIONS - currently 10)
+        // TODO(SET LIMIT THROUGH OPTIONS - currently 100)
         let webBookmarks = this._listWebBookmarks(pattern);
-        webBookmarks = webBookmarks.slice(0, 1000);
+        webBookmarks = webBookmarks.slice(0, 100);
         for (var i in webBookmarks) placesResults.push(webBookmarks[i]);
         //global.log("menyy: webBookmarks: " + webBookmarks);
         
@@ -2608,18 +2710,18 @@ const ApplicationsMenu = new Lang.Class({
 		// TODO(DISABLE THROUGH OPTIONS)
 		// TODO(SET LIMIT THROUGH OPTIONS - currently 10)
         let recentResults = this._listRecent(pattern);
-        recentResults = recentResults.slice(0, 1000);
-        
+        recentResults = recentResults.slice(0, 100);
+
 		this._clearAppsBox();
 		
 		//this._displayButtons(appResults);
 		// Displaybuttons has (appresults, home, placesresults, recentresults)
-		this._displayButtons(appResults, _ ,placesResults, recentResults);
-
-		if (searchFixed) {
-			if (this.appsBox.get_children().length > 0)
-				global.stage.set_key_focus(this.appsBox.get_first_child());
-		}
+		
+		
+		this._displayButtons(appResults, _ ,placesResults, recentResults, terminalResults);
+		
+		
+		
 		this.homeScrollBox.hide();
 		this.appsScrollBox.show();
 		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
@@ -2703,7 +2805,7 @@ const ApplicationsMenu = new Lang.Class({
 	_display: function() {
 		this.mainBox.hide();
 		if (this._settings.get_enum('visible-menus') != visibleMenus.SYSTEM_ONLY) {
-			this._applicationsButtons = new Array();
+			this._appsButtons = new Array();
 			this._clearCategoryBox();
 			this._loadCategories();
 			this._previousSearchPattern = "";

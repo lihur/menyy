@@ -475,6 +475,7 @@ const CategoryGridButton = new Lang.Class({
 
         let styleLabel = "menyy-apps-grid-button-label menyy-category-grid-button-label";        
         
+        /*
         if (settings.get_int('apps-grid-column-count') == 3) {
             styleButton += " col3";
         } else if (settings.get_int('apps-grid-column-count') == 4) {
@@ -486,6 +487,8 @@ const CategoryGridButton = new Lang.Class({
         } else if (settings.get_int('apps-grid-column-count') == 7) {
             styleButton += " col7";
         }
+        */
+        
         this.actor = new St.Button({reactive: true, style_class: styleButton, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
         this.actor._delegate = this;
         
@@ -812,6 +815,7 @@ const AppListButton = new Lang.Class({
     //},
     
     popupMenu: function() {
+    	this._button.toggleMenuFlag = false;
         this._removeMenuTimeout();
 
         if (this._draggable)
@@ -842,7 +846,7 @@ const AppListButton = new Lang.Class({
         this.actor.set_hover(true);
         this._menu.popup();
         // Don't close the menu if right button is released and don't require double click if held down left button is released
-        if (!this._isTimeOutOpen) (this._menuManager.ignoreRelease());        
+        if (!this._isTimeOutOpen) (this._menuManager.ignoreRelease());
         return false;
     },
     
@@ -912,6 +916,7 @@ const AppListButton = new Lang.Class({
     },
     
     _onMenuPoppedDown: function() {
+    	this._button.toggleMenuFlag = true;
     	this._isTimeOutOpen = false;
     	this.actor.remove_style_pseudo_class('pressed');
         this.actor.remove_style_class_name('selected');

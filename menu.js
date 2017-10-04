@@ -271,8 +271,8 @@ const SearchWebBookmarks = new Lang.Class({
     },
 
     bookmarksSort: function(a, b) {
-        if (a.score < b.score) return 1;
-        if (a.score > b.score) return -1;
+        //if (a.score < b.score) return 1;
+        //if (a.score > b.score) return -1;
         if (a.name < b.name) return -1;
         if (a.name > b.name) return 1;
         return 0;
@@ -343,12 +343,14 @@ const ApplicationsMenu = new Lang.Class({
 		this._session = new GnomeSession.SessionManager();
 
 		// Lists and other variables
+		this.toggleMenuFlag = true;
 		this.reloadFlag = false;																		// Reload later flag
 		this.searchActive = false;																		//
 		this.currentCategory = null;																	// Current Category (for reloading changes)
 		this.placesManager = null;																		// Places Manager
 		this.searchEntryText = null;																	// Search text that will get entered by user
 		this._searchIconClickedId = 0;																	// 
+		this._searchTimeoutId = 0;																		// Used to make search wait for new input
 		
 		this._activeContainer = null;																	// Destroy me later maybe?
 
@@ -361,6 +363,7 @@ const ApplicationsMenu = new Lang.Class({
 		this._menyy_favorites = new Array();															// Custom Favorites List (for use later)
 
 		// Settings
+		this._searchWaitTime = 500;																		// Put in setting, this is used to determine how long search waits for new input
 		this._appGridColumns = this._settings.get_int('apps-grid-column-count');						// Grid Column Count
 		this._appsViewMode = this._settings.get_enum('apps-viewmode');									// Apps View Mode (grid or list or other)
 		this._categoriesViewMode = this._settings.get_enum('categories-viewmode');						// Categories View Mode (left, right, combined with apps or accordion)
@@ -1488,7 +1491,13 @@ const ApplicationsMenu = new Lang.Class({
 		this._activeContainer = this.searchBox;
 		this.mainBox.show();
 		this.altBox.hide();
-		this.menu.toggle();
+		//TODO(Disable when right click menu open)
+		if (this.toggleMenuFlag) {
+			this.menu.toggle();
+		} else {
+			// Close right click menu somehow
+			// and then Close menu
+		}
 		//return Clutter.EVENT_STOP;
 	},
 
@@ -1542,6 +1551,7 @@ const ApplicationsMenu = new Lang.Class({
 			//global.log("menyy -> directory: " + directory);
 			this._allAppsList = this._allAppsList.concat(this.applicationsByCategory[directory]);
 		}
+		
 		// Remove Duplicates
 		this._allAppsList = this._allAppsList.filter(function(elem, index, self) {
 		    return index == self.indexOf(elem);
@@ -2469,49 +2479,90 @@ const ApplicationsMenu = new Lang.Class({
 		}
 		return res;
 	},
+	
+	_removeSearchTimeout: function(){
+		global.log("menyy searchTimeoutId: " + this._searchTimeoutId);
+	     if (this._searchTimeoutId > 0) {
+	         Mainloop.source_remove(this._searchTimeoutId);
+	         this._searchTimeoutId = 0;
+	     }		
+	},
+	
+	/*
+	 * 	 _setPopupTimeout: function() {
+	     this._removeMenuTimeout();
+	     this._menuTimeoutId = Mainloop.timeout_add(AppDisplay.MENU_POPUP_TIMEOUT,
+	         Lang.bind(this, function() {
+	        	 if (!this._isDragged){
+		        	 this._isTimeOutOpen = true;
+		        	 this._isLeftDown = false;
+		             this._menuTimeoutId = 0;
+		             this.popupMenu();
+	        	 } else {
+        	    	this.actor.remove_style_pseudo_class('pressed');
+        	        this.actor.remove_style_class_name('selected');
+	        		 return false;
+	        	 }
+	         }));
+	     GLib.Source.set_name_by_id(this._menuTimeoutId, '[gnome-shell] this.popupMenu');
+	     global.log("menyy: setpopuptimeout ending")
+	     return false;
+	 },
+	 */
+	
+	_setSearchTimeout: function(se, prop){
+		this._removeSearchTimeout();
+		this._searchTimeoutId = Mainloop.timeout_add(this._searchWaitTime,
+				Lang.bind(this, function() {
+					let searchString = this.searchEntry.get_text();
+					//If text is "force shell restart", then restart the shell
+					if (searchString == 'force shell restart') {
+						global.log("menyy: RESTART THROUGH SEARCH")
+						global.reexec_self();
+					} else if (searchString == 'force open activities'){
+						Main.overview.toggle();
+					}
 
-
-	// Handle search text entry input changes
-	_onSearchTextChanged: function (se, prop) {
-		let searchString = this.searchEntry.get_text();
-
-		//If text is "force shell restart", then restart the shell
-		//VEEEERRRRYY USEFUL FOR DEBUGGING AND DEVELOPMENT!
-		//global.log("menyy: search: " + searchString);
-		if (searchString == 'force shell restart') {
-			global.log("menyy: RESTART THROUGH SEARCH")
-			global.reexec_self();
-		} else if (searchString == 'force open activities'){
-			Main.overview.toggle();
-		}
-
-		this.searchActive = searchString != '';
-		if (this.searchActive) {
-			this.searchEntry.set_secondary_icon(this._searchActiveIcon);
-			if (this._searchIconClickedId == 0) {
-				this._searchIconClickedId = this.searchEntry.connect('secondary-icon-clicked',
-						Lang.bind(this, function() {
-							this.resetSearch();
-							this._openDefaultCategory();
-						}));
-			}
-			
-			this._doSearch();
-		} else {
-			if (this._searchIconClickedId > 0)
-				this.searchEntry.disconnect(this._searchIconClickedId);
-			this._searchIconClickedId = 0;
-			this.searchEntry.set_secondary_icon(null);
-			if (searchString == "" && this._previousSearchPattern != "") {
-				if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
-					this._selectCategory('categories');
-				} else {
-					this._openDefaultCategory();
+					this.searchActive = searchString != '';
+					if (this.searchActive) {
+						this.searchEntry.set_secondary_icon(this._searchActiveIcon);
+						if (this._searchIconClickedId == 0) {
+							this._searchIconClickedId = this.searchEntry.connect('secondary-icon-clicked',
+									Lang.bind(this, function() {
+										this.resetSearch();
+										this._openDefaultCategory();
+									}));
+						}
+						
+						this._doSearch();
+					} else {
+						if (this._searchIconClickedId > 0)
+							this.searchEntry.disconnect(this._searchIconClickedId);
+						this._searchIconClickedId = 0;
+						this.searchEntry.set_secondary_icon(null);
+						if (searchString == "" && this._previousSearchPattern != "") {
+							if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
+								this._selectCategory('categories');
+							} else {
+								this._openDefaultCategory();
+							}
+						}
+						this._previousSearchPattern = "";
+					}
+					return false;
 				}
-			}
-			this._previousSearchPattern = "";
-		}
+			)
+		);
+		GLib.Source.set_name_by_id(this._searchTimeoutId, '[gnome-shell] this._doSearch');
+		global.log("menyy: setSearchTimeout ending");
 		return false;
+	},
+	
+	
+	
+	// Start search timeout
+	_onSearchTextChanged: function (se, prop) {
+		this._setSearchTimeout(se, prop);
 	},
 
 	// Carry out a search based on the search text entry value
@@ -2525,12 +2576,16 @@ const ApplicationsMenu = new Lang.Class({
 		}
 		
 		// TODO(Create a custom appResults without! custom categories)
+		// TODO(SET LIMIT THROUGH OPTIONS)
 		let appResults = this._listApplications(null, pattern);
+		appResults = appResults.slice(0, 1000);
         
 		// Search Places
 		// TODO(DISABLE THROUGH OPTIONS)
+		// TODO(SET LIMIT THROUGH OPTIONS - currently 10)
 		let placesResults = new Array();
         let places = this._listPlaces(pattern);
+        places = places.slice(0, 1000);
         for (var i in places) placesResults.push(places[i]);
 
         // Search Bookmarks
@@ -2539,16 +2594,21 @@ const ApplicationsMenu = new Lang.Class({
         
         // Search Web Bookmarks
         // TODO(DISABLE THROUGH OPTIONS)
+        // TODO(SET LIMIT THROUGH OPTIONS - currently 10)
         let webBookmarks = this._listWebBookmarks(pattern);
+        webBookmarks = webBookmarks.slice(0, 1000);
         for (var i in webBookmarks) placesResults.push(webBookmarks[i]);
         //global.log("menyy: webBookmarks: " + webBookmarks);
         
         // Search Devices
         //let devices = this._listDevices(pattern);
         //for (var i in devices) placesResults.push(devices[i]);
-
-        let recentResults = this._listRecent(pattern);
         
+        // Search recent
+		// TODO(DISABLE THROUGH OPTIONS)
+		// TODO(SET LIMIT THROUGH OPTIONS - currently 10)
+        let recentResults = this._listRecent(pattern);
+        recentResults = recentResults.slice(0, 1000);
         
 		this._clearAppsBox();
 		

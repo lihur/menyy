@@ -27,17 +27,12 @@ const _createApp = _appSystem.lookup_desktop_wmclass;
 
 
 const Gettext = imports.gettext.domain('menyy');
-//const _ = Gettext.gettext;
-
-
-
-
-
-//const N_ = function(x) { return x; }
-
 const Menyy = imports.misc.extensionUtils.getCurrentExtension();
 const shell_path     = Menyy.path + "/bash_scripts";
 const cache_path     = Menyy.path + "/cache/";
+const constants = Menyy.imports.constants;
+const AppType = constants.AppType;
+
 
 let UseSymbolicIcons = false;
 
@@ -52,6 +47,7 @@ const terminalCommandInfo = new Lang.Class({
 		this.mime = mime;
 		this.variables = variables;
 		this.icon = Gio.content_type_get_icon(mime);
+		this.appType = AppType.TERMINAL;
 	},
 	
 	launch: function(timestamp) {
@@ -59,8 +55,6 @@ const terminalCommandInfo = new Lang.Class({
 		launchContext.set_timestamp(timestamp);
 
 		try {
-			//Gio.AppInfo.launch_default_for_uri(this.location, launchContext);
-			//Util.spawnCommandLine(this.command);
 			Util.spawnCommandLine(this.command + " " + this.variables);
 		} catch(e) {
 			Main.notifyError(_("Failed to launch \"%s\"").format(this.name), e.message);
@@ -75,7 +69,7 @@ const terminalCommandInfo = new Lang.Class({
 	},
 
 	getIcon: function() {
-		return Gio.content_type_get_icon(this.mime);	//definately works
+		return Gio.content_type_get_icon(this.mime);
 	}
 });
 
@@ -86,7 +80,6 @@ const CommandLineManager = new Lang.Class({
 		UseSymbolicIcons = useSymbolic;
 
 		this._commands = [];
-		//this._getMethods(Shell);	
 	},
 	
 	_getMethods: function (obj) {
@@ -104,7 +97,6 @@ const CommandLineManager = new Lang.Class({
 	
 	createDesktopFile: function(filename, contents) {
 		try {
-			//Creates the file in the cache folder
 			let file = Gio.file_new_for_path(cache_path + filename + ".desktop");
 			
 			{
@@ -116,11 +108,6 @@ const CommandLineManager = new Lang.Class({
 	            //let fstream = file.replace(null, false, Gio.FileCreateFlags.NONE, null);
 	            let dos = file.create(Gio.FileCreateFlags.NONE, null);
 	            dos.write(contents, null, contents.length);
-	            //dos.write(contents, null, contents.length);
-	            
-	            
-	            //let dos = new Gio.DataOutputStream (file.create (Gio.FileCreateFlags.REPLACE_DESTINATION, null));
-	            //dos.put_string("test", null);
 			} // Streams closed at this point
         } catch (e) {
         	Main.notifyError(_("Failed to create file \"%s\"").format(this.name), e.message);
@@ -141,9 +128,6 @@ const CommandLineManager = new Lang.Class({
 			variables = "";
 		}
 		pattern = pattern.split(" ")[0];
-		
-		//global.log("menyy variables " + variables);
-		
 		this._commands = [];
 		let argv = shell_path + "/listAllCommands.sh " + pattern + " 10";
 		let commandsList;

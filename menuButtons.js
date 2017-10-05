@@ -24,11 +24,12 @@ const Menyy = imports.misc.extensionUtils.getCurrentExtension();
 const RightClickMenus = Menyy.imports.rightClickMenu;
 const convenience = Menyy.imports.convenience;
 const settings = convenience.getSettings('org.gnome.shell.extensions.menyy');
-//const wordWrap = Menyy.imports.wordWrap.wordWrap;
-
 const constants = Menyy.imports.constants;
 const AppType = constants.AppType;
 const ApplicationsViewMode = constants.ApplicationsViewMode;
+const CategoriesViewMode = constants.CategoriesViewMode;
+const SelectMethod = constants.SelectMethod;
+
 
 
 // TODO(MOVE TO A HELPER FILE)
@@ -239,20 +240,15 @@ const UserMenuItem = new Lang.Class({
     
 });
 
-
-
 // Menu item to go back to category view (for arcmenu compatibility)
 const BackMenuItem = new Lang.Class({
     Name: 'Menyy.BackMenuItem',
-    
-    
     // Initialize the menu item
     _init: function(menyy, purpose) {
    	    this.parent();
     	this._iconSize = (settings.get_int('apps-icon-size') > 0) ? settings.get_int('apps-icon-size') : 64;
     	this._showIcon = (settings.get_int('apps-icon-size') > 0) ? true : false;
     	this.purpose = purpose;    	
-    	
     	if (this.purpose == 'backtoCategories') {
     		this._icon = new St.Icon({ icon_name: 'go-previous-symbolic',
 	            style_class: 'popup-menu-icon',
@@ -272,15 +268,9 @@ const BackMenuItem = new Lang.Class({
         	this._label = new St.Label({ text: _("Show Categories"), y_expand: true,
         		y_align: Clutter.ActorAlign.CENTER, style_class: 'menyy-back-button-label' });
     	}
-        
-    	
-        // let style = "popup-menu-item popup-submenu-menu-item";
         let style = "popup-menu-item popup-submenu-menu-item menyy-back-button";
         this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.START });
         this.actor._delegate = this;
-
-        
-        
 		this.buttonEnterCallback = (Lang.bind(this, function() {
 		    this.actor.add_style_class_name('selected');
 		}));
@@ -295,11 +285,6 @@ const BackMenuItem = new Lang.Class({
 			this.actor.remove_style_class_name('selected');
 			this.activate();
     	}));
-    	
-    	
-        	
-        	
-
         this.buttonbox = new St.BoxLayout();
         
         if (this.purpose == 'goToCategories') {
@@ -309,16 +294,8 @@ const BackMenuItem = new Lang.Class({
 	        this.buttonbox.add_child(this._icon);
 	        this.buttonbox.add_child(this._label, { expand: true });
         }
-	        
         this.actor.set_child(this.buttonbox);
-
-        // Connect signals
-        // this.actor.connect('touch-event', Lang.bind(this,
-		// this._onTouchEvent));
-        
         this._button = menyy;
-        // this.actor.connect('destroy', Lang.bind(this, this._onDestroy));
-        
         // Callbacks to events
 		this.actor.connect('enter-event', Lang.bind(this, this.buttonEnterCallback));
 		this.actor.connect('leave-event', Lang.bind(this, this.buttonLeaveCallback));
@@ -333,50 +310,79 @@ const BackMenuItem = new Lang.Class({
     	} else {
     		this._button._selectCategory('categories');
     	}
-        // this._button._openDefaultCategory();
         if (this._button.searchActive) this._button.resetSearch();
-	    // this.parent(event);
     },
 });
 
-
-
-
-
-
-
 /*
  * ========================================================================= /*
- * name: CategoryListButton @desc A button with an icon and label that holds app
- * info From GnoMenu project
+ * name: CategoryButton @desc A button with an icon and label that holds app
+ * info From Menyy project
  * =========================================================================
  */
-const CategoryListButton = new Lang.Class({
+const CategoryButton = new Lang.Class({
     Name: 'Menyy.CategoryListButton',
+    Extends: PopupMenu.PopupBaseMenuItem,
 
     _init: function (dir, altNameText, altIconName, button) {
-    	// this.iconSize = settings.get_int('categories-icon-size');
-    	this._iconSize = (settings.get_int('categories-icon-size') > 0) ? settings.get_int('categories-icon-size') : 24;
-    	this._showIcon = (settings.get_int('categories-icon-size') > 0) ? true : false;
-    	
+    	this._settings = convenience.getSettings('org.gnome.shell.extensions.menyy');
+    	this._button = button;
+		this._categoriesViewMode = button._categoriesViewMode;
+		this._appsViewMode = button._appsViewMode;
+		this._appGridButtonWidth = button._appGridButtonWidth;
+		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
+			this.selectionMethod = SelectMethod.CLICK;
+		} else {
+			this.selectionMethod = this._settings.get_enum('categories-selection-method');
+		}
+		this.hoverDelay =  this._settings.get_int('categories-hover-delay');
+		let _hoverTimeOutId;
+		
+		let style;
+		let styleLabel;
+		//TODO(CATEGORIES LABEL SIDE)
+    	if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.GRID)) {
+    		this._iconSize = (settings.get_int('grid-icon-size') > 0) ? settings.get_int('grid-icon-size') : 32;
+        	this._showIcon = true;
+        	style = "popup-menu-item popup-submenu-menu-item menyy-apps-grid-button menyy-category-grid-button";
+        	styleLabel = "menyy-apps-grid-button-label menyy-category-grid-button-label";
+        	this.actor = new St.Button({reactive: true, style_class: style, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
+        	this.buttonbox = new St.BoxLayout({vertical: true});
+    	} else if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.LIST)) {
+			this._iconSize = (settings.get_int('apps-icon-size') > 0) ? settings.get_int('apps-icon-size') : 28;
+			this._showIcon = (settings.get_int('apps-icon-size') > 0) ? true : false;
+        	style = "popup-menu-item popup-submenu-menu-item menyy-category-button";
+        	styleLabel = "menyy-category-button-label";
+        	this.buttonbox = new St.BoxLayout();
+        	if (settings.get_enum('categories-button-orientation') == 1) {
+            	this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.END, y_align: St.Align.START });
+            } else if (settings.get_enum('categories-button-orientation') == 2) {
+            	this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.MIDDLE, y_align: St.Align.START });
+            } else {
+            	this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.START });
+            }
+    	} else {
+        	this._iconSize = (settings.get_int('categories-icon-size') > 0) ? settings.get_int('categories-icon-size') : 24;
+        	this._showIcon = (settings.get_int('categories-icon-size') > 0) ? true : false;
+        	style = "popup-menu-item popup-submenu-menu-item menyy-category-button";
+        	styleLabel = "menyy-category-button-label";
+        	this.buttonbox = new St.BoxLayout();
+        	if (settings.get_enum('categories-button-orientation') == 1) {
+            	this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.END, y_align: St.Align.START });
+            } else if (settings.get_enum('categories-button-orientation') == 2) {
+            	this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.MIDDLE, y_align: St.Align.START });
+            } else {
+            	this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.START });
+            }
+    	}
+    	this.actor._delegate = this;        
+        
+        this.actor.connect('touch-event', Lang.bind(this, this._onTouchEvent)); 	
         this.buttonEnterCallback = null;
         this.buttonLeaveCallback = null;
         this.buttonPressCallback = null;
         this.buttonReleaseCallback = null;
         this._ignoreHoverSelect = null;
-
-        let style = "popup-menu-item popup-submenu-menu-item menyy-category-button";
-        if (settings.get_enum('categories-label') == 1) {
-        	this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.END, y_align: St.Align.START });
-        } else if (settings.get_enum('categories-label') == 2) {
-        	this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.MIDDLE, y_align: St.Align.START });
-        } else {
-        	this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.START });
-        }
-        
-        this.actor._delegate = this;
-        this._button = button;
-        this.buttonbox = new St.BoxLayout();
 
         this._dir = dir;
         let categoryNameText = "";
@@ -388,28 +394,47 @@ const CategoryListButton = new Lang.Class({
         } else {
             categoryNameText = dir.get_name() ? dir.get_name() : "";
             categoryIconName = dir.get_icon() ? dir.get_icon().get_names().toString() : "error";
-        }        
+        }
         
-        this.label = new St.Label({ text: categoryNameText, style_class: 'menyy-category-button-label' });
-        if (categoryIconName && this._showIcon) {
-            this.icon = new St.Icon({icon_name: categoryIconName, icon_size: this._iconSize});            
-            if (settings.get_enum('categories-label') == 1) {
-            	this.buttonbox.add(this.label, {x_fill: true, y_fill: false, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
-            	this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
-            } else if (settings.get_enum('categories-label') == 2) {
-            	this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
-            } else {
-            	this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
-            	this.buttonbox.add(this.label, {x_fill: true, y_fill: false, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
+        if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.GRID)) {
+        	if (categoryIconName) {
+                this.icon = new St.Icon({icon_name: categoryIconName, icon_size: this._iconSize});
+                this.label = new St.Label({ text: categoryNameText, style_class: styleLabel });
+                this.label.clutter_text.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR);
+	        	this.label.clutter_text.set_line_wrap(true);
+                this.buttonbox.add(this.icon, {x_fill: false, y_fill: false,x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
+                this.buttonbox.add(this.label, {x_fill: false, y_fill: true, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
             }
         } else {
-        	this.buttonbox.add(this.label, {x_fill: true, y_fill: false, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
+        	this.label = new St.Label({ text: categoryNameText, style_class: 'menyy-category-button-label' });
+            this.label.clutter_text.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR);
+        	this.label.clutter_text.set_line_wrap(true);
+        	if (categoryIconName && this._showIcon) {
+	            this.icon = new St.Icon({icon_name: categoryIconName, icon_size: this._iconSize});
+	            if (settings.get_enum('categories-label') == 1) {
+	            	this.buttonbox.add(this.label, {x_fill: true, y_fill: false, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
+	            	this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
+	            } else if (settings.get_enum('categories-label') == 2) {
+	            	this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
+	            } else {
+	            	this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
+	            	this.buttonbox.add(this.label, {x_fill: true, y_fill: false, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
+	            }
+	        } else {
+	        	this.buttonbox.add(this.label, {x_fill: true, y_fill: false, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
+	        }
         }
+        
 
         this.actor.set_child(this.buttonbox);
 
         // Connect signals
         this.actor.connect('touch-event', Lang.bind(this, this._onTouchEvent));
+        this.actor.connect('button-press-event', Lang.bind(this, this._onButtonPressEvent));
+        this.actor.connect('button-release-event', Lang.bind(this, this._onButtonReleaseEvent));
+        this.actor.connect('enter-event', Lang.bind(this, this._onEnterEvent));
+        this.actor.connect('leave-event', Lang.bind(this, this._onLeaveEvent));
+        
     },
     
     
@@ -417,9 +442,42 @@ const CategoryListButton = new Lang.Class({
     activate: function(event) {
     	this._button._selectCategory(this._dir);
         this.parent(event);
-        // return Clutter.EVENT_STOP;
     },
     
+    
+    _onButtonPressEvent: function(actor, event) {
+    	this._button._selectCategory(this);
+    },
+
+    _onButtonReleaseEvent: function (actor, event) {
+        actor.remove_style_pseudo_class('pressed');
+        actor.remove_style_class_name('selected');
+    },
+
+    _onTouchEvent : function (actor, event) {
+        return Clutter.EVENT_PROPAGATE;
+    },
+    
+    _onEnterEvent: function(actor, event) {
+    	actor.add_style_class_name('selected');
+		if (this._ignoreHoverSelect)
+			return;
+		if (this.selectionMethod == SelectMethod.HOVER ) {
+			this._hoverTimeoutId = Mainloop.timeout_add((this.hoverDelay >0) ? this.hoverDelay : 0, Lang.bind(this, function() {
+				this._button._selectCategory(this);
+				this._hoverTimeoutId = 0;
+			}));
+		}
+    },
+    
+    _onLeaveEvent: function(actor, event) {
+    	actor.remove_style_class_name('selected');
+		if (this.selectionMethod == SelectMethod.HOVER ) {
+			if (this._hoverTimeoutId > 0) {
+				Mainloop.source_remove(this._hoverTimeoutId);
+			}
+		}
+    },
     
 
     setButtonEnterCallback: function(cb) {
@@ -455,129 +513,6 @@ const CategoryListButton = new Lang.Class({
     click: function() {
         this.buttonPressCallback.call();
         this.buttonReleaseCallback.call();
-    },
-    
-    _onTouchEvent : function (actor, event) {
-        return Clutter.EVENT_PROPAGATE;
-    }
-    
-});
-
-/*
- * ========================================================================= /*
- * name: AppButton @desc A button with an icon and label that holds app info
- * for various @desc types of sources (application, places, recent)
- * =========================================================================
- */
-
-const CategoryGridButton = new Lang.Class({
-    Name: 'Menyy.CategoryGridButton',
-
-    _init: function (dir, altNameText, altIconName) {
-    	this._settings = convenience.getSettings('org.gnome.shell.extensions.menyy');
-    	this._iconSize = this._settings.get_int('grid-icon-size');		// change
-																		// to
-																		// grid
-																		// icon
-																		// size,
-																		// to
-																		// have
-																		// unified
-    	
-        this.buttonEnterCallback = null;
-        this.buttonLeaveCallback = null;
-        this.buttonPressCallback = null;
-        this.buttonReleaseCallback = null;
-        this._ignoreHoverSelect = null;    	
-    	
-        
-        this._name= altNameText;
-        this._dir = dir;
-        let categoryNameText = "";
-        let categoryIconName = null;
-        
-        this._stateChangedId = 0;
-        let styleButton = "popup-menu-item popup-submenu-menu-item menyy-apps-grid-button menyy-category-grid-button";
-
-        let styleLabel = "menyy-apps-grid-button-label menyy-category-grid-button-label";        
-        
-        /*
-		 * if (settings.get_int('apps-grid-column-count') == 3) { styleButton += "
-		 * col3"; } else if (settings.get_int('apps-grid-column-count') == 4) {
-		 * styleButton += " col4"; } else if
-		 * (settings.get_int('apps-grid-column-count') == 5) { styleButton += "
-		 * col5"; } else if (settings.get_int('apps-grid-column-count') == 6) {
-		 * styleButton += " col6"; } else if
-		 * (settings.get_int('apps-grid-column-count') == 7) { styleButton += "
-		 * col7"; }
-		 */
-        
-        this.actor = new St.Button({reactive: true, style_class: styleButton, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
-        this.actor._delegate = this;
-        
-        if (typeof dir == 'string') {
-            categoryNameText = altNameText;
-            categoryIconName = altIconName;
-        } else {
-            categoryNameText = dir.get_name() ? dir.get_name() : "";
-            categoryIconName = dir.get_icon() ? dir.get_icon().get_names().toString() : "error";
-        }
-        this.buttonbox = new St.BoxLayout({vertical: true});
-        if (categoryIconName) {
-            this.icon = new St.Icon({icon_name: categoryIconName, icon_size: this._iconSize});
-            this.buttonbox.add(this.icon, {x_fill: false, y_fill: false,x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
-        }
-        // this.label = new St.Label({ text: categoryNameText, style_class:
-		// 'menyy-category-button-label' });
-        this.label = new St.Label({ text: categoryNameText, style_class: styleLabel });
-        this.buttonbox.add(this.label, {x_fill: false, y_fill: true, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
-        this.actor.set_child(this.buttonbox);
-        
-        
-        this.actor.connect('touch-event', Lang.bind(this, this._onTouchEvent));
-    },
-
-    _onTouchEvent : function (actor, event) {
-        return Clutter.EVENT_PROPAGATE;
-    },
-    
-    setButtonEnterCallback: function(cb) {
-        this.buttonEnterCallback = cb;
-        this.actor.connect('enter-event', Lang.bind(this, this.buttonEnterCallback));
-    },
-
-    setButtonLeaveCallback: function(cb) {
-        this.buttonLeaveCallback = cb;
-        this.actor.connect('leave-event', Lang.bind(this, this.buttonLeaveCallback));
-    },
-
-    setButtonPressCallback: function(cb) {
-        this.buttonPressCallback = cb;
-        this.actor.connect('button-press-event', Lang.bind(this, this.buttonPressCallback));
-    },
-
-    setButtonReleaseCallback: function(cb) {
-        this.buttonReleaseCallback = cb;
-        this.actor.connect('button-release-event', Lang.bind(this, this.buttonReleaseCallback));
-    },
-
-    select: function() {
-        this._ignoreHoverSelect = true;
-        this.buttonEnterCallback.call();
-    },
-
-    unSelect: function() {
-        this._ignoreHoverSelect = false;
-        this.buttonLeaveCallback.call();
-    },
-
-    click: function() {
-        this.buttonPressCallback.call();
-        this.buttonReleaseCallback.call();
-    },
-    
-    _onTouchEvent : function (actor, event) {
-        return Clutter.EVENT_PROPAGATE;
     }
 });
 
@@ -595,12 +530,12 @@ const AppButton = new Lang.Class({
     Extends: PopupMenu.PopupBaseMenuItem,
 
     
-    _init: function (app, button, appType, location) {
+    _init: function (app, button, location) {
 		this.parent();
 		this._appsViewMode = button._appsViewMode;
 		this._button = button;
 		this.app = app;
-		this._type = appType;
+		this._type = app.appType || AppType.APPLICATION;	// gets apptype from the generator and the only one without apptype is APPLICATION
 		this._stateChangedId = 0;
 		this._isLeftDown = false;
 		this._isTimeOutOpen = false;
@@ -632,13 +567,13 @@ const AppButton = new Lang.Class({
 		}
 		
 		if (this._appsViewMode == ApplicationsViewMode.LIST || location == 'places'){
-			if (settings.get_enum('apps-label') == 1 && (this._type == AppType.APPLICATION || this._type == AppType.FILE || this._type == AppType.FOLDER || this._type == AppType.WEBBOOKMARK || this._type == AppType.TERMINAL)) {
+			if (settings.get_enum('apps-button-orientation') == 1 && (this._type == AppType.APPLICATION || this._type == AppType.FILE || this._type == AppType.FOLDER || this._type == AppType.WEBBOOKMARK || this._type == AppType.TERMINAL)) {
 				this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.END, y_align: St.Align.MIDDLE});
-			} else if (settings.get_enum('apps-label') == 2 && (this._type == AppType.APPLICATION || this._type == AppType.FILE || this._type == AppType.FOLDER || this._type == AppType.WEBBOOKMARK || this._type == AppType.TERMINAL)) {
+			} else if (settings.get_enum('apps-button-orientation') == 2 && (this._type == AppType.APPLICATION || this._type == AppType.FILE || this._type == AppType.FOLDER || this._type == AppType.WEBBOOKMARK || this._type == AppType.TERMINAL)) {
 				this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
-			} else if (settings.get_enum('places-label') == 1 && this._type == AppType.PLACE) {
+			} else if (settings.get_enum('places-button-orientation') == 1 && this._type == AppType.PLACE) {
 				this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.END, y_align: St.Align.MIDDLE});
-			} else if (settings.get_enum('places-label') == 2 && this._type == AppType.PLACE) {
+			} else if (settings.get_enum('places-button-orientation') == 2 && this._type == AppType.PLACE) {
 				this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
 			} else {
 				this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.MIDDLE});
@@ -656,11 +591,6 @@ const AppButton = new Lang.Class({
 			}));
 		this.actor.connect('popup-menu', Lang.bind(this, this._onKeyboardPopupMenu));      
 		
-		
-		
-		
-		
-		
         this._menu = null;
         this._menuManager = new PopupMenu.PopupMenuManager(this);
         this._menuTimeoutId = 0;
@@ -669,29 +599,24 @@ const AppButton = new Lang.Class({
         this.actor.connect('enter-event', Lang.bind(this, this._onEnterEvent));
         this.actor.connect('leave-event', Lang.bind(this, this._onLeaveEvent));
         
-        
-        
         // Set labels and icons
-        if (appType == AppType.APPLICATION) {
+        if (this._type == AppType.APPLICATION) {
         	this.icon = app.create_icon_texture(this._iconSize);
             this.label = new St.Label({ text: app.get_name(), style_class: this._labelStyle });
-            //this.entry = new St.Entry();
-        	//this.label = new St.Label({ text: "alpha\nbeta", style_class: this._labelStyle });
-        } else if (appType == AppType.PLACE || appType == AppType.WEBBOOKMARK) {
+        } else if (this._type == AppType.PLACE || this._type == AppType.WEBBOOKMARK) {
             this.icon = new St.Icon({gicon: app.icon, icon_size: this._iconSize});
             if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
             this.label = new St.Label({ text: app.name, style_class: this._labelStyle });
-        } else if (appType == AppType.FILE) {
+        } else if (this._type == AppType.FILE || this._type == AppType.FOLDER) {
             let gicon = Gio.content_type_get_icon(app.mime);
             this.icon = new St.Icon({gicon: gicon, icon_size: this._iconSize});
             if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
             this.label = new St.Label({ text: app.name, style_class: this._labelStyle });
-        } else if (appType == AppType.TERMINAL) {
+        } else if (this._type == AppType.TERMINAL) {
             this.icon = new St.Icon({gicon: app.icon, icon_size: this._iconSize});
             if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
             this.label = new St.Label({ text: app.name, style_class: this._labelStyle });
         }
-        
         
         // Create button
         if (this._appsViewMode == ApplicationsViewMode.LIST || location == 'places') {
@@ -704,28 +629,27 @@ const AppButton = new Lang.Class({
 		this._iconContainer = new St.BoxLayout({vertical: true});
 		this._iconContainer.add_style_class_name(this._iconStyle);
 		
+		
+		// Set run indicator
+        this._dot = new St.Widget({ style_class: 'app-well-app-running-dot',
+                                    layout_manager: new Clutter.BinLayout(),
+                                    x_expand: true, y_expand: true,
+                                    x_align: Clutter.ActorAlign.CENTER,
+                                    y_align: Clutter.ActorAlign.END });
+		
 	    if (this._showIcon) {
 	        this._iconContainer.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.END, y_align: St.Align.END});
-        }
-        
-        // Add possibility to deactivate this function
-	    // Add possibility under button or icon only
-        if (location == 'apps') {
-        	// Set run indicator
-	        this._dot = new St.Widget({ style_class: 'app-well-app-running-dot',
-	                                    layout_manager: new Clutter.BinLayout(),
-	                                    x_expand: true, y_expand: true,
-	                                    x_align: Clutter.ActorAlign.CENTER,
-	                                    y_align: Clutter.ActorAlign.END });
-	        this._iconContainer.add(this._dot, {x_fill: false, y_fill: false, x_align: St.Align.END, y_align: St.Align.END});
-	        // this._iconContainer.add(this._dot, {expand: true ,x_fill: true,
-			// y_fill: true, x_align: St.Align.END, y_align: St.Align.END});
 	        
-	        // Check if running state
-	        this._dot.opacity = 0;
-	        this._onStateChanged();
+	        if (location == 'apps') {
+		        this._iconContainer.add(this._dot, {x_fill: false, y_fill: false, x_align: St.Align.END, y_align: St.Align.END});
+	        }
+	        	
         }
-
+	    
+	    // Check if running state
+	    this._dot.opacity = 0;
+        this._onStateChanged();
+	    
 	    // Create button and add labol, icon and indicator
         if (this._appsViewMode == ApplicationsViewMode.LIST){
         	// Wraps text if too long
@@ -759,19 +683,15 @@ const AppButton = new Lang.Class({
 			this.label.clutter_text.line_wrap_mode = Pango.WrapMode.WORD_CHAR;
         	this.buttonbox.add(this.label, {x_fill: false, y_fill: true, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE, expand: true});
         }
-
         this.actor.set_child(this.buttonbox);
 
-        
         // Connect signals
         this.actor.connect('touch-event', Lang.bind(this, this._onTouchEvent));
-        if (appType == AppType.APPLICATION) {
+        if (this._type == AppType.APPLICATION) {
             this._stateChangedId = this.app.connect('notify::state', Lang.bind(this, this._onStateChanged));
         }
-         
         // Connect drag-n-drop signals
         this._draggable = DND.makeDraggable(this.actor);
-        
         this._draggable.connect('drag-begin', Lang.bind(this, function () {
         	this._isDragged = true;
         	Main.overview.beginItemDrag(this);
@@ -801,7 +721,7 @@ const AppButton = new Lang.Class({
 	        } else {
 	            this.app.launch();
 	        }
-    	} else if (this._type == AppType.FILE){
+    	} else if (this._type == AppType.FILE || this._type == AppType.FOLDER){
     		Gio.app_info_launch_default_for_uri(this.app.uri, global.create_app_launch_context(0, -1));
     	} else if (this._type == AppType.TERMINAL) {
     		this.app.launch();
@@ -958,7 +878,7 @@ const AppButton = new Lang.Class({
             appIcon = this.app.create_icon_texture(this._iconSize);
         } else if (this._type == AppType.PLACE) {
             appIcon = new St.Icon({gicon: this.app.icon, icon_size: this._iconSize});
-        } else if (this._type == AppType.FILE) {
+        } else if (this._type == AppType.FILE || this._type == AppType.FOLDER) {
             let gicon = Gio.content_type_get_icon(this.app.mime);
             appIcon = new St.Icon({gicon: gicon, icon_size: this._iconSize});
         }
@@ -984,7 +904,7 @@ const AppButton = new Lang.Class({
            } else {
                this.app.launch();
            }
-        } else if (this._type == AppType.FILE) {
+        } else if (this._type == AppType.FILE || this._type == AppType.FOLDER) {
             Gio.app_info_launch_default_for_uri(this.app.uri, global.create_app_launch_context(0, -1));
         }
 
@@ -1037,7 +957,7 @@ const ShortcutButton = new Lang.Class({
             this.icon = new St.Icon({gicon: app.icon, icon_size: this._iconSize, style_class: 'menyy-shortcuts-icon'});
             if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
             this.label = new St.Label({ text: app.name, style_class: 'menyy-shortcuts-button-label' });
-        } else if (appType == AppType.FILE) {
+        } else if (appType == AppType.FILE || appType == AppType.FOLDER) {
             let gicon = Gio.content_type_get_icon(app.mime);
             this.icon = new St.Icon({gicon: gicon, icon_size: this._iconSize, style_class: 'menyy-shortcuts-icon'});
             if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
@@ -1086,7 +1006,7 @@ const ShortcutButton = new Lang.Class({
             appIcon = this.app.create_icon_texture(this._iconSize);
         } else if (this._type == AppType.PLACE) {
             appIcon = new St.Icon({gicon: this.app.icon, icon_size: this._iconSize});
-        } else if (this._type == AppType.FILE) {
+        } else if (this._type == AppType.FILE || this._type == AppType.FOLDER) {
             let gicon = Gio.content_type_get_icon(this.app.mime);
             appIcon = new St.Icon({gicon: gicon, icon_size: this._iconSize});
         }
@@ -1111,7 +1031,7 @@ const ShortcutButton = new Lang.Class({
            } else {
                this.app.launch();
            }
-        } else if (this._type == AppType.FILE) {
+        } else if (this._type == AppType.FILE || this._type == AppType.FOLDER) {
             Gio.app_info_launch_default_for_uri(this.app.uri, global.create_app_launch_context(0, -1));
         }
 

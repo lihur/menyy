@@ -16,8 +16,8 @@ const appSys = Shell.AppSystem.get_default();
 const Gio = imports.gi.Gio;
 const Mainloop = imports.mainloop;
 
-const Meta = imports.gi.Meta;										// DesktopTarget
-const DND = imports.ui.dnd;											// DesktopTarget
+//const Meta = imports.gi.Meta;										// DesktopTarget
+//const DND = imports.ui.dnd;											// DesktopTarget
 
 
 
@@ -37,6 +37,8 @@ const Firefox = Menyy.imports.managers.webFirefox;
 const GoogleChrome = Menyy.imports.managers.webGoogleChrome;
 const Midori = Menyy.imports.managers.webMidori;
 const Opera = Menyy.imports.managers.webOpera;
+const DesktopTarget = Menyy.imports.managers.DnD.DesktopTarget;
+Signals.addSignalMethods(DesktopTarget.prototype);
 
 //SystemButtons
 const PowerButton = systemButtons.PowerButton;
@@ -46,11 +48,8 @@ const SuspendButton = systemButtons.SuspendButton;
 const LockButton = systemButtons.LockButton;
 
 //MenuButtons
-const CategoryListButton = menuButtons.CategoryListButton;
-const CategoryGridButton = menuButtons.CategoryGridButton;
+const CategoryButton = menuButtons.CategoryButton;
 const AppButton = menuButtons.AppButton;
-//Signals.addSignalMethods(AppButton.prototype);
-//Signals.addSignalMethods(AppGridButton.prototype);
 const ShortcutButton = menuButtons.ShortcutButton;				// Right click for menu uses it
 const UserMenuItem = menuButtons.UserMenuItem;
 const BackMenuItem = menuButtons.BackMenuItem;
@@ -71,152 +70,6 @@ const CategoriesViewMode = constants.CategoriesViewMode;
 const PlacesViewMode = constants.PlacesViewMode;
 const SelectMethod = constants.SelectMethod;
 const HomeView = constants.HomeView;
-
-//TODO(MOVE ELSEWHERE!)
-//Drag to desktop functionality
-//Drag and drop from "Applications menu" (aps-menu@gnome-shell-extensions.gcampax.github.com)
-const DesktopTarget = new Lang.Class({
-	Name: 'DesktopTarget',
-
-	_init: function() {
-		this._desktop = null;
-		this._desktopDestroyedId = 0;
-
-		this._windowAddedId =
-			global.window_group.connect('actor-added',
-					Lang.bind(this, this._onWindowAdded));
-
-		global.get_window_actors().forEach(a => {
-			this._onWindowAdded(a.get_parent(), a);
-		});
-	},
-
-	get hasDesktop() {
-		return this._desktop != null;
-	},
-
-	_onWindowAdded: function(group, actor) {
-		if (!(actor instanceof Meta.WindowActor))
-			return;
-
-		if (actor.meta_window.get_window_type() == Meta.WindowType.DESKTOP)
-			this._setDesktop(actor);
-	},
-
-	_setDesktop: function(desktop) {
-		if (this._desktop) {
-			this._desktop.disconnect(this._desktopDestroyedId);
-			this._desktopDestroyedId = 0;
-
-			delete this._desktop._delegate;
-		}
-
-		this._desktop = desktop;
-		this.emit('desktop-changed');
-
-		if (this._desktop) {
-			this._desktopDestroyedId = this._desktop.connect('destroy', () => {
-				this._setDesktop(null);
-			});
-			this._desktop._delegate = this;
-		}
-	},
-
-	_getSourceAppInfo: function(source) {
-		//global.log("menyy: source: " + source);
-		if (!(source instanceof AppButton))
-			return null;
-		//if (!(source instanceof ApplicationMenuItem))
-		//	return null;
-		return source.app.app_info;
-	},
-
-	_touchFile: function(file) {
-		let queryFlags = Gio.FileQueryInfoFlags.NONE;
-		let ioPriority = GLib.PRIORITY_DEFAULT;
-
-		let info = new Gio.FileInfo();
-		info.set_attribute_uint64(Gio.FILE_ATTRIBUTE_TIME_ACCESS,
-				GLib.get_real_time());
-		file.set_attributes_async (info, queryFlags, ioPriority, null,
-				(o, res) => {
-					try {
-						o.set_attributes_finish(res);
-					} catch(e) {
-						log('Failed to update access time: ' + e.message);
-					}
-				});
-	},
-
-	_markTrusted: function(file) {
-		let modeAttr = Gio.FILE_ATTRIBUTE_UNIX_MODE;
-		let trustedAttr = 'metadata::trusted';
-		let queryFlags = Gio.FileQueryInfoFlags.NONE;
-		let ioPriority = GLib.PRIORITY_DEFAULT;
-
-		file.query_info_async(modeAttr, queryFlags, ioPriority, null,
-				(o, res) => {
-					try {
-						let info = o.query_info_finish(res);
-						//Octals are deprecated
-						//let mode = info.get_attribute_uint32(modeAttr) | 0100;
-						let mode = info.get_attribute_uint32(modeAttr) | 0o100;
-
-						info.set_attribute_uint32(modeAttr, mode);
-						info.set_attribute_string(trustedAttr, 'yes');
-						file.set_attributes_async (info, queryFlags, ioPriority, null,
-								(o, res) => {
-									o.set_attributes_finish(res);
-
-									// Hack: force nautilus to reload file info
-									this._touchFile(file);
-								});
-					} catch(e) {
-						log('Failed to mark file as trusted: ' + e.message);
-					}
-				});
-	},
-
-	destroy: function() {
-		if (this._windowAddedId)
-			global.window_group.disconnect(this._windowAddedId);
-		this._windowAddedId = 0;
-
-		this._setDesktop(null);
-	},
-
-	handleDragOver: function(source, actor, x, y, time) {
-		let appInfo = this._getSourceAppInfo(source);
-		if (!appInfo)
-			return DND.DragMotionResult.CONTINUE;
-
-		return DND.DragMotionResult.COPY_DROP;
-	},
-
-	acceptDrop: function(source, actor, x, y, time) {
-		let appInfo = this._getSourceAppInfo(source);
-		if (!appInfo)
-			return false;
-
-		this.emit('app-dropped');
-
-		let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-
-		let src = Gio.File.new_for_path(appInfo.get_filename());
-		let dst = Gio.File.new_for_path(GLib.build_filenamev([desktop, src.get_basename()]));
-
-		try {
-			// copy_async() isn't introspectable :-(
-			src.copy(dst, Gio.FileCopyFlags.OVERWRITE, null, null);
-			this._markTrusted(dst);
-		} catch(e) {
-			log('Failed to copy to desktop: ' + e.message);
-		}
-
-		return true;
-	}
-});
-Signals.addSignalMethods(DesktopTarget.prototype);
 
 // TODO(MOVE TO A SEPARATE FILE)
 // Searches web bookmarks
@@ -318,15 +171,14 @@ const ApplicationsMenu = new Lang.Class({
 		this._activeContainer = null;																	// Destroy me later maybe?
 
 		this.applicationsByCategory = {};																// applications in categories
-		this._allAppsList = new Array();																// All Apps list
+		this._allAppsList = {};																// All Apps list
 		this._frequentApps = new Array();																// Frequent Apps List
 		this._favorites = new Array();																	// Favorite Apps List
 		this._places = new Array();																		// Places List
 		this._recent = new Array();																		// Recent Files List
-		//this._menyy_favorites = new Array();															// Custom Favorites List (for use later)
-
+		
 		// Settings
-		this._searchWaitTime = 250;																		// Put in setting, this is used to determine how long search waits for new input
+		this._searchWaitTime = 350;																		// Put in setting, this is used to determine how long search waits for new input
 		this._appGridColumns = this._settings.get_int('apps-grid-column-count');						// Grid Column Count
 		this._appsViewMode = this._settings.get_enum('apps-viewmode');									// Apps View Mode (grid or list or other)
 		this._categoriesViewMode = this._settings.get_enum('categories-viewmode');						// Categories View Mode (left, right, combined with apps or accordion)
@@ -334,7 +186,6 @@ const ApplicationsMenu = new Lang.Class({
 		this._appGridButtonWidth = 20 + (settings.get_int('grid-icon-size'));							// grid icon size in px
 		this.hoverDelay =  this._settings.get_int('categories-hover-delay');							// hoverDelay
 		this.HomeViewSettings = this._settings.get_enum('default-category');							// Default category to open
-		this.selectionMethod = null;																	// Click or hover category
 
 		// Panel button stuff
 		this._menuButtonWidget = new MenuButtonWidget();
@@ -353,7 +204,6 @@ const ApplicationsMenu = new Lang.Class({
 		// Load stuff into memory for a minor speed improvement
 		this._loadFavorites();																			// Load Favorites into memory
 		this._loadFrequent();																			// Load Frequent into memory
-		this._loadAllAppsList();																		// Load All apps list into memory
 		this._loadHome();																				// Load homescreen applications into memory		
 		/*
 		Main.panel.actor.connect('notify::height', Lang.bind(this,
@@ -433,18 +283,6 @@ const ApplicationsMenu = new Lang.Class({
 	// Right Click Menu
 	_createAltLayout: function() {
 		this.rightClickBox = new St.BoxLayout({ vertical: true, style_class: 'menyy-rightClick-box menyy-spacing', x_align: St.Align.END});
-		//this.rightClickScrollBox = new St.ScrollView({x_fill: true, y_fill: true, y_align: St.Align.START, style_class: 'vfade menyy-rightClickScroll-box-scrollview' });
-		//this.rightClickScrollBox.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC);
-		//let vScrollRightClick = this.rightClickScrollBox.get_vscroll_bar();
-		//vScrollRightClick.connect('scroll-start', Lang.bind(this, function() {
-		//	this.menu.passEvents = true;
-		//}));
-		//vScrollRightClick.connect('scroll-stop', Lang.bind(this, function() {
-		//	this.menu.passEvents = false;
-		//}));
-		//Scroll should never be needed here :D
-		//this.rightClickScrollBox.add_actor(this.rightClickBox, {expand: true, x_fill: true, y_fill: true});
-		//this.altBox.add(this.rightClickScrollBox, {expand: true, x_fill: true, y_fill: true});
 		this.altBox.add(this.rightClickBox, {expand: true, x_fill: true, y_fill: true});
 
 
@@ -458,16 +296,10 @@ const ApplicationsMenu = new Lang.Class({
 		this.centerBox = new St.BoxLayout({ vertical: false, style_class: 'menyy-center-box menyy-spacing' , y_align: St.Align.END });		// NOT USED YET
 		this.bottomBox = new St.BoxLayout({ vertical: false, style_class: 'menyy-bottom-box menyy-spacing' , y_align: St.Align.END });
 
-
 		// Categories, Applications, Places part of Horizontal layout
 		this.leftBox = new St.BoxLayout({ vertical: false, style_class: 'menyy-left-box menyy-spacing', x_align: St.Align.END});
 		//this.middleBox = new St.BoxLayout({ vertical: false, style_class: 'menyy-middle-box menyy-spacing', x_align: St.Align.END});
 		this.rightBox = new St.BoxLayout({ vertical: false, style_class: 'menyy-right-box menyy-spacing', x_align: St.Align.END });
-
-
-
-
-
 
 		// Search
 		this.searchBox = new St.BoxLayout({ vertical: true, style_class: 'menyy-search-box', y_align:St.Align.MIDDLE});
@@ -489,28 +321,10 @@ const ApplicationsMenu = new Lang.Class({
 		this._previousSearchPattern = "";
 		this._searchIconClickedId = 0;
 
-
-
-
-
-
-
-
-
 		// System Controls
-		
 		this.systemBox = new St.BoxLayout({ vertical: false, style_class: 'menyy-system-box', y_align: St.Align.END });
-		
 		this.systemBoxMenu = new PopupMenu.PopupBaseMenuItem({ reactive: false,
 			can_focus: false, style_class: 'menyy-system-box menyy-spacing'});
-
-
-
-
-
-
-
-
 
 		// Categories, main display, places and homescreen
 		// Always create the box... it's not like it's gonna slow it down or chug memory
@@ -535,9 +349,6 @@ const ApplicationsMenu = new Lang.Class({
 			this.homeBoxWrapper.add(this.homeBox, {x_fill:false, y_fill: false, x_align: St.Align.START, y_align: St.Align.START});
 		}
 		this.placesBox = new St.BoxLayout({ vertical: true, style_class: 'menyy-places-box menyy-spacing'});
-
-
-
 
 		// Apps Scroll
 		this.appsScrollBox = new St.ScrollView({x_fill: true, y_fill: true, y_align: St.Align.START, style_class: 'vfade menyy-applications-box-scrollview' });
@@ -709,10 +520,13 @@ const ApplicationsMenu = new Lang.Class({
 			y_align: St.Align.START
 		});
 
-		/*
-		 * let lock = new LockButton(this); this.systemBox.add(lock.actor, {
-		 * expand: false, x_fill: false, y_align: St.Align.START });
-		 */
+		if (Main.screenShield !== null) {
+			let lock = new LockButton(this); this.systemBox.add(lock.actor, { expand: false, x_fill: false, y_align: St.Align.START });
+			this.systemBox.add(lock.actor, { expand: false,
+				x_fill: false,
+				y_align: St.Align.START
+			});
+		}
 
 		let suspend = new SuspendButton(this);
 		this.systemBox.add(suspend.actor, { expand: false,
@@ -1176,7 +990,6 @@ const ApplicationsMenu = new Lang.Class({
             	if (this._activeContainer) {
                     this._clearActiveContainerSelections();
                 }
-                // Launch application or Nautilus place or Recent document
                 let item_actor = children[this._selectedItemIndex];
             	item_actor._delegate.activate();
                 return true;
@@ -1201,12 +1014,7 @@ const ApplicationsMenu = new Lang.Class({
 
         // Check if position reached its end
         if (index>=children.length) {
-            //if (this._activeContainer == this.systemBox) {
-                // allow index to be 1 greater to accommodate pref button
-            //    index = children.length;
-            //} else {
-                index = children.length-1;
-            //}
+            index = children.length-1;
         }
         
         
@@ -1225,8 +1033,6 @@ const ApplicationsMenu = new Lang.Class({
         	}
         }
         
-        
-
         // All good .. now get item actor in container
         this._selectedItemIndex = index;
         let itemActor = children[this._selectedItemIndex];
@@ -1246,27 +1052,6 @@ const ApplicationsMenu = new Lang.Class({
         if (this._activeContainer == this.placesBox || this._activeContainer == this.appsBox || this._activeContainer == this.homeBox || this._activeContainer == this.categoryBox) {
         	this._scrollToActiveContainerButton(itemActor);
         }
-        /*
-        // Set selected app name/description
-        if (this._activeContainer == this.placesBox || this._activeContainer == this.appsBox) {
-            if (itemActor._delegate._type == AppType.APPLICATION) {
-               this.selectedAppTitle.set_text(itemActor._delegate.app.get_name());
-               if (itemActor._delegate.app.get_description()) this.selectedAppDescription.set_text(itemActor._delegate.app.get_description());
-               else this.selectedAppDescription.set_text("");
-            } else if (itemActor._delegate._type == AppType.FOLDER) {
-               this.selectedAppTitle.set_text(itemActor._delegate.app.name);
-               if (itemActor._delegate.app.description) this.selectedAppDescription.set_text(itemActor._delegate.app.description);
-               else this.selectedAppDescription.set_text("");
-            } else if (itemActor._delegate._type == AppType.FOLDER) {
-               this.selectedAppTitle.set_text(itemActor._delegate.app.name);
-               if (itemActor._delegate.app.description) this.selectedAppDescription.set_text(itemActor._delegate.app.description);
-               else this.selectedAppDescription.set_text("");
-            }
-
-            // Scroll to item actor if hidden from view
-            this._scrollToActiveContainerButton(itemActor);
-        }
-        */
         return true;
     },
     
@@ -1296,17 +1081,6 @@ const ApplicationsMenu = new Lang.Class({
             }
         }
     },
-    
-    /*
-    _clearUserGroupButtons: function() {
-        this.recentCategory.actor.remove_style_class_name('popup-sub-menu');
-        this.webBookmarksCategory.actor.remove_style_class_name('popup-sub-menu');
-        this.placesCategory.actor.remove_style_class_name('popup-sub-menu');
-        this.recentCategory._opened = false;
-        this.webBookmarksCategory._opened = false;
-        this.placesCategory._opened = false;
-    },
-	*/
 	
     _clearTabFocusSelections: function(selectedBox, resetSearch) {
         this._selectedItemIndex = -1;
@@ -1322,20 +1096,6 @@ const ApplicationsMenu = new Lang.Class({
     _clearActiveContainerSelections: function(selectedContainerActor) {
         if (!this._activeContainer)
             return;
-
-        // Implement this button later, in a later version (maybe)
-        // Deal with extensionPreferences actor separately
-        // because it's not in any of the activeContainer objects
-        /*
-        if (this.extensionPreferences == selectedContainerActor) {
-            this.extensionPreferences.actor.add_style_class_name('selected');
-            if (this.extensionPreferences.actor._delegate && this.extensionPreferences.actor._delegate.select) {
-                this.extensionPreferences.actor._delegate.select();
-            }
-        } else {
-            this.extensionPreferences.actor.remove_style_class_name('selected');
-        }
-        */
 
         // Return if activeContainer has no children
         // Such is the case with the thumbnailsBox
@@ -1473,7 +1233,7 @@ const ApplicationsMenu = new Lang.Class({
 		if (this.HomeViewSettings != HomeView.CATEGORIES) {
 			if (this.homeBox)
 				this.homeBox.destroy_all_children();
-			this._displayButtons(_, this._listApplications(this.HomeViewSettings));
+			this._displayButtons(this._listApplications(this.HomeViewSettings), this.homeBox);
 		}
 
 	},
@@ -1502,21 +1262,6 @@ const ApplicationsMenu = new Lang.Class({
 			if (app)
 				this._favorites.push(app);
 		}
-	},
-
-	// Load All Apps
-	_loadAllAppsList: function () {
-		this._allAppsList = [];
-		
-		for (var directory in this.applicationsByCategory) {
-			//global.log("menyy -> directory: " + directory);
-			this._allAppsList = this._allAppsList.concat(this.applicationsByCategory[directory]);
-		}
-		
-		// Remove Duplicates
-		this._allAppsList = this._allAppsList.filter(function(elem, index, self) {
-		    return index == self.indexOf(elem);
-		})
 	},
 
 	// Load menu category data for a single category
@@ -1548,30 +1293,19 @@ const ApplicationsMenu = new Lang.Class({
 		let column = 0;
 		let rownum = 0;
 		let gridLayout = this.appsBox.layout_manager;
-		// this._loadFavorites();
-		// this._loadFrequent();
 		this.applicationsByCategory = {};
 		let tree = new GMenu.Tree({ menu_basename: 'applications.menu' });
 		tree.load_sync();
 		let root = tree.get_root_directory();
 		let iter = root.iter();
 		let nextType;
-		let _hoverTimeOutId;
-		this.hoverDelay =  this._settings.get_int('categories-hover-delay');
-		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
-			this.selectionMethod = SelectMethod.CLICK;
-		} else {
-			this.selectionMethod = this._settings.get_enum('categories-selection-method');
-		}
-
-
-
+		
 		/*
 		 * Favorite Apps Category
 		 */        
 		let favAppCategory;
 		if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.GRID)) {
-			favAppCategory = new CategoryGridButton('favorites', _('Favorite Apps'), 'applications-other');
+			favAppCategory = new CategoryButton('favorites', _('Favorite Apps'), 'applications-other', this);
 			favAppCategory.buttonbox.width = this._appGridButtonWidth;
 			gridLayout.pack(favAppCategory.actor, column, rownum);
 			column ++;
@@ -1580,65 +1314,21 @@ const ApplicationsMenu = new Lang.Class({
 				rownum ++;
 			}
 		} else {
-			favAppCategory = new CategoryListButton('favorites', _('Favorite Apps'), 'applications-other', this);
+			favAppCategory = new CategoryButton('favorites', _('Favorite Apps'), 'applications-other', this);
 		}
-
-		favAppCategory.setButtonEnterCallback(Lang.bind(this, function() {
-			favAppCategory.actor.add_style_class_name('selected');
-			// this.selectedAppTitle.set_text(freqAppCategory.label.get_text());
-			// this.selectedAppDescription.set_text('');
-
-			if (favAppCategory._ignoreHoverSelect)
-				return;
-
-			if (this.selectionMethod == SelectMethod.HOVER ) {
-				this._hoverTimeoutId = Mainloop.timeout_add((this.hoverDelay >0) ? this.hoverDelay : 0, Lang.bind(this, function() {
-					this._selectCategory(favAppCategory);
-					this._hoverTimeoutId = 0;
-				}));
-			}
-		}));
-		favAppCategory.setButtonLeaveCallback(Lang.bind(this, function() {
-			favAppCategory.actor.remove_style_class_name('selected');
-			// this.selectedAppTitle.set_text('');
-			// this.selectedAppDescription.set_text('');
-
-
-			if (this.selectionMethod == SelectMethod.HOVER ) {
-				if (this._hoverTimeoutId > 0) {
-					Mainloop.source_remove(this._hoverTimeoutId);
-				}
-			}
-		}));
-		favAppCategory.setButtonPressCallback(Lang.bind(this, function() {
-			freqAppCategory.actor.add_style_pseudo_class('pressed');
-		}));
-		favAppCategory.setButtonReleaseCallback(Lang.bind(this, function() {
-			favAppCategory.actor.remove_style_pseudo_class('pressed');
-			favAppCategory.actor.remove_style_class_name('selected');
-			// this._startupAppsView = StartupAppsDisplay.FREQUENT;
-			this._selectCategory(favAppCategory);
-			// this.selectedAppTitle.set_text(freqAppCategory.label.get_text());
-			// this.selectedAppDescription.set_text('');
-		}));
 		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
 			this.appsBox.add_actor(favAppCategory.actor);
 		} else {
 			this.categoryBox.add_actor(favAppCategory.actor);
 		}
-
-
+		
+		
 		/*
 		 * All Apps Category
-		 */
-		/*
-		 * Try and make it load different icons if exist and fallback to
-		 * applications-other
-		 */
-		// dir, alttext, alticon
+		 */   
 		let allAppsCategory;
 		if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.GRID)) {
-			allAppsCategory = new CategoryGridButton('all', _('All Applications'), 'applications-other');
+			allAppsCategory = new CategoryButton('all', _('All Applications'), 'applications-other', this);
 			allAppsCategory.buttonbox.width = this._appGridButtonWidth;
 			gridLayout.pack(allAppsCategory.actor, column, rownum);
 			column ++;
@@ -1647,56 +1337,19 @@ const ApplicationsMenu = new Lang.Class({
 				rownum ++;
 			}
 		} else {
-			allAppsCategory = new CategoryListButton('all', _('All Applications'), 'applications-other', this);
+			allAppsCategory = new CategoryButton('all', _('All Applications'), 'applications-other', this);
 		}
-		allAppsCategory.setButtonEnterCallback(Lang.bind(this, function() {
-			allAppsCategory.actor.add_style_class_name('selected');
-			// this.selectedAppTitle.set_text(allAppsCategory.label.get_text());
-			// this.selectedAppDescription.set_text('');
-
-			if (allAppsCategory._ignoreHoverSelect)
-				return;
-
-			if (this.selectionMethod == SelectMethod.HOVER ) {
-				this._hoverTimeoutId = Mainloop.timeout_add((this.hoverDelay >0) ? this.hoverDelay : 0, Lang.bind(this, function() {
-					this._selectCategory(allAppsCategory);
-					this._hoverTimeoutId = 0;
-				}));
-			}
-		}));
-		allAppsCategory.setButtonLeaveCallback(Lang.bind(this, function() {
-			allAppsCategory.actor.remove_style_class_name('selected');
-			// this.selectedAppTitle.set_text('');
-			// this.selectedAppDescription.set_text('');
-
-			if (this.selectionMethod == SelectMethod.HOVER ) {
-				if (this._hoverTimeoutId > 0) {
-					Mainloop.source_remove(this._hoverTimeoutId);
-				}
-			}
-		}));
-		allAppsCategory.setButtonPressCallback(Lang.bind(this, function() {
-			allAppsCategory.actor.add_style_pseudo_class('pressed');
-		}));
-		allAppsCategory.setButtonReleaseCallback(Lang.bind(this, function() {
-			allAppsCategory.actor.remove_style_pseudo_class('pressed');
-			allAppsCategory.actor.remove_style_class_name('selected');
-			// this._startupAppsView = StartupAppsDisplay.ALL;
-			this._selectCategory(allAppsCategory);
-			// this.selectedAppTitle.set_text(allAppsCategory.label.get_text());
-			// this.selectedAppDescription.set_text('');
-		}));
+		
 		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
 			this.appsBox.add_actor(allAppsCategory.actor);
 		} else {
 			this.categoryBox.add_actor(allAppsCategory.actor);
 		}
 
-
 		// Frequent Category
 		let freqAppCategory;
 		if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.GRID)) {
-			freqAppCategory = new CategoryGridButton('frequent', _('Frequent Apps'), 'applications-other');
+			freqAppCategory = new CategoryButton('frequent', _('Frequent Apps'), 'applications-other', this);
 			freqAppCategory.buttonbox.width = this._appGridButtonWidth;
 			gridLayout.pack(freqAppCategory.actor, column, rownum);
 			column ++;
@@ -1705,65 +1358,18 @@ const ApplicationsMenu = new Lang.Class({
 				rownum ++;
 			}
 		} else {
-			freqAppCategory = new CategoryListButton('frequent', _('Frequent Apps'), 'applications-other', this);
+			freqAppCategory = new CategoryButton('frequent', _('Frequent Apps'), 'applications-other', this);
 		}
-
-
-		freqAppCategory.setButtonEnterCallback(Lang.bind(this, function() {
-			freqAppCategory.actor.add_style_class_name('selected');
-			// this.selectedAppTitle.set_text(freqAppCategory.label.get_text());
-			// this.selectedAppDescription.set_text('');
-
-			if (freqAppCategory._ignoreHoverSelect)
-				return;
-
-			if (this.selectionMethod == SelectMethod.HOVER ) {
-				this._hoverTimeoutId = Mainloop.timeout_add((this.hoverDelay >0) ? this.hoverDelay : 0, Lang.bind(this, function() {
-					this._selectCategory(freqAppCategory);
-					this._hoverTimeoutId = 0;
-				}));
-			}
-		}));
-		freqAppCategory.setButtonLeaveCallback(Lang.bind(this, function() {
-			freqAppCategory.actor.remove_style_class_name('selected');
-			// this.selectedAppTitle.set_text('');
-			// this.selectedAppDescription.set_text('');
-
-
-			if (this.selectionMethod == SelectMethod.HOVER ) {
-				if (this._hoverTimeoutId > 0) {
-					Mainloop.source_remove(this._hoverTimeoutId);
-				}
-			}
-		}));
-		freqAppCategory.setButtonPressCallback(Lang.bind(this, function() {
-			freqAppCategory.actor.add_style_pseudo_class('pressed');
-		}));
-		freqAppCategory.setButtonReleaseCallback(Lang.bind(this, function() {
-			freqAppCategory.actor.remove_style_pseudo_class('pressed');
-			freqAppCategory.actor.remove_style_class_name('selected');
-			// this._startupAppsView = StartupAppsDisplay.FREQUENT;
-			this._selectCategory(freqAppCategory);
-			// this.selectedAppTitle.set_text(freqAppCategory.label.get_text());
-			// this.selectedAppDescription.set_text('');
-		}));
 		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
 			this.appsBox.add_actor(freqAppCategory.actor);
 		} else {
 			this.categoryBox.add_actor(freqAppCategory.actor);
 		}
 		
-		
-		
-		
-		
-		
-		
-		
 		// Recent Files Category
 		let recentFilesCategory;
 		if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.GRID)) {
-			recentFilesCategory = new CategoryGridButton('recent', _('Recent Files'), 'applications-other');
+			recentFilesCategory = new CategoryButton('recent', _('Recent Files'), 'applications-other', this);
 			recentFilesCategory.buttonbox.width = this._appGridButtonWidth;
 			gridLayout.pack(recentFilesCategory.actor, column, rownum);
 			column ++;
@@ -1772,73 +1378,18 @@ const ApplicationsMenu = new Lang.Class({
 				rownum ++;
 			}
 		} else {
-			recentFilesCategory = new CategoryListButton('recent', _('Recent Files'), 'applications-other', this);
+			recentFilesCategory = new CategoryButton('recent', _('Recent Files'), 'applications-other', this);
 		}
-
-
-		recentFilesCategory.setButtonEnterCallback(Lang.bind(this, function() {
-			recentFilesCategory.actor.add_style_class_name('selected');
-			// this.selectedAppTitle.set_text(freqAppCategory.label.get_text());
-			// this.selectedAppDescription.set_text('');
-
-			if (recentFilesCategory._ignoreHoverSelect)
-				return;
-
-			if (this.selectionMethod == SelectMethod.HOVER ) {
-				this._hoverTimeoutId = Mainloop.timeout_add((this.hoverDelay >0) ? this.hoverDelay : 0, Lang.bind(this, function() {
-					this._selectCategory(recentFilesCategory);
-					this._hoverTimeoutId = 0;
-				}));
-			}
-		}));
-		recentFilesCategory.setButtonLeaveCallback(Lang.bind(this, function() {
-			recentFilesCategory.actor.remove_style_class_name('selected');
-			// this.selectedAppTitle.set_text('');
-			// this.selectedAppDescription.set_text('');
-
-
-			if (this.selectionMethod == SelectMethod.HOVER ) {
-				if (this._hoverTimeoutId > 0) {
-					Mainloop.source_remove(this._hoverTimeoutId);
-				}
-			}
-		}));
-		recentFilesCategory.setButtonPressCallback(Lang.bind(this, function() {
-			recentFilesCategory.actor.add_style_pseudo_class('pressed');
-		}));
-		recentFilesCategory.setButtonReleaseCallback(Lang.bind(this, function() {
-			recentFilesCategory.actor.remove_style_pseudo_class('pressed');
-			recentFilesCategory.actor.remove_style_class_name('selected');
-			// this._startupAppsView = StartupAppsDisplay.FREQUENT;
-			this._selectCategory(recentFilesCategory);
-			// this.selectedAppTitle.set_text(freqAppCategory.label.get_text());
-			// this.selectedAppDescription.set_text('');
-		}));
 		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
 			this.appsBox.add_actor(recentFilesCategory.actor);
 		} else {
 			this.categoryBox.add_actor(recentFilesCategory.actor);
 		}
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
+
 		// Web Bookmarks Category
 		let webBookmarksCategory;
 		if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.GRID)) {
-			webBookmarksCategory = new CategoryGridButton('webBookmarks', _('Web Bookmarks'), 'applications-other');
+			webBookmarksCategory = new CategoryButton('webBookmarks', _('Web Bookmarks'), 'applications-other', this);
 			webBookmarksCategory.buttonbox.width = this._appGridButtonWidth;
 			gridLayout.pack(webBookmarksCategory.actor, column, rownum);
 			column ++;
@@ -1847,82 +1398,27 @@ const ApplicationsMenu = new Lang.Class({
 				rownum ++;
 			}
 		} else {
-			webBookmarksCategory = new CategoryListButton('webBookmarks', _('Web Bookmarks'), 'applications-other', this);
+			webBookmarksCategory = new CategoryButton('webBookmarks', _('Web Bookmarks'), 'applications-other', this);
 		}
 
-
-		webBookmarksCategory.setButtonEnterCallback(Lang.bind(this, function() {
-			webBookmarksCategory.actor.add_style_class_name('selected');
-			// this.selectedAppTitle.set_text(freqAppCategory.label.get_text());
-			// this.selectedAppDescription.set_text('');
-
-			if (webBookmarksCategory._ignoreHoverSelect)
-				return;
-
-			if (this.selectionMethod == SelectMethod.HOVER ) {
-				this._hoverTimeoutId = Mainloop.timeout_add((this.hoverDelay >0) ? this.hoverDelay : 0, Lang.bind(this, function() {
-					this._selectCategory(webBookmarksCategory);
-					this._hoverTimeoutId = 0;
-				}));
-			}
-		}));
-		webBookmarksCategory.setButtonLeaveCallback(Lang.bind(this, function() {
-			webBookmarksCategory.actor.remove_style_class_name('selected');
-			// this.selectedAppTitle.set_text('');
-			// this.selectedAppDescription.set_text('');
-
-
-			if (this.selectionMethod == SelectMethod.HOVER ) {
-				if (this._hoverTimeoutId > 0) {
-					Mainloop.source_remove(this._hoverTimeoutId);
-				}
-			}
-		}));
-		webBookmarksCategory.setButtonPressCallback(Lang.bind(this, function() {
-			webBookmarksCategory.actor.add_style_pseudo_class('pressed');
-		}));
-		webBookmarksCategory.setButtonReleaseCallback(Lang.bind(this, function() {
-			webBookmarksCategory.actor.remove_style_pseudo_class('pressed');
-			webBookmarksCategory.actor.remove_style_class_name('selected');
-			// this._startupAppsView = StartupAppsDisplay.FREQUENT;
-			this._selectCategory(webBookmarksCategory);
-			// this.selectedAppTitle.set_text(freqAppCategory.label.get_text());
-			// this.selectedAppDescription.set_text('');
-		}));
 		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
 			this.appsBox.add_actor(webBookmarksCategory.actor);
 		} else {
 			this.categoryBox.add_actor(webBookmarksCategory.actor);
 		}
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-
-
-
 		/*
 		 * Real Categories
 		 */
-		//TODO (CLEAN THIS MESS UP!)
 		while ((nextType = iter.next()) != GMenu.TreeItemType.INVALID) {
 			if (nextType == GMenu.TreeItemType.DIRECTORY) {
 				let dir = iter.get_directory();
 				let categoryId = dir.get_menu_id();
 				this.applicationsByCategory[categoryId] = [];
-				// this._loadCategories(dir);
 				this._loadCategory(categoryId, dir);
 				if (this.applicationsByCategory[dir.get_menu_id()].length>0){
 					let appCategory;
 					if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.GRID)) {
-						appCategory = new CategoryGridButton(dir);
+						appCategory = new CategoryButton(dir, _, _, this);
 						appCategory.buttonbox.width = this._appGridButtonWidth;
 						gridLayout.pack(appCategory.actor, column, rownum);
 						column ++;
@@ -1931,44 +1427,8 @@ const ApplicationsMenu = new Lang.Class({
 							rownum ++;
 						}
 					} else {
-						appCategory = new CategoryListButton(dir, _, _, this);
+						appCategory = new CategoryButton(dir, _, _, this);
 					}
-					appCategory.setButtonEnterCallback(Lang.bind(this, function() {
-						appCategory.actor.add_style_class_name('selected');
-						// this.selectedAppTitle.set_text(appCategory.label.get_text());
-						// this.selectedAppDescription.set_text('');
-
-						if (appCategory._ignoreHoverSelect)
-							return;
-
-						if (this.selectionMethod == SelectMethod.HOVER ) {
-							this._hoverTimeoutId = Mainloop.timeout_add((this.hoverDelay >0) ? this.hoverDelay : 0, Lang.bind(this, function() {
-								this._selectCategory(appCategory);
-								this._hoverTimeoutId = 0;
-							}));
-						}
-					}));
-					appCategory.setButtonLeaveCallback(Lang.bind(this, function() {
-						appCategory.actor.remove_style_class_name('selected');
-						// this.selectedAppTitle.set_text('');
-						// this.selectedAppDescription.set_text('');
-
-						if (this.selectionMethod == SelectMethod.HOVER ) {
-							if (this._hoverTimeoutId > 0) {
-								Mainloop.source_remove(this._hoverTimeoutId);
-							}
-						}
-					}));
-					appCategory.setButtonPressCallback(Lang.bind(this, function() {
-						appCategory.actor.add_style_pseudo_class('pressed');
-					}));
-					appCategory.setButtonReleaseCallback(Lang.bind(this, function() {
-						appCategory.actor.remove_style_pseudo_class('pressed');
-						appCategory.actor.remove_style_class_name('selected');
-						this._selectCategory(appCategory);
-						// this.selectedAppTitle.set_text(appCategory.label.get_text());
-						// this.selectedAppDescription.set_text('');
-					}));
 					if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
 						this.appsBox.add_actor(appCategory.actor);
 					} else {
@@ -1982,6 +1442,15 @@ const ApplicationsMenu = new Lang.Class({
 			if (this.HomeViewSettings != HomeView.CATEGORIES) this.backToButton.actor.show();
 			this.goToButton.actor.hide();
 		}
+		
+		this._allAppsList = [];		// reset the list
+		for (var directory in this.applicationsByCategory) {
+			this._allAppsList = this._allAppsList.concat(this.applicationsByCategory[directory]);
+		}
+		// Remove Duplicates
+		this._allAppsList = this._allAppsList.filter(function(elem, index, self) {
+		    return index == self.indexOf(elem);
+		})
 	},
 
 	// Load right click menu
@@ -2031,8 +1500,6 @@ const ApplicationsMenu = new Lang.Class({
 	// Load menu place shortcuts
 	_loadPlaces: function() {
 		if (placeDisplay) {
-			// if (settings.get_enum('shortcuts-display') ==
-			// ShortcutsDisplay.PLACES) {
 			if (true) {
 				this.placesManager = new placeDisplay.PlacesManager(true);
 			} else {
@@ -2045,25 +1512,18 @@ const ApplicationsMenu = new Lang.Class({
 		// Load Places Panel
 		let shortcuts = new Array();
 		let shortcutType;
-		// if (settings.get_enum('shortcuts-display') ==
-		// ShortcutsDisplay.PLACES) {
 		if (true){
 			let places = this._listPlaces();
 			let bookmarks = this._listBookmarks();
-			//global.log("menyy -> bookmarks: " + bookmarks);
 			let devices = this._listDevices();
-			//global.log("menyy -> devices: " + devices);
 			let allPlaces = places.concat(bookmarks.concat(devices));
 			shortcuts = allPlaces;
-			shortcutType = AppType.PLACE;
 		} else {
 			shortcuts = this._favorites;
-			shortcutType = AppType.APPLICATION;
 		}
 		for (let i = 0; i < shortcuts.length; ++i) {
 			let app = shortcuts[i];
-			
-			let shortcutButton = new AppButton(app, this, shortcutType, 'places');
+			let shortcutButton = new AppButton(app, this, 'places');
 			this.placesBox.add_actor(shortcutButton.actor);
 		}
 	},
@@ -2162,7 +1622,8 @@ const ApplicationsMenu = new Lang.Class({
                     name:   bookmarks[id].name,
                     icon:   bookmarks[id].appInfo.get_icon(),
                     mime:   null,
-                    uri:    bookmarks[id].uri
+                    uri:    bookmarks[id].uri,
+                    appType: bookmarks[id].appType
                 });
             }
         }
@@ -2189,16 +1650,26 @@ const ApplicationsMenu = new Lang.Class({
 	_listRecent: function(pattern) {
 		let recentFiles = this.recentManager.get_items();
 		let res = new Array();
-
+		let type;
+		
+		//TODO(CHECK IF APPTYPE FILE OR FOLDER)
 		for (let id = 0; id < recentFiles.length; id++) {
 			let recentInfo = recentFiles[id];
+			//global.log("menyy file uri: " + recentInfo.get_uri());
+			//global.log("menyy file typ: " + recentInfo.get_mime_type());
+			if (recentInfo.get_mime_type() == 'inode/directory') {
+				type = AppType.FOLDER;
+			} else {
+				type = AppType.FILE;
+			}
 			if (recentInfo.exists()) {
 				if (!pattern || recentInfo.get_display_name().toLowerCase().indexOf(pattern)!=-1) {
 					res.push({
 						name:   recentInfo.get_display_name(),
 						icon:   recentInfo.get_gicon(),
 						mime:   recentInfo.get_mime_type(),
-						uri:    recentInfo.get_uri()
+						uri:    recentInfo.get_uri(),
+						appType: type
 					});
 				}
 			}
@@ -2207,144 +1678,28 @@ const ApplicationsMenu = new Lang.Class({
 	},
 
 	// Display application menu items
-	// TODO (STOP THE NONSENCE AND HAVE (APPS, LOCATION) only and have the appslist items contain its type, and location literally be a reference to the box
-	_displayButtons: function(apps, home, places, recent, terminal, refresh) {
-		// get from settings!
-		// let viewMode = this._appsViewMode;
-		let appType;
-		// variables for icon grid layout
+	_displayButtons: function(apps, location) {
 		let page = 0;
 		let column = 0;
 		let rownum = 0;
 		
-		
-        if (refresh) {
-            apps = this._applications;
-        } else {
-            this._applications = [];
-        }		
-		
-
-		if (home){
-			appType = AppType.APPLICATION;
-			for (let i in home) {
-				let app = home[i];
-				if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
-					let appButton = new AppButton(app, this, appType, 'apps');
-					this.homeBox.add_actor(appButton.actor);
-				} else {
-					let appButton = new AppButton(app, this, appType, 'apps');
-					//this.homeBox.add_actor(AppButton.actor);
-					appButton.buttonbox.width = this._appGridButtonWidth;
-					let gridLayout = this.homeBox.layout_manager;
-					gridLayout.pack(appButton.actor, column, rownum);
-					column ++;
-					if (column > this._appGridColumns-1) {
-						column = 0;
-						rownum ++;
-					}
+		for (var i in apps) {
+			const app = apps[i];
+			if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
+				let appButton = new AppButton(app, this, 'apps');
+				location.add_actor(appButton.actor);
+			} else {
+				let appButton = new AppButton(app, this, 'apps');
+				appButton.buttonbox.width = this._appGridButtonWidth;
+				let gridLayout = location.layout_manager;
+				gridLayout.pack(appButton.actor, column, rownum);
+				column ++;
+				if (column > this._appGridColumns-1) {
+					column = 0;
+					rownum ++;
 				}
 			}
 		}
-
-		if (apps){
-			appType = AppType.APPLICATION;
-			for (let i in apps) {
-				let app = apps[i];
-				//let AppButton = new AppButton(app, this, appType, 'apps');
-				//this.appsBox.add_actor(AppButton.actor);
-				if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
-					let appButton = new AppButton(app, this, appType, 'apps');
-					this.appsBox.add_actor(appButton.actor);
-				} else {
-					let appButton = new AppButton(app, this, appType, 'apps');
-					//this.appsBox.add_actor(appButton.actor);
-					appButton.buttonbox.width = this._appGridButtonWidth;
-					let gridLayout = this.appsBox.layout_manager;
-					gridLayout.pack(appButton.actor, column, rownum);
-					column ++;
-					if (column > this._appGridColumns-1) {
-						column = 0;
-						rownum ++;
-					}
-				}
-			}
-		}
-		
-        if (terminal){
-            appType = AppType.TERMINAL;
-            for (let i in terminal) {
-                let app = terminal[i];
-                    if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
-                    	let appButton = new AppButton(app, this, appType, 'apps');
-    					this.appsBox.add_actor(appButton.actor);
-                    } else { // GridView
-                    	let appButton = new AppButton(app, this, appType, 'apps');
-    					//this.appsBox.add_actor(appButton.actor);
-    					appButton.buttonbox.width = this._appGridButtonWidth;
-    					let gridLayout = this.appsBox.layout_manager;
-    					gridLayout.pack(appButton.actor, column, rownum);
-    					column ++;
-    					if (column > this._appGridColumns-1) {
-    						column = 0;
-    						rownum ++;
-    					}
-                    }
-                if (!refresh) this._places[app.name] = app;
-            }
-        }
-
-        if (places){
-            //appType = AppType.PLACE;
-        	appType = AppType.WEBBOOKMARK;		// HACK UNTIL I MOVE STUFF INSIDE THE MANAGERS GENERATING THE APPS 
-            for (let i in places) {
-                let app = places[i];
-                    if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
-                    	let appButton = new AppButton(app, this, appType, 'apps');
-    					this.appsBox.add_actor(appButton.actor);
-                    } else { // GridView
-                    	let appButton = new AppButton(app, this, appType, 'apps');
-    					//this.appsBox.add_actor(appButton.actor);
-    					appButton.buttonbox.width = this._appGridButtonWidth;
-    					let gridLayout = this.appsBox.layout_manager;
-    					gridLayout.pack(appButton.actor, column, rownum);
-    					column ++;
-    					if (column > this._appGridColumns-1) {
-    						column = 0;
-    						rownum ++;
-    					}
-                    }
-                //}
-                if (!refresh) this._places[app.name] = app;
-            }
-        }
-
-        if (recent){
-            appType = AppType.FILE;
-            for (let i in recent) {
-                let app = recent[i];
-                // only add if not already in this._recent or refreshing
-                if (!this._recent[app.name]) {
-                    if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
-                    	let appButton = new AppButton(app, this, appType, 'apps');
-    					this.appsBox.add_actor(appButton.actor);
-                    } else { // GridView
-                    	let appButton = new AppButton(app, this, appType, 'apps');
-    					//this.appsBox.add_actor(appButton.actor);
-    					appButton.buttonbox.width = this._appGridButtonWidth;
-    					let gridLayout = this.appsBox.layout_manager;
-    					gridLayout.pack(appButton.actor, column, rownum);
-    					column ++;
-    					if (column > this._appGridColumns-1) {
-    						column = 0;
-    						rownum ++;
-    					}
-                    }
-                }
-                //if (!refresh) this._recent[app.name] = app;
-            }
-        }
-
     },
     
 	// Clear the applications menu box
@@ -2371,7 +1726,6 @@ const ApplicationsMenu = new Lang.Class({
 
 
 	//TODO(CLEAN UP SELECTCATEGORY CODE)
-	// _displayButtons: function(apps, home, places, recent, terminal, refresh) {
 	_selectCategory: function(button) {
 		this._clearAppsBox();
 		this.resetSearch();
@@ -2405,11 +1759,11 @@ const ApplicationsMenu = new Lang.Class({
 				this.homeScrollBox.hide();
 				this.appsScrollBox.show();
 				if (category == 'recent') {
-					this._displayButtons(_, _, _, this._listApplications(category));
+					this._displayButtons(this._listApplications(category), this.appsBox);
 				} else if (category == 'webBookmarks'){
-					this._displayButtons(_, _, this._listApplications(category));
+					this._displayButtons(this._listApplications(category), this.appsBox);
 				} else {
-					this._displayButtons(this._listApplications(category));
+					this._displayButtons(this._listApplications(category), this.appsBox);
 				}
 				this.homeScrollBox.hide();
 				this.appsScrollBox.show();
@@ -2421,7 +1775,7 @@ const ApplicationsMenu = new Lang.Class({
 			} else {
 				this.homeScrollBox.hide();
 				this.appsScrollBox.show();
-				this._displayButtons(this._listApplications(category.get_menu_id()));
+				this._displayButtons(this._listApplications(category.get_menu_id()), this.appsBox);
 				if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
 					this.backButton.actor.show();
 					this.backToButton.actor.hide();
@@ -2530,28 +1884,6 @@ const ApplicationsMenu = new Lang.Class({
 	     }		
 	},
 	
-	/*
-	 * 	 _setPopupTimeout: function() {
-	     this._removeMenuTimeout();
-	     this._menuTimeoutId = Mainloop.timeout_add(AppDisplay.MENU_POPUP_TIMEOUT,
-	         Lang.bind(this, function() {
-	        	 if (!this._isDragged){
-		        	 this._isTimeOutOpen = true;
-		        	 this._isLeftDown = false;
-		             this._menuTimeoutId = 0;
-		             this.popupMenu();
-	        	 } else {
-        	    	this.actor.remove_style_pseudo_class('pressed');
-        	        this.actor.remove_style_class_name('selected');
-	        		 return false;
-	        	 }
-	         }));
-	     GLib.Source.set_name_by_id(this._menuTimeoutId, '[gnome-shell] this.popupMenu');
-	     global.log("menyy: setpopuptimeout ending")
-	     return false;
-	 },
-	 */
-	
 	_setSearchTimeout: function(se, prop){
 		this._removeSearchTimeout();
 		this._searchTimeoutId = Mainloop.timeout_add(this._searchWaitTime,
@@ -2599,7 +1931,6 @@ const ApplicationsMenu = new Lang.Class({
 			)
 		);
 		GLib.Source.set_name_by_id(this._searchTimeoutId, '[gnome-shell] this._doSearch');
-		//global.log("menyy: setSearchTimeout ending");
 		return false;
 	},
 	
@@ -2637,49 +1968,35 @@ const ApplicationsMenu = new Lang.Class({
 	        	}
 	        }
         }
-        
-               
-        
-		
 		let placesResults = new Array();
 		// Search Places
-		// TODO(DISABLE THROUGH OPTIONS)
-		// TODO(SET LIMIT THROUGH OPTIONS - currently 100)
         let places = this._listPlaces(pattern);
         places = places.slice(0, 100);
-        //for (var i in places) placesResults.push(places[i]); // until fixed, don't show
+        for (var i in places) placesResults.push(places[i]); // until fixed, don't show
 
         // Search Bookmarks
         //let bookmarks = this._listBookmarks(pattern);
         //for (var i in bookmarks) placesResults.push(bookmarks[i]);
         
         // Search Web Bookmarks
-        // TODO(DISABLE THROUGH OPTIONS)
-        // TODO(SET LIMIT THROUGH OPTIONS - currently 100)
         let webBookmarks = this._listWebBookmarks(pattern);
         webBookmarks = webBookmarks.slice(0, 100);
         for (var i in webBookmarks) placesResults.push(webBookmarks[i]);
-        //global.log("menyy: webBookmarks: " + webBookmarks);
         
         // Search Devices
         //let devices = this._listDevices(pattern);
         //for (var i in devices) placesResults.push(devices[i]);
         
         // Search recent
-		// TODO(DISABLE THROUGH OPTIONS)
-		// TODO(SET LIMIT THROUGH OPTIONS - currently 10)
         let recentResults = this._listRecent(pattern);
         recentResults = recentResults.slice(0, 100);
 
 		this._clearAppsBox();
 		
-		//this._displayButtons(appResults);
-		// Displaybuttons has (appresults, home, placesresults, recentresults)
-		
-		
-		this._displayButtons(appResults, _ ,placesResults, recentResults, terminalResults);
-		
-		
+		for (var i in terminalResults) appResults.push(terminalResults[i]);
+		for (var i in placesResults) appResults.push(placesResults[i]);
+		for (var i in recentResults) appResults.push(recentResults[i]);
+		this._displayButtons(appResults, this.appsBox);
 		
 		this.homeScrollBox.hide();
 		this.appsScrollBox.show();

@@ -35,7 +35,6 @@ const Lang = imports.lang;
 const Main = imports.ui.main;
 
 const _appSystem = Shell.AppSystem.get_default();
-//const _foundApps = _appSystem.initial_search(['google-chrome']);
 const _foundApps = _appSystem.lookup_desktop_wmclass('google-chrome');
 
 var _appInfo = null;
@@ -43,6 +42,11 @@ var _bookmarksFile = null;
 var _bookmarksMonitor = null;
 var _callbackId = null;
 var bookmarks = [];
+
+const Menyy = imports.misc.extensionUtils.getCurrentExtension();
+const constants = Menyy.imports.constants;
+const AppType = constants.AppType;
+
 
 function _readBookmarks() {
     bookmarks = [];
@@ -83,7 +87,8 @@ function _readBookmarks() {
                     appInfo: _appInfo,
                     name: children[idx].name,
                     score: 0,
-                    uri: children[idx].url
+                    uri: children[idx].url,
+                    appType: AppType.WEBBOOKMARK
                 });
             }
         }

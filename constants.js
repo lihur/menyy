@@ -99,8 +99,8 @@ const PlacesViewMode = {
 
 
 const SelectMethod = {
-		HOVER: 0,
-		SELECT: 1
+		SELECT: 0,
+		HOVER: 1
 };
 
 const HomeView = {

@@ -52,6 +52,12 @@ var _callbackId = null;
 var _connection = null;
 var bookmarks = [];
 
+
+const Menyy = imports.misc.extensionUtils.getCurrentExtension();
+const constants = Menyy.imports.constants;
+const AppType = constants.AppType;
+
+
 function _readBookmarks() {
     bookmarks = [];
 
@@ -94,7 +100,8 @@ function _readBookmarks() {
             appInfo: _appInfo,
             name: name,
             score: 0,
-            uri: uri
+            uri: uri,
+            appType: AppType.WEBBOOKMARK
         });
     }
 }

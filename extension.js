@@ -7,7 +7,7 @@ const Main = imports.ui.main;
 const ExtensionUtils = imports.misc.extensionUtils
 const Mainloop = imports.mainloop;
 const Gettext = imports.gettext;
-const Dash = imports.ui.dash;	//what does it do?
+const Dash = imports.ui.dash;
 
 // My Extension Files
 const Menyy = imports.misc.extensionUtils.getCurrentExtension();

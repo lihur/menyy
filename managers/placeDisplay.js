@@ -28,6 +28,10 @@ const N_ = function(x) { return x; }
 const _appSystem = Shell.AppSystem.get_default();
 const _foundApps = _appSystem.lookup_desktop_wmclass('nautilus');
 
+const Menyy = imports.misc.extensionUtils.getCurrentExtension();
+const constants = Menyy.imports.constants;
+const AppType = constants.AppType;
+
 
 
 let UseSymbolicIcons = false;
@@ -42,6 +46,7 @@ const PlaceInfo = new Lang.Class({
 		// this.name = name || this._getFileName();
 		this.name = name ? name : this._getFileName();
 		this.icon = icon ? new Gio.ThemedIcon({ name: icon }) : this.getIcon();
+		this.appType = AppType.PLACE;
 	},
 
 	isRemovable: function() {
@@ -112,6 +117,7 @@ const PlaceDeviceInfo = new Lang.Class({
 	_init: function(kind, mount) {
 		this._mount = mount;
 		this.parent(kind, mount.get_root(), mount.get_name());
+		this.appType = AppType.PLACE;
 	},
 
 	getIcon: function() {
@@ -133,6 +139,7 @@ const PlaceAppInfo = new Lang.Class({
 		this._icon = icon;
 		this._command = command;
 		this.parent(kind, command, label);
+		this.appType = AppType.PLACE;
 	},
 	
 	// Launch Application separate

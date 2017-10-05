@@ -201,7 +201,7 @@ const BehaviourSettingsPage = new Lang.Class({
         homeViewCombo.append_text(_("Frequent"));
         homeViewCombo.append_text(_("Favorites"));
         homeViewCombo.append_text(_("All"));
-        //homeViewCombo.append_text(_("Recent"));
+        homeViewCombo.append_text(_("Recent"));
         //homeViewCombo.append_text(_("Shortcuts"));
         homeViewCombo.set_active(this.settings.get_enum('default-category'));
         homeViewCombo.connect('changed', Lang.bind (this, function(widget) {
@@ -211,6 +211,53 @@ const BehaviourSettingsPage = new Lang.Class({
         homeViewRow.add(homeViewCombo);
         homeViewFrame.add(homeViewRow);
         this.add(homeViewFrame);
+        
+        
+        /*
+         * Hover setting
+         */
+        // hover enable?
+        let hoverFrame = new AM.FrameBox();
+        let enableHoverRow = new AM.FrameBoxRow();
+        let enableHoverLabel = new Gtk.Label({
+            label: _("Categories select on hover: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });
+        let enableHoverSwitch = new Gtk.Switch({ halign: Gtk.Align.END });
+        enableHoverSwitch.set_active(this.settings.get_enum('categories-selection-method'));
+        enableHoverSwitch.connect('notify::active', Lang.bind(this, function(check) {
+            this.settings.set_enum('categories-selection-method', check.get_active());
+        }));
+        enableHoverRow.add(enableHoverLabel);
+        enableHoverRow.add(enableHoverSwitch);
+        hoverFrame.add(enableHoverRow);
+        
+        
+        let hoverTimeRow = new AM.FrameBoxRow();
+        let hoverTimeSliderRow = new AM.FrameBoxRow();
+        let hoverTimeLabel = new Gtk.Label({
+            label: _("Categories hover delay: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });
+        var hoverTimeSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.0,1024.0,1.0);
+        hoverTimeSlider.set_value(this.settings.get_int("categories-hover-delay"));
+        hoverTimeSlider.connect('value-changed', Lang.bind (this, function(widget) {
+            this.settings.set_int('categories-hover-delay', hoverTimeSlider.get_value());
+        }));
+        hoverTimeSlider.set_property ("expand", true);
+        hoverTimeRow.add(hoverTimeLabel);
+        hoverTimeSliderRow.add(hoverTimeSlider);
+        hoverFrame.add(hoverTimeRow);
+        hoverFrame.add(hoverTimeSliderRow);
+        
+        
+        
+        this.add(hoverFrame);
+
     }
 });
 
@@ -695,301 +742,6 @@ const AboutPage = new Lang.Class({
     }
 });
 
-/*
-const CategoriesPage = new Lang.Class({
-    Name: 'CategoriesPage',
-    Extends: AM.NotebookPage,
-
-    _init: function(settings) {
-        this.parent(_('Categories'));
-        this.settings = settings;
-        
-        
-        
-        let categoryIconFrame = new AM.FrameBox();
-        
-        // Category Icon size options
-        let categoryIconRow = new AM.FrameBoxRow();
-        let categoriesIconSizeLabel = new Gtk.Label({
-            label: _("Size of Category Icons"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: true
-        });        
-        let iconSizes = [0, 16, 22, 24, 32, 48, 64, 96, 128];
-        let categoriesIconSizeCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
-        	categoriesIconSizeCombo.set_size_request(129, -1);
-        	categoriesIconSizeCombo.append_text('0');
-        	categoriesIconSizeCombo.append_text('16');
-        	categoriesIconSizeCombo.append_text('22');
-        	categoriesIconSizeCombo.append_text('24');
-        	categoriesIconSizeCombo.append_text('32');
-            categoriesIconSizeCombo.append_text('48');
-            categoriesIconSizeCombo.append_text('64');
-            categoriesIconSizeCombo.append_text('96');
-            categoriesIconSizeCombo.append_text('128');
-            categoriesIconSizeCombo.set_active(iconSizes.indexOf(this.settings.get_int('categories-icon-size')));
-            categoriesIconSizeCombo.connect('changed', Lang.bind (this, function(widget) {
-                    this.settings.set_int('categories-icon-size', iconSizes[widget.get_active()]);
-            }));
-        categoryIconRow.add(categoriesIconSizeLabel);
-        categoryIconRow.add(categoriesIconSizeCombo);
-        categoryIconFrame.add(categoryIconRow);
-        
-        
-        
-        
-        
-        // Category Label location
-        let categoryLabelRow = new AM.FrameBoxRow();
-        let categoriesLabelLabel = new Gtk.Label({
-            label: _("Category Label location"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: true
-        });        
-        let categoriesLabelCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
-        categoriesLabelCombo.append_text(_("Left"));
-        categoriesLabelCombo.append_text(_("Right"));
-        categoriesLabelCombo.append_text(_("Hide"));
-        categoriesLabelCombo.set_active(this.settings.get_enum('categories-label'));
-        categoriesLabelCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_enum('categories-label', widget.get_active());
-        }));
-        categoryLabelRow.add(categoriesLabelLabel);
-        categoryLabelRow.add(categoriesLabelCombo);
-        categoryIconFrame.add(categoryLabelRow);        
-        this.add(categoryIconFrame);
-        
-        // Categories Behaviour frame
-        let categoriesBehaveFrame = new AM.FrameBox();
-        
-        
-        let categoriesSelectMethodBox = new AM.FrameBoxRow();
-        let categoriesSelectMethodLabel = new Gtk.Label({
-	        label: _("Categories Selection Method"),
-	        use_markup: true,
-	        xalign: 0,
-	        hexpand: true
-        });
-        let categoriesSelectMethodCombo = new Gtk.ComboBoxText({halign:Gtk.Align.END});
-            categoriesSelectMethodCombo.append_text(_('Hover'));
-            categoriesSelectMethodCombo.append_text(_('Click'));
-            categoriesSelectMethodCombo.set_active(this.settings.get_enum('categories-selection-method'));
-            categoriesSelectMethodCombo.connect('changed', Lang.bind (this, function(widget) {
-                    this.settings.set_enum('categories-selection-method', widget.get_active());
-            }));
-
-        categoriesSelectMethodBox.add(categoriesSelectMethodLabel);
-        categoriesSelectMethodBox.add(categoriesSelectMethodCombo);
-        categoriesBehaveFrame.add(categoriesSelectMethodBox);
-        
-        
-        
-        let categoriesHoverRow = new AM.FrameBoxRow();
-        let categoriesHoverLabel = new Gtk.Label({
-            label: _("Categories Hover Open Time"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: false
-        });    
-        categoriesHoverRow.add(categoriesHoverLabel);
-        var categoriesHoverSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.0,500.0,1.0);
-        categoriesHoverSlider.set_value(this.settings.get_int("categories-hover-delay"));
-        categoriesHoverSlider.connect('value-changed', Lang.bind (this, function(widget) {
-            this.settings.set_int('categories-hover-delay', categoriesHoverSlider.get_value());
-        }));
-        categoriesHoverSlider.set_property ("expand", true);
-        categoriesHoverRow.add(categoriesHoverSlider);
-        categoriesBehaveFrame.add(categoriesHoverRow);
-        
-        
-        
-        let categoriesCollapseRow = new AM.FrameBoxRow();
-        let categoriesCollapseLabel = new Gtk.Label({
-            label: _("Categories Collapsible"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: true
-        });    
-        categoriesCollapseRow.add(categoriesCollapseLabel);
-        let categoriesCollapseCombo = new Gtk.ComboBoxText({halign:Gtk.Align.END});
-        categoriesCollapseCombo.append_text(_('True'));
-        categoriesCollapseCombo.append_text(_('False'));
-        categoriesCollapseCombo.set_active(this.settings.get_enum('categories-collapsible'));
-        categoriesCollapseCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_enum('categories-collapsible', widget.get_active());
-        }));
-
-        categoriesCollapseRow.add(categoriesCollapseCombo);
-        categoriesBehaveFrame.add(categoriesCollapseRow);
-        
-        
-        let categoriesCollapseTimeRow = new AM.FrameBoxRow();
-        let categoriesCollapseTimeLabel = new Gtk.Label({
-            label: _("Categories Expand Hover Time"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: false
-        });
-        categoriesCollapseTimeRow.add(categoriesCollapseTimeLabel);
-        var categoriesCollapseTimeSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.0,500.0,1.0);
-        categoriesCollapseTimeSlider.set_value(this.settings.get_int("categories-collapse-time"));
-        categoriesCollapseTimeSlider.connect('value-changed', Lang.bind (this, function(widget) {
-            this.settings.set_int('categories-collapse-time', categoriesCollapseTimeSlider.get_value());
-        }));
-        categoriesCollapseTimeSlider.set_property ("expand", true);
-        categoriesCollapseTimeRow.add(categoriesCollapseTimeSlider);
-        categoriesBehaveFrame.add(categoriesCollapseTimeRow);
-        
-        
-        this.add(categoriesBehaveFrame);
-    }
-});
-
-const AppsPage = new Lang.Class({
-    Name: 'ApplicationsPage',
-    Extends: AM.NotebookPage,
-
-    _init: function(settings) {
-        this.parent(_('Applications'));
-        this.settings = settings;
-        
-        
-        
-        
-        let appsIconFrame = new AM.FrameBox();
-        
-        // Category Icon size options
-        let appsIconRow = new AM.FrameBoxRow();
-        let appsIconSizeLabel = new Gtk.Label({
-            label: _("Size of Application Icons"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: true
-        });        
-        let iconSizes = [0, 16, 22, 24, 32, 48, 64, 96, 128];
-        let appsIconSizeCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
-        	appsIconSizeCombo.set_size_request(129, -1);
-        	appsIconSizeCombo.append_text('0');
-        	appsIconSizeCombo.append_text('16');
-        	appsIconSizeCombo.append_text('22');
-        	appsIconSizeCombo.append_text('24');
-        	appsIconSizeCombo.append_text('32');
-            appsIconSizeCombo.append_text('48');
-            appsIconSizeCombo.append_text('64');
-            appsIconSizeCombo.append_text('96');
-            appsIconSizeCombo.append_text('128');
-            appsIconSizeCombo.set_active(iconSizes.indexOf(this.settings.get_int('apps-icon-size')));
-            appsIconSizeCombo.connect('changed', Lang.bind (this, function(widget) {
-                    this.settings.set_int('apps-icon-size', iconSizes[widget.get_active()]);
-            }));
-        appsIconRow.add(appsIconSizeLabel);
-        appsIconRow.add(appsIconSizeCombo);
-        appsIconFrame.add(appsIconRow);
-        
-        
-        
-        
-        // Apps Label location
-        let appsLabelRow = new AM.FrameBoxRow();
-        let appsLabelLabel = new Gtk.Label({
-            label: _("Application Label location"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: true
-        });        
-        let appsLabelCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
-        appsLabelCombo.append_text(_("Left"));
-        appsLabelCombo.append_text(_("Right"));
-        appsLabelCombo.append_text(_("Hide"));
-        appsLabelCombo.set_active(this.settings.get_enum('apps-label'));
-        appsLabelCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_enum('apps-label', widget.get_active());
-        }));
-        appsLabelRow.add(appsLabelLabel);
-        appsLabelRow.add(appsLabelCombo);
-        appsIconFrame.add(appsLabelRow);        
-        this.add(appsIconFrame);
-    }
-});
-
-
-const PlacesPage = new Lang.Class({
-    Name: 'PlacesPage',
-    Extends: AM.NotebookPage,
-
-    _init: function(settings) {
-        this.parent(_('Places'));
-        this.settings = settings;
-        
-        
-        let placesIconFrame = new AM.FrameBox();
-        
-        // Places Icon size options
-        let placesIconRow = new AM.FrameBoxRow();
-        let placesIconSizeLabel = new Gtk.Label({
-            label: _("Size of Place Icons"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: true
-        });        
-        let iconSizes = [0, 16, 22, 24, 32, 48, 64, 96, 128];
-        let placesIconSizeCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
-        	placesIconSizeCombo.set_size_request(129, -1);
-        	placesIconSizeCombo.append_text('0');
-        	placesIconSizeCombo.append_text('16');
-        	placesIconSizeCombo.append_text('22');
-        	placesIconSizeCombo.append_text('24');
-        	placesIconSizeCombo.append_text('32');
-            placesIconSizeCombo.append_text('48');
-            placesIconSizeCombo.append_text('64');
-            placesIconSizeCombo.append_text('96');
-            placesIconSizeCombo.append_text('128');
-            placesIconSizeCombo.set_active(iconSizes.indexOf(this.settings.get_int('places-icon-size')));
-            placesIconSizeCombo.connect('changed', Lang.bind (this, function(widget) {
-                    this.settings.set_int('places-icon-size', iconSizes[widget.get_active()]);
-            }));
-        placesIconRow.add(placesIconSizeLabel);
-        placesIconRow.add(placesIconSizeCombo);
-        placesIconFrame.add(placesIconRow);
-        
-        
-        
-        
-        // Places Label location
-        let placesLabelRow = new AM.FrameBoxRow();
-        let placesLabelLabel = new Gtk.Label({
-            label: _("Places Label location"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: true
-        });        
-        let placesLabelCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
-        placesLabelCombo.append_text(_("Left"));
-        placesLabelCombo.append_text(_("Right"));
-        placesLabelCombo.append_text(_("Hide"));
-        placesLabelCombo.set_active(this.settings.get_enum('places-label'));
-        placesLabelCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_enum('places-label', widget.get_active());
-        }));
-        placesLabelRow.add(placesLabelLabel);
-        placesLabelRow.add(placesLabelCombo);
-        placesIconFrame.add(placesLabelRow);        
-        this.add(placesIconFrame);
-        
-        
-        
-        
-        
-        
-        // Make moveable list with all the things that places can show!
-        
-        
-        
-    }
-});
-*/
 
 const SearchPage = new Lang.Class({
     Name: 'SearchPage',
@@ -1604,6 +1356,27 @@ const IconsPage = new Lang.Class({
         appsLabelRow.add(appsLabelLabel);
         appsLabelRow.add(appsLabelCombo);
         appsIconFrame.add(appsLabelRow);        
+        
+        
+        // Apps Button Orientation
+        let appsOrientationRow = new AM.FrameBoxRow();
+        let appsOrientationLabel = new Gtk.Label({
+            label: _("Application button orientation: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });        
+        let appsOrientationCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
+        appsOrientationCombo.append_text(_("Left"));
+        appsOrientationCombo.append_text(_("Right"));
+        appsOrientationCombo.append_text(_("Middle"));
+        appsOrientationCombo.set_active(this.settings.get_enum('apps-button-orientation'));
+        appsOrientationCombo.connect('changed', Lang.bind (this, function(widget) {
+                this.settings.set_enum('apps-button-orientation', widget.get_active());
+        }));
+        appsOrientationRow.add(appsOrientationLabel);
+        appsOrientationRow.add(appsOrientationCombo);
+        appsIconFrame.add(appsOrientationRow);        
         this.add(appsIconFrame);
         
         
@@ -1655,11 +1428,29 @@ const IconsPage = new Lang.Class({
         categoryLabelRow.add(categoriesLabelLabel);
         categoryLabelRow.add(categoriesLabelCombo);
         categoryIconFrame.add(categoryLabelRow);        
+        
+        
+        
+        // Categories Button Orientation
+        let categoriesOrientationRow = new AM.FrameBoxRow();
+        let categoriesOrientationLabel = new Gtk.Label({
+            label: _("Category button orientation: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });        
+        let categoriesOrientationCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
+        categoriesOrientationCombo.append_text(_("Left"));
+        categoriesOrientationCombo.append_text(_("Right"));
+        categoriesOrientationCombo.append_text(_("Middle"));
+        categoriesOrientationCombo.set_active(this.settings.get_enum('categories-button-orientation'));
+        categoriesOrientationCombo.connect('changed', Lang.bind (this, function(widget) {
+                this.settings.set_enum('categories-button-orientation', widget.get_active());
+        }));
+        categoriesOrientationRow.add(categoriesOrientationLabel);
+        categoriesOrientationRow.add(categoriesOrientationCombo);
+        categoryIconFrame.add(categoriesOrientationRow);        
         this.add(categoryIconFrame);
-        
-        
-        
-        
         
         
         
@@ -1708,6 +1499,28 @@ const IconsPage = new Lang.Class({
         placesLabelRow.add(placesLabelLabel);
         placesLabelRow.add(placesLabelCombo);
         placesIconFrame.add(placesLabelRow);        
+        this.add(placesIconFrame);
+        
+        
+        // Places Button Orientation
+        let placesOrientationRow = new AM.FrameBoxRow();
+        let placesOrientationLabel = new Gtk.Label({
+            label: _("Places button orientation: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });        
+        let placesOrientationCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
+        placesOrientationCombo.append_text(_("Left"));
+        placesOrientationCombo.append_text(_("Right"));
+        placesOrientationCombo.append_text(_("Middle"));
+        placesOrientationCombo.set_active(this.settings.get_enum('places-button-orientation'));
+        placesOrientationCombo.connect('changed', Lang.bind (this, function(widget) {
+                this.settings.set_enum('places-button-orientation', widget.get_active());
+        }));
+        placesOrientationRow.add(placesOrientationLabel);
+        placesOrientationRow.add(placesOrientationCombo);
+        placesIconFrame.add(placesOrientationRow);        
         this.add(placesIconFrame);
         
         

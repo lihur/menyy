@@ -103,11 +103,17 @@ const AppFavorites = imports.ui.appFavorites;
         this._settings.connect('changed::grid-icon-size', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::places-icon-size', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::categories-icon-size', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::user-icon-size', Lang.bind(this, this._setLayoutChanges));
         // Label Changes
         this._settings.connect('changed::apps-label', Lang.bind(this, this._setLayoutChanges));
-        //this._settings.connect('changed::grid-label', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::places-label', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::categories-label', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::user-label', Lang.bind(this, this._setLayoutChanges));
+        // Orientation Changes
+        this._settings.connect('changed::apps-button-orientation', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::categories-button-orientation', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::places-button-orientation', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::user-button-orientation', Lang.bind(this, this._setLayoutChanges));
         // ViewMode changes
         this._settings.connect('changed::apps-viewmode', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::categories-viewmode', Lang.bind(this, this._setLayoutChanges));
@@ -124,9 +130,13 @@ const AppFavorites = imports.ui.appFavorites;
         //global.settings.connect('changed::favorite-apps', Lang.bind(this, this._menuButton._loadFavorites));
         AppFavorites.getAppFavorites().connect('changed', Lang.bind(this, this._loadFavorites));
         // All Apps Change _loadAllApps();
-        appSys.connect('installed-changed', Lang.bind(this, this._menuButton._loadAllAppsList));
+        appSys.connect('installed-changed', Lang.bind(this, this._loadAllAppsList));
         // Frequent change _loadFrequent();
         
+    },
+    
+    _loadAllAppsList: function() {
+    	this._menuButton._loadCategories;
     },
     
     _loadFavorites: function() {

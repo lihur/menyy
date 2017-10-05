@@ -34,6 +34,11 @@
     <value value="1" nick="Right"/>
     <value value="2" nick="Hide"/>
   </enum>
+  <enum id='org.gnome.shell.extensions.menyy.button-orientation'>
+    <value value="0" nick="Left"/>
+    <value value="1" nick="Right"/>
+    <value value="2" nick="Middle"/>
+  </enum>
   <enum id='org.gnome.shell.extensions.menyy.categories-viewmode'>
     <value value="0" nick="Left"/>
     <value value="1" nick="Right"/>
@@ -41,8 +46,8 @@
     <value value="3" nick="Accordion" />
   </enum>
   <enum id='org.gnome.shell.extensions.menyy.categories-selection-method'>
-    <value value="0" nick="Hover"/>
     <value value="1" nick="Click"/>
+    <value value="0" nick="Hover"/>
   </enum>
   <enum id='org.gnome.shell.extensions.menyy.categories-collapsible'>
     <value value="0" nick="True"/>
@@ -316,6 +321,19 @@
       <summary>Menu width</summary>
     </key>
     
+    
+    <key name="categories-button-orientation" enum="org.gnome.shell.extensions.menyy.button-orientation">
+      <default>'Left'</default>
+      <summary>Categories button orientation</summary>
+    </key>
+    <key name="apps-button-orientation" enum="org.gnome.shell.extensions.menyy.button-orientation">
+      <default>'Left'</default>
+      <summary>Apps button orientation</summary>
+    </key>
+    <key name="places-button-orientation" enum="org.gnome.shell.extensions.menyy.button-orientation">
+      <default>'Left'</default>
+      <summary>Places button orientation</summary>
+    </key>
     
     
     <key name="default-category" enum="org.gnome.shell.extensions.menyy.default-category">

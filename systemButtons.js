@@ -160,11 +160,9 @@ const LockButton = new Lang.Class({
         this._button.menu.toggle();
         if (Main.screenShield !== null) {
         	Main.screenShield.lock(true);
-        } else {
-        	global.log("menyy: no screen shield!")
         }
     },
     _onClick: function(){
-    	this.activate;
+    	this.activate();
     }
 });

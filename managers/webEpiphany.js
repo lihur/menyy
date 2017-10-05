@@ -45,6 +45,13 @@ var _bookmarksMonitor = null;
 var _callbackId = null;
 var bookmarks = [];
 
+
+const Menyy = imports.misc.extensionUtils.getCurrentExtension();
+const constants = Menyy.imports.constants;
+const AppType = constants.AppType;
+
+
+
 function _readBookmarks() {
     bookmarks = [];
 
@@ -77,7 +84,8 @@ function _readBookmarks() {
             appInfo: _appInfo,
             name: String(xmlItem.title),
             score: 0,
-            uri: String(xmlItem.link)
+            uri: String(xmlItem.link),
+            appType: AppType.WEBBOOKMARK
         });
     }
 }

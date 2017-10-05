@@ -242,17 +242,30 @@
     </key>
     
     
+    <key type="i" name="search-timeout-time">
+      <default>512</default>
+      <summary>Search timeout time</summary>
+    </key>
+    <key type="b" name="search-timeout">
+      <default>true</default>
+      <summary>Search timeout enable-disable</summary>
+    </key>
     
+    
+    <key type="i" name="search-apps">
+      <default>10</default>
+      <summary>Search Apps</summary>
+    </key>
     <key type="i" name="search-places">
       <default>0</default>
       <summary>Search places names</summary>
     </key>
     <key type="i" name="search-files">
-      <default>1</default>
+      <default>10</default>
       <summary>Search files and folders</summary>
     </key>
     <key type="i" name="search-terminal">
-      <default>1</default>
+      <default>10</default>
       <summary>Search terminal commands</summary>
     </key>
     <key type="i" name="search-recent">
@@ -261,15 +274,15 @@
     </key>
     <key type="i" name="search-calculator">
       <default>1</default>
-      <summary>Search places names</summary>
+      <summary>Calculator inside search</summary>
     </key>
     <key type="i" name="search-webmarks">
-      <default>0</default>
-      <summary>Search places names</summary>
+      <default>10</default>
+      <summary>Search Web Bookmarks</summary>
     </key>
     <key type="i" name="search-wiki">
-      <default>0</default>
-      <summary>Search terminal commands</summary>
+      <default>1</default>
+      <summary>Search wikipedia</summary>
     </key>
     <key type="i" name="search-google">
       <default>0</default>
@@ -343,6 +356,18 @@
     
     
     
+    <key type="i" name="user-icon-size">
+      <default>64</default>
+      <summary>Size of the user icon.</summary>
+    </key>
+    <key name="user-label" enum="org.gnome.shell.extensions.menyy.categories-label">
+      <default>'Left'</default>
+      <summary>Location of categories label</summary>
+    </key>
+    <key name="user-button-orientation" enum="org.gnome.shell.extensions.menyy.button-orientation">
+      <default>'Left'</default>
+      <summary>Categories button orientation</summary>
+    </key>
     
   </schema>
 </schemalist>

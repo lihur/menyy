@@ -116,9 +116,8 @@ const CommandLineManager = new Lang.Class({
 	
 	// Loads right Click menu
 	// TODO(ADD SETTINGS TO CONTROL WHAT TO LOAD)
-	_loadCommands: function(pattern) {
+	_loadCommands: function(pattern, amount) {
 		// pattern is the terminal command and variables are its inputs
-		
 		// TODO(DELETE THE CASH FOLDER (AS OPTION)
 		
 		let variables;
@@ -129,7 +128,7 @@ const CommandLineManager = new Lang.Class({
 		}
 		pattern = pattern.split(" ")[0];
 		this._commands = [];
-		let argv = shell_path + "/listAllCommands.sh " + pattern + " 10";
+		let argv = shell_path + "/listAllCommands.sh " + pattern + " " + amount;
 		let commandsList;
 		let commandInfo;
 		try {
@@ -205,8 +204,8 @@ const CommandLineManager = new Lang.Class({
 		this.emit('rightClick-updated');
 	},
 	
-	getCommands: function (pattern) {
-		this._loadCommands(pattern);
+	getCommands: function (pattern, amount) {
+		this._loadCommands(pattern, amount);
 		return this._commands;
 	}
 	

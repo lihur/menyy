@@ -1,84 +1,55 @@
-.menyy-system-box{
-	padding-left: 20px;
+/* FINALIZED CSS */
+
+/* CSS CODE USED AS OPTIONS */
+.menyy-text-left {
+	text-align: left;
 }
-
-
-.menyy-general-button {
-	padding: 0px;
-	padding-left: 20px;
-	padding-right: 20px;
+.menyy-text-right {
+	text-align: right;
 }
-
-.menyy-apps-grid-button-label {
+.menyy-text-center {
 	text-align: center;
 }
 
 
+
+/* LIST BUTTONS CSS */
+.menyy-general-button {
+	padding-left: 20px;
+	padding-right: 20px;
+}
+/*.menyy-general-button-label {
+}*/
+.menyy-general-button-icon-right {
+	padding-right: 20px;
+}
+.menyy-general-button-icon-left {
+	padding-left: 20px;
+}
+
+
+/* GRID BUTTONS CSS */
+.menyy-apps-grid-button-label {
+	text-align: center;
+}
 .menyy-apps-grid-button {
 	padding: 20px;
 }
 .menyy-categories-grid-button {
 	padding-bottom: 26px;
 }
-
 .menyy-apps-grid-button-label {
 	padding: 0px;
 }
 
-.menyy-category-button {
-	padding-left: 20px;
-	padding-right: 20px;
-	padding-top: 6px;
-	padding-bottom: 11px;
-}
 
-.menyy-apps-button {
-	padding-top:6px;
-	padding-left: 20px;
-	padding-right: 20px;
-}
-.menyy-back-button {
-	padding-left: 20px;
-	padding-right: 20px;
-	padding-top: 6px;
-	padding-bottom: 6px;
-}
+/* RIGHT CLICK BUTTONS CSS */
 .menyy-shortcuts-button {
 	padding: 6px;
 	padding-left: 20px;
 	padding-right: 20px;
-	margin: 0px;
-	border: 0px;
-}
-.menyy-user-button {
-	padding: 6px;
-	padding-left: 20px;
-	padding-right: 20px;
-	margin: 0px;
-	border: 0px;
 }
 
-
-
-
-.menyy-category-button-label {
-	padding: 0px;
-	padding-left: 20px;
-	padding-right: 20px;
-}
-
-.menyy-apps-button-label {
-	padding: 0px;
-	padding-left: 20px;
-	padding-right: 20px;
-	margin-bottom: 6px;
-}
-
-.menyy-back-button-label {
-	padding: 0px;
-	padding-left: 20px;
-	padding-right: 20px;
-}
 .menyy-shortcuts-button-label {
 	padding: 0px;
 	padding-left: 20px;
@@ -87,54 +58,11 @@
 
 
 
-/*
-.popup-menu-item {
-	padding: 0px;
-	-natural-hpadding: 0px;
-	-minimum-hpadding: 0px;
-	padding-left: 0px;
-	padding-right: 0px;
-	margin: 0px;
-	border: 0px;
-}
-*/
-
-.popup-inactive-menu-item {
-	padding: 0px;
-	-natural-hpadding: 0px;
-	-minimum-hpadding: 0px;
-	padding-left: 0px;
-	padding-right: 0px;
-	margin: 0px;
-	border: 0px;
-}
-
-
-/*
-.popup-menu-ornament {
-	padding: 0px;
-	-natural-hpadding: 0px;
-	-minimum-hpadding: 0px;
-	padding-left: 0px;
-	padding-right: 0px;
-	margin: 0px;
-	border: 0px;
-}
-*/
-/*
-.menyy-main-box {
-	width: 60em;
-	height: 60em;
-}
-*/
-
-.menyy-icon {
-	icon-size: 2em;
-}
-
+/* BOXES CSS */
 .menyy-bottom-box {
 	padding-left: 20px;
 	padding-right: 20px;
-	/*padding-bottom: 0.5em;*/
 }
-
+.menyy-system-box{
+	padding-left: 20px;
+}

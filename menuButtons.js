@@ -117,21 +117,31 @@ const UserMenuItem = new Lang.Class({
     // Initialize the menu item
     _init: function(menyy) {
    	    this.parent();
-    	this._iconSize = 64; // (settings.get_int('user-icon-size') > 0) ?
-								// settings.get_int('user-icon-size') : 64;
-    	this._showIcon = true; // (settings.get_int('user-icon-size') > 0) ?
-								// true : false;
-    	let username = GLib.get_user_name();
-        this._user = AccountsService.UserManager.get_default().get_user(username);
-        this._userIcon = new St.Icon({ style_class: 'popup-menu-icon',
-                                   icon_size: this._iconSize});
-        this._userLabel = new St.Label({ text: username, 
+    	//this._iconSize = (settings.get_int('user-icon-size') > 0) ? settings.get_int('user-icon-size') : 64;
+    	//this._showIcon = (settings.get_int('user-icon-size') > 0) ? true : false;
+   	    this._iconSize = 64;
+    	this._showIcon = true;
+    	const userName = GLib.get_user_name();
+    	const realName = GLib.get_real_name();
+    	const hostName = GLib.get_host_name();
+    	
+        this._user = AccountsService.UserManager.get_default().get_user(userName);
+        this.label = new St.Label({ text: hostName, 
             y_expand: true,
             y_align: Clutter.ActorAlign.CENTER, 
          });
     	
-        let style = "popup-menu-item popup-submenu-menu-item menyy-user-button";
-        this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.START });
+        let style = "popup-menu-item popup-submenu-menu-item menyy-user-button menyy-general-button";
+        //this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.START });
+        
+        if (settings.get_enum('user-button-orientation') == 1) {
+        	this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.END, y_align: St.Align.START });
+        } else if (settings.get_enum('user-button-orientation') == 2) {
+        	this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.MIDDLE, y_align: St.Align.START });
+        } else {
+        	this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.START });
+        }
+        
         this.actor._delegate = this;
 
         this.buttonEnterCallback = (Lang.bind(this, function() {
@@ -150,14 +160,40 @@ const UserMenuItem = new Lang.Class({
             this.actor.remove_style_class_name('selected');
             this.activate();
     	}));
-    	
-    	
-        	
-        	
-
         this.buttonbox = new St.BoxLayout();
-        this.buttonbox.add_child(this._userIcon);
-        this.buttonbox.add_child(this._userLabel, { expand: true });
+        
+        
+        
+        
+        
+        this.label.clutter_text.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR);
+        this.label.clutter_text.set_line_wrap(true);
+    	if (this._showIcon) {
+            this.icon = new St.Icon({ style_class: 'popup-menu-icon',
+                icon_size: this._iconSize});
+            if (settings.get_enum('user-label') == 1) {
+            	this.label.add_style_class_name('menyy-text-left');
+            	this.icon.add_style_class_name('menyy-general-button-icon-left');
+            	this.buttonbox.add(this.label, {x_fill: true, y_fill: false, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
+            	this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
+            } else if (settings.get_enum('user-label') == 2) {
+            	this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
+            } else {
+            	this.label.add_style_class_name('menyy-text-right');
+            	this.icon.add_style_class_name('menyy-general-button-icon-right');
+            	this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
+            	this.buttonbox.add(this.label, {x_fill: true, y_fill: false, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
+            }
+        } else {
+        	if (settings.get_enum('user-button-orientation') == 1) {
+        		this.label.add_style_class_name('menyy-text-right');
+        	} else if (settings.get_enum('user-button-orientation') == 2) {
+        		this.label.add_style_class_name('menyy-text-center');
+        	} else {
+        		this.label.add_style_class_name('menyy-text-left');
+        	}
+        	this.buttonbox.add(this.label, {x_fill: true, y_fill: false, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
+        }
         
         this.actor.set_child(this.buttonbox);
 
@@ -192,11 +228,11 @@ const UserMenuItem = new Lang.Class({
     _onUserChanged: function() {
     	// global.log('menyy: user changed')
         if (this._user.is_loaded) {
-            this._userLabel.set_text (this._user.get_real_name());
-            if (this._userIcon) {
+            this.label.set_text (this._user.get_real_name());
+            if (this.icon) {
                 let iconFileName = this._user.get_icon_file();
                 let iconFile = Gio.file_new_for_path(iconFileName);
-                setIconAsync(this._userIcon, iconFile, 'avatar-default');
+                setIconAsync(this.icon, iconFile, 'avatar-default');
             }
         }
     },
@@ -246,29 +282,29 @@ const BackMenuItem = new Lang.Class({
     // Initialize the menu item
     _init: function(menyy, purpose) {
    	    this.parent();
-    	this._iconSize = (settings.get_int('apps-icon-size') > 0) ? settings.get_int('apps-icon-size') : 64;
+    	this._iconSize = (settings.get_int('apps-icon-size') > 0) ? settings.get_int('apps-icon-size') : 12;
     	this._showIcon = (settings.get_int('apps-icon-size') > 0) ? true : false;
     	this.purpose = purpose;    	
     	if (this.purpose == 'backtoCategories') {
     		this._icon = new St.Icon({ icon_name: 'go-previous-symbolic',
-	            style_class: 'popup-menu-icon',
+	            style_class: 'popup-menu-icon menyy-general-icon-left',
 	            icon_size: this._iconSize});
         	this._label = new St.Label({ text: _("Back"), y_expand: true,
         		y_align: Clutter.ActorAlign.CENTER, style_class: 'menyy-back-button-label'});
 		} else if (this.purpose == 'backToHome'){
 			this._icon = new St.Icon({ icon_name: 'go-previous-symbolic',
-		        style_class: 'popup-menu-icon',
+		        style_class: 'popup-menu-icon menyy-general-icon-left',
 		        icon_size: this._iconSize});
 		 	this._label = new St.Label({ text: _("Back"), y_expand: true,
 		 		y_align: Clutter.ActorAlign.CENTER, style_class: 'menyy-back-button-label'});
     	} else {
     		this._icon = new St.Icon({ icon_name: 'go-next-symbolic',
-	            style_class: 'popup-menu-icon',
+	            style_class: 'popup-menu-icon menyy-general-icon-right',
 	            icon_size: this._iconSize});
         	this._label = new St.Label({ text: _("Show Categories"), y_expand: true,
         		y_align: Clutter.ActorAlign.CENTER, style_class: 'menyy-back-button-label' });
     	}
-        let style = "popup-menu-item popup-submenu-menu-item menyy-back-button";
+        let style = "popup-menu-item popup-submenu-menu-item menyy-back-button menyy-general-button";
         this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.START });
         this.actor._delegate = this;
 		this.buttonEnterCallback = (Lang.bind(this, function() {
@@ -351,8 +387,8 @@ const CategoryButton = new Lang.Class({
     	} else if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.LIST)) {
 			this._iconSize = (settings.get_int('apps-icon-size') > 0) ? settings.get_int('apps-icon-size') : 28;
 			this._showIcon = (settings.get_int('apps-icon-size') > 0) ? true : false;
-        	style = "popup-menu-item popup-submenu-menu-item menyy-category-button";
-        	styleLabel = "menyy-category-button-label";
+        	style = "popup-menu-item popup-submenu-menu-item menyy-apps-button menyy-general-button";
+        	styleLabel = "menyy-apps-button-label menyy-general-button-label";
         	this.buttonbox = new St.BoxLayout();
         	if (settings.get_enum('categories-button-orientation') == 1) {
             	this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.END, y_align: St.Align.START });
@@ -364,8 +400,8 @@ const CategoryButton = new Lang.Class({
     	} else {
         	this._iconSize = (settings.get_int('categories-icon-size') > 0) ? settings.get_int('categories-icon-size') : 24;
         	this._showIcon = (settings.get_int('categories-icon-size') > 0) ? true : false;
-        	style = "popup-menu-item popup-submenu-menu-item menyy-category-button";
-        	styleLabel = "menyy-category-button-label";
+        	style = "popup-menu-item popup-submenu-menu-item menyy-category-button menyy-general-button";
+        	styleLabel = "menyy-category-button-label menyy-general-button-label";
         	this.buttonbox = new St.BoxLayout();
         	if (settings.get_enum('categories-button-orientation') == 1) {
             	this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.END, y_align: St.Align.START });
@@ -406,21 +442,32 @@ const CategoryButton = new Lang.Class({
                 this.buttonbox.add(this.label, {x_fill: false, y_fill: true, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
             }
         } else {
-        	this.label = new St.Label({ text: categoryNameText, style_class: 'menyy-category-button-label' });
+        	this.label = new St.Label({ text: categoryNameText, style_class: 'menyy-category-button-label menyy-general-button-label' });
             this.label.clutter_text.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR);
         	this.label.clutter_text.set_line_wrap(true);
         	if (categoryIconName && this._showIcon) {
 	            this.icon = new St.Icon({icon_name: categoryIconName, icon_size: this._iconSize});
 	            if (settings.get_enum('categories-label') == 1) {
+	            	this.label.add_style_class_name('menyy-text-left');
+	            	this.icon.add_style_class_name('menyy-general-button-icon-left');
 	            	this.buttonbox.add(this.label, {x_fill: true, y_fill: false, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
 	            	this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
 	            } else if (settings.get_enum('categories-label') == 2) {
 	            	this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
 	            } else {
+	            	this.label.add_style_class_name('menyy-text-right');
+	            	this.icon.add_style_class_name('menyy-general-button-icon-right');
 	            	this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
 	            	this.buttonbox.add(this.label, {x_fill: true, y_fill: false, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
 	            }
 	        } else {
+	        	if (settings.get_enum('categories-button-orientation') == 1) {
+	        		this.label.add_style_class_name('menyy-text-right');
+	        	} else if (settings.get_enum('categories-button-orientation') == 2) {
+	        		this.label.add_style_class_name('menyy-text-center');
+	        	} else {
+	        		this.label.add_style_class_name('menyy-text-left');
+	        	}
 	        	this.buttonbox.add(this.label, {x_fill: true, y_fill: false, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
 	        }
         }
@@ -547,17 +594,17 @@ const AppButton = new Lang.Class({
 		let style;
 		
 		if (location == 'places') {
-			this._labelStyle = 'menyy-shortcuts-button-label';
-			this._iconStyle = 'menyy-shortcuts-icon'
+			this._labelStyle = 'menyy-general-button-label';
+			this._iconStyle = 'menyy-general-button-icon'
 			this._iconSize = (settings.get_int('places-icon-size') > 0) ? settings.get_int('places-icon-size') : 16;
 	    	this._showIcon = (settings.get_int('places-icon-size') > 0) ? true : false;
-	    	style = "popup-menu-item menyy-shortcuts-button";
+	    	style = "popup-menu-item menyy-shortcuts-button menyy-general-button";
 		} else if (this._appsViewMode == ApplicationsViewMode.LIST){
-			this._labelStyle = 'menyy-apps-button-label';
-			this._iconStyle = 'menyy-apps-button-icon'
+			this._labelStyle = 'menyy-apps-button-label menyy-general-button-label';
+			this._iconStyle = 'menyy-apps-button-icon menyy-general-button-icon'
 			this._iconSize = (settings.get_int('apps-icon-size') > 0) ? settings.get_int('apps-icon-size') : 28;
 			this._showIcon = (settings.get_int('apps-icon-size') > 0) ? true : false;
-			style = "popup-menu-item popup-submenu-menu-item menyy-apps-button";
+			style = "popup-menu-item popup-submenu-menu-item menyy-apps-button menyy-general-button";
 		} else {
 			this._labelStyle = 'menyy-apps-grid-button-label';
 			this._iconStyle = 'menyy-apps-grid-button-icon'
@@ -657,31 +704,79 @@ const AppButton = new Lang.Class({
         	this.label.clutter_text.set_line_wrap(true);
         	
         	if (settings.get_enum('apps-label') == 0 && (this._type == AppType.APPLICATION || this._type == AppType.FILE || this._type == AppType.FOLDER || this._type == AppType.WEBBOOKMARK || this._type == AppType.TERMINAL)) {
+            	this.label.add_style_class_name('menyy-text-left');
+            	this._iconContainer.add_style_class_name('menyy-general-button-icon-right');
+            	
         		this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
         		this.buttonbox.add(this.label, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
         	} else if (settings.get_enum('apps-label') == 1  && (this._type == AppType.APPLICATION || this._type == AppType.FILE || this._type == AppType.FOLDER || this._type == AppType.WEBBOOKMARK || this._type == AppType.TERMINAL)){
+            	this.label.add_style_class_name('menyy-text-right');
+            	this._iconContainer.add_style_class_name('menyy-general-button-icon-left');
+        		
         		this.buttonbox.add(this.label, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
         		this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.END});
         	} else if ((this._type == AppType.APPLICATION || this._type == AppType.FILE || this._type == AppType.FOLDER || this._type == AppType.WEBBOOKMARK || this._type == AppType.TERMINAL)  && this._showIcon) {
         		this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
-        	} else if (settings.get_enum('places-label') == 0 && this._type == AppType.PLACE) {
+        	
+        	
+        	} else if (settings.get_enum('places-label') == 0 && this._type == AppType.PLACE  && this._showIcon) {
+            	this.label.add_style_class_name('menyy-text-left');
+            	this._iconContainer.add_style_class_name('menyy-general-button-icon-right');
+            	
         		this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
         		this.buttonbox.add(this.label, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
-        	} else if (settings.get_enum('places-label') == 1 && this._type == AppType.PLACE){
+        	} else if (settings.get_enum('places-label') == 1 && this._type == AppType.PLACE  && this._showIcon){
+            	this.label.add_style_class_name('menyy-text-right');
+            	this._iconContainer.add_style_class_name('menyy-general-button-icon-left');
+        		
         		this.buttonbox.add(this.label, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
         		this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.END});
         	} else if (this._type == AppType.PLACE && this._showIcon){
         		this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
         	} else {
+        		if ((this._type == AppType.APPLICATION || this._type == AppType.FILE || this._type == AppType.FOLDER || this._type == AppType.WEBBOOKMARK || this._type == AppType.TERMINAL)) {
+        			if (settings.get_enum('apps-button-orientation') == 1) {
+    	        		this.label.add_style_class_name('menyy-text-right');
+    	        	} else if (settings.get_enum('apps-button-orientation') == 2) {
+    	        		this.label.add_style_class_name('menyy-text-center');
+    	        	} else {
+    	        		this.label.add_style_class_name('menyy-text-left');
+    	        	}
+        		} else {
+		        	if (settings.get_enum('places-button-orientation') == 1) {
+		        		this.label.add_style_class_name('menyy-text-right');
+		        	} else if (settings.get_enum('places-button-orientation') == 2) {
+		        		this.label.add_style_class_name('menyy-text-center');
+		        	} else {
+		        		this.label.add_style_class_name('menyy-text-left');
+		        	}
+        		}
+	        	
         		this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
         		this.buttonbox.add(this.label, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
         	}
         } else {
-        	this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false,x_align: St.Align.MIDDLE, y_align: St.Align.START});
-        	// Use pango to wrap label text
-			this.label.clutter_text.line_wrap = true;
-			this.label.clutter_text.line_wrap_mode = Pango.WrapMode.WORD_CHAR;
-        	this.buttonbox.add(this.label, {x_fill: false, y_fill: true, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE, expand: true});
+        	if (settings.get_enum('places-label') == 0 && this._type == AppType.PLACE  && this._showIcon) {
+	        	this.label.add_style_class_name('menyy-text-left');
+	        	this._iconContainer.add_style_class_name('menyy-general-button-icon-right');
+	        	
+	    		this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
+	    		this.buttonbox.add(this.label, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
+	    	} else if (settings.get_enum('places-label') == 1 && this._type == AppType.PLACE  && this._showIcon){
+	        	this.label.add_style_class_name('menyy-text-right');
+	        	this._iconContainer.add_style_class_name('menyy-general-button-icon-left');
+	    		
+	    		this.buttonbox.add(this.label, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
+	    		this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.END});
+	    	} else if (this._type == AppType.PLACE && this._showIcon){
+	    		this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
+	    	} else {
+	        	this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false,x_align: St.Align.MIDDLE, y_align: St.Align.START});
+	        	// Use pango to wrap label text
+				this.label.clutter_text.line_wrap = true;
+				this.label.clutter_text.line_wrap_mode = Pango.WrapMode.WORD_CHAR;
+	        	this.buttonbox.add(this.label, {x_fill: false, y_fill: true, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE, expand: true});
+	    	}
         }
         this.actor.set_child(this.buttonbox);
 
@@ -941,17 +1036,11 @@ const ShortcutButton = new Lang.Class({
         let style = "popup-menu-item menyy-shortcut-button";
         this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.START });
         this.actor._delegate = this;
-        // this._iconSize = (settings.get_int('shortcuts-icon-size') > 0) ?
-		// settings.get_int('shortcuts-icon-size') : 32;
-        // this._iconSize = 16;
-
-        // appType 0 = application, appType 1 = place, appType 2 = recent
+        
         if (appType == AppType.APPLICATION) {
             this.icon = app.create_icon_texture(this._iconSize);
             this.label = new St.Label({ text: app.get_name(), style_class: 'menyy-shortcuts-button-label' });
         } else if (appType == AppType.PLACE) {
-            // Adjust 'places' symbolic icons by reducing their size
-            // and setting a special class for button padding
             this._iconSize -= 4;
             this.actor.add_style_class_name('menyy-shortcuts-button');
             this.icon = new St.Icon({gicon: app.icon, icon_size: this._iconSize, style_class: 'menyy-shortcuts-icon'});
@@ -963,9 +1052,6 @@ const ShortcutButton = new Lang.Class({
             if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
             this.label = new St.Label({ text: app.name, style_class: 'menyy-shortcuts-button-label' });
         }
-        // this.label = new St.Label({ text: app.get_name(), style_class:
-		// 'menyy-shortcut-button-label' });
-
         this.buttonbox = new St.BoxLayout();
         if (this._showIcon) this.buttonbox.add(this.icon, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
         this.buttonbox.add(this.label, {x_fill: false, y_fill: true, x_align: St.Align.START, y_align: St.Align.MIDDLE});
@@ -974,26 +1060,6 @@ const ShortcutButton = new Lang.Class({
 
         // Connect signals
         this.actor.connect('touch-event', Lang.bind(this, this._onTouchEvent));
-
-        // Connect drag-n-drop signals
-        this._draggable = DND.makeDraggable(this.actor);
-        this._draggable.connect('drag-begin', Lang.bind(this,
-            function () {
-                // this._removeMenuTimeout();
-                Main.overview.beginItemDrag(this);
-                if (menyy.appsMenuButton) {
-                    if (menyy.appsMenuButton._categoryWorkspaceMode == CategoryWorkspaceMode.CATEGORY)
-                        menyy.appsMenuButton.toggleCategoryWorkspaceMode();
-                }
-            }));
-        this._draggable.connect('drag-cancelled', Lang.bind(this,
-            function () {
-                Main.overview.cancelledItemDrag(this);
-            }));
-        this._draggable.connect('drag-end', Lang.bind(this,
-            function () {
-               Main.overview.endItemDrag(this);
-            }));
     },
 
     _onTouchEvent : function (actor, event) {

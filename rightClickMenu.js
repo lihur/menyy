@@ -80,35 +80,21 @@ const AppItemMenu = new Lang.Class({
         		global.log("menyy file: " + app.get_app_info().get_filename());
         	} else if (this.source._type == AppType.FILE) {
         		shortcut = false;
-        		//workItGirl = this.source._get_app_id(AppType.FILE).replace('file://','');
         		fileUri = this.source.app.uri.replace('file://','');
         		file = Gio.file_new_for_path(fileUri);
         		destFile = Gio.file_new_for_path(path + "/" + this.source.app.uri.replace(/^.*[\\\/]/, ''));
+        	} else if (this.source._type == AppType.FOLDER) {
+        		shortcut = true;
+        		file = this.source.app.uri.replace('file://','');
+        		destFile = Gio.file_new_for_path(path + "/" + this.source.app.uri.replace(/^.*[\\\/]/, ''));
         	} else if (this.source._type == AppType.PLACE) {
         		shortcut = true;
-        		if (this.source.app.uri) {
-        			fileUri = this.source._get_app_id(AppType.PLACE).replace('file://','');
-            		file = Gio.file_new_for_path(fileUri);
-            		destFile = Gio.file_new_for_path(path + "/" + this.source.name);
-            		global.log("menyy file: " + this.source._get_app_id(AppType.PLACE));
-        		} else if (this.source.app.file) {
-            		file = this.source.app.file.get_path();
-            		destFile = Gio.file_new_for_path(path + "/" + this.source.app.file.get_basename());
-        		}
+        		file = this.source.app.file.get_path();
+        		destFile = Gio.file_new_for_path(path + "/" + this.source.app.file.get_basename());
         	} else {
         		global.log("menyy: how have you managed to create a situation without a filetype and gotten so far???");
         	}
-        	
-        	//let app = this.source.app;
-        	
-            //let file = Gio.file_new_for_path(app.get_app_info().get_filename());
-            //let path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-            //let destFile = Gio.file_new_for_path(path + "/" + app.get_id());
         	if (shortcut) {
-        		//g_file_make_symbolic_link
-        		global.log("menyy destFile: " + destFile);
-        		//file.make_symbolic_link(destFile, null, function(){});
-        		//file.make_symbolic_link(destFile, null);
         		destFile.make_symbolic_link(file,  null);
         	} else {
 	            file.copy(destFile, 0, null, function(){});
@@ -230,15 +216,13 @@ const AppItemMenu = new Lang.Class({
     		
     		//this._createDefaultMenu();   		
     	} else if (this.source._type == AppType.PLACE) {
-    		global.log("menyy folder");
     		app = this.source.app;
 			path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-			
-			
-			// A hack until I Web Bookmarks as a different type
-    		if (!this.source.app.app) {
-    			file = Gio.file_new_for_path(path + "/" + this.source.app.file.get_basename());
-    		}
+			file = Gio.file_new_for_path(path + "/" + this.source.app.file.get_basename());
+    	} else if (this.source._type == AppType.FOLDER) {
+    		app = this.source.app;
+			path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+			file = Gio.file_new_for_path(path + "/" + app.uri.replace(/^.*[\\\/]/, ''));
     	} else {
     		global.log("menyy: how have you managed to create a situation without a filetype?");
     	}
@@ -254,7 +238,7 @@ const AppItemMenu = new Lang.Class({
                 this._appendSeparator();
                 this._addToDesktopItem = this._appendMenuItem("Remove from Desktop (unimplemented)");
             }*/
-        } else if ((this.source._type == AppType.PLACE) && !(this.source.app.app)) {
+        } else if ((this.source._type == AppType.PLACE) && !(this.source.app.app) || (this.source._type == AppType.FOLDER)) {
         	if (!file.query_exists(null)) {
 	            this._appendSeparator();
 	            this._addToDesktopItem = this._appendMenuItem("Symlink to Desktop");

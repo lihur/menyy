@@ -181,6 +181,32 @@ const DesktopTarget = new Lang.Class({
 			} catch(e) {
 				log('Failed to copy to desktop: ' + e.message);
 			}
+		} else if (source._type == AppType.FOLDER) {
+			//let fileUri = this._getSourceFileInfo(source);
+			let fileUri = source.app.uri.replace('file://','');
+			if (!fileUri)
+				return false;
+			this.emit('app-dropped');
+			let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+			//let src = Gio.file_new_for_path(fileUri);
+			let dst = Gio.File.new_for_path(GLib.build_filenamev([desktop, source.app.uri.replace(/^.*[\\\/]/, '')]));	
+			try {
+				dst.make_symbolic_link(fileUri,  null);
+			} catch(e) {
+				log('Failed to copy to desktop: ' + e.message);
+			}
+		} else if (source._type == AppType.PLACE) {
+			let fileUri = source.app.file.get_path();
+			if (!fileUri)
+				return false;
+			this.emit('app-dropped');
+			let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+			let dst = Gio.File.new_for_path(GLib.build_filenamev([desktop, source.app.file.get_basename()]));	
+			try {
+				dst.make_symbolic_link(fileUri,  null);
+			} catch(e) {
+				log('Failed to copy to desktop: ' + e.message);
+			}
 		}
 
 		return true;

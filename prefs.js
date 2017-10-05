@@ -253,145 +253,57 @@ const BehaviourSettingsPage = new Lang.Class({
         hoverTimeSliderRow.add(hoverTimeSlider);
         hoverFrame.add(hoverTimeRow);
         hoverFrame.add(hoverTimeSliderRow);
-        
-        
-        
         this.add(hoverFrame);
+        
+        
+        
+        /*
+         * Search Timeout switch
+         */
+        let searchTimeOutFrame = new AM.FrameBox();
+        let searchTimeOutRow = new AM.FrameBoxRow();
+        let searchTimeOutLabel = new Gtk.Label({
+            label: _("Wait for search input: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });
+        let searchTimeOutSwitch = new Gtk.Switch({ halign: Gtk.Align.END });
+        searchTimeOutSwitch.set_active(this.settings.get_boolean('search-timeout'));
+        searchTimeOutSwitch.connect('notify::active', Lang.bind(this, function(check) {
+            this.settings.set_boolean('search-timeout', check.get_active());
+        }));
+        searchTimeOutRow.add(searchTimeOutLabel);
+        searchTimeOutRow.add(searchTimeOutSwitch);
+        searchTimeOutFrame.add(searchTimeOutRow);
+        this.add(searchTimeOutFrame);
+        
+        /*
+         * Search Timeout Time
+         */
+        let searchTimeRow = new AM.FrameBoxRow();
+        let searchTimeSliderRow = new AM.FrameBoxRow();
+        let searchTimeLabel = new Gtk.Label({
+            label: _("Search delay: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });
+        var searchTimeSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 100.0,1024.0,1.0);
+        searchTimeSlider.set_value(this.settings.get_int('search-timeout-time'));
+        searchTimeSlider.connect('value-changed', Lang.bind (this, function(widget) {
+            this.settings.set_int('search-timeout-time', searchTimeSlider.get_value());
+        }));
+        searchTimeSlider.set_property ("expand", true);
+        searchTimeRow.add(searchTimeLabel);
+        searchTimeSliderRow.add(searchTimeSlider);
+        searchTimeOutFrame.add(searchTimeRow);
+        searchTimeOutFrame.add(searchTimeSliderRow);
+        this.add(searchTimeOutFrame);
+        
 
     }
 });
-
-
-
-/*
-const WorkspaceNameModel = new GObject.Class({
-    Name: 'WorkspaceIndicator.WorkspaceNameModel',
-    GTypeName: 'WorkspaceNameModel',
-    Extends: Gtk.ListStore,
-
-    Columns: {
-        LABEL: 0,
-    },
-
-    _init: function(params) {
-        this.parent(params);
-        this.set_column_types([GObject.TYPE_STRING]);
-
-        this._settings = new Gio.Settings({ schema_id: WORKSPACE_SCHEMA });
-        //this._settings.connect('changed::workspace-names', Lang.bind(this, this._reloadFromSettings));
-
-        this._reloadFromSettings();
-
-        // overriding class closure doesn't work, because GtkTreeModel
-        // plays tricks with marshallers and class closures
-        this.connect('row-changed', Lang.bind(this, this._onRowChanged));
-        this.connect('row-inserted', Lang.bind(this, this._onRowInserted));
-        this.connect('row-deleted', Lang.bind(this, this._onRowDeleted));
-    },
-
-    _reloadFromSettings: function() {
-        if (this._preventChanges)
-            return;
-        this._preventChanges = true;
-
-        let newNames = this._settings.get_strv(WORKSPACE_KEY);
-
-        let i = 0;
-        let [ok, iter] = this.get_iter_first();
-        while (ok && i < newNames.length) {
-            this.set(iter, [this.Columns.LABEL], [newNames[i]]);
-
-            ok = this.iter_next(iter);
-            i++;
-        }
-
-        while (ok)
-            ok = this.remove(iter);
-
-        for ( ; i < newNames.length; i++) {
-            iter = this.append();
-            this.set(iter, [this.Columns.LABEL], [newNames[i]]);
-        }
-
-        this._preventChanges = false;
-    },
-
-    _onRowChanged: function(self, path, iter) {
-        if (this._preventChanges)
-            return;
-        this._preventChanges = true;
-
-        let index = path.get_indices()[0];
-        let names = this._settings.get_strv(WORKSPACE_KEY);
-
-        if (index >= names.length) {
-            // fill with blanks
-            for (let i = names.length; i <= index; i++)
-                names[i] = '';
-        }
-
-        names[index] = this.get_value(iter, this.Columns.LABEL);
-
-        this._settings.set_strv(WORKSPACE_KEY, names);
-
-        this._preventChanges = false;
-    },
-
-    _onRowInserted: function(self, path, iter) {
-        if (this._preventChanges)
-            return;
-        this._preventChanges = true;
-
-        let index = path.get_indices()[0];
-        let names = this._settings.get_strv(WORKSPACE_KEY);
-        let label = this.get_value(iter, this.Columns.LABEL) || '';
-        names.splice(index, 0, label);
-
-        this._settings.set_strv(WORKSPACE_KEY, names);
-
-        this._preventChanges = false;
-    },
-
-    _onRowDeleted: function(self, path) {
-        if (this._preventChanges)
-            return;
-        this._preventChanges = true;
-
-        let index = path.get_indices()[0];
-        let names = this._settings.get_strv(WORKSPACE_KEY);
-
-        if (index >= names.length)
-            return;
-
-        names.splice(index, 1);
-
-        // compact the array
-        for (let i = names.length -1; i >= 0 && !names[i]; i++)
-            names.pop();
-
-        this._settings.set_strv(WORKSPACE_KEY, names);
-
-        this._preventChanges = false;
-    },
-});
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 const PanelButtonPage = new Lang.Class({
     Name: 'PanelButtonPage',
@@ -753,285 +665,115 @@ const SearchPage = new Lang.Class({
         
         
         let searchWhereFrame = new AM.FrameBox();
-        let boolean = [0, 1];
+        
+        // Applications Search Amount
+        let searchAppsRow = new AM.FrameBoxRow();
+        let searchAppsSliderRow = new AM.FrameBoxRow();
+        let searchAppsLabel = new Gtk.Label({
+            label: _("Amount of Applications Search Results: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });        
+        var searchAppsSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 1.0,100.0,1.0);
+        searchAppsSlider.set_value(this.settings.get_int("search-apps"));
+        searchAppsSlider.connect('value-changed', Lang.bind (this, function(widget) {
+            this.settings.set_int('search-apps', searchAppsSlider.get_value());
+        }));
+        searchAppsSlider.set_property ("expand", true);
+        searchAppsRow.add(searchAppsLabel);
+        searchAppsSliderRow.add(searchAppsSlider);
+        searchWhereFrame.add(searchAppsRow);
+        searchWhereFrame.add(searchAppsSliderRow);  
         
         
-        // Where to search (rows)
-        let searchPlacesRow = new AM.FrameBoxRow();
-        let searchFilesRow = new AM.FrameBoxRow();
+        
+        // Terminal Search Amount
         let searchTerminalRow = new AM.FrameBoxRow();
-        let searchRecentRow = new AM.FrameBoxRow();
-        let searchCalculatorRow = new AM.FrameBoxRow();
-        let searchWebMarksRow = new AM.FrameBoxRow();
-        let searchWikiRow = new AM.FrameBoxRow();
-        let searchGoogleRow = new AM.FrameBoxRow();
-        
-        
-        
-        
-        
-        
-        let searchPlacesLabel = new Gtk.Label({
-            label: _("Search Places"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: true
-        });    
-        searchPlacesRow.add(searchPlacesLabel);
-        let searchPlacesCombo = new Gtk.ComboBoxText({halign:Gtk.Align.END});
-        searchPlacesCombo.append_text(_('False'));
-        searchPlacesCombo.append_text(_('True'));
-        searchPlacesCombo.set_active(this.settings.get_int('search-places'));
-        searchPlacesCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_int('search-places', boolean[widget.get_active()]);
-        }));
-
-        searchPlacesRow.add(searchPlacesCombo);
-        searchWhereFrame.add(searchPlacesRow);
-        
-        
-        
-        
-        
-        
-        let searchFilesLabel = new Gtk.Label({
-            label: _("Search Files"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: true
-        });    
-        searchFilesRow.add(searchFilesLabel);
-        let searchFilesCombo = new Gtk.ComboBoxText({halign:Gtk.Align.END});
-        searchFilesCombo.append_text(_('False'));
-        searchFilesCombo.append_text(_('True'));
-        searchFilesCombo.set_active(this.settings.get_int('search-files'));
-        searchFilesCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_int('search-files', boolean[widget.get_active()]);
-        }));
-
-        searchFilesRow.add(searchFilesCombo);
-        searchWhereFrame.add(searchFilesRow);
-        
-        
-        
-        
-        
+        let searchTerminalSliderRow = new AM.FrameBoxRow();
         let searchTerminalLabel = new Gtk.Label({
-            label: _("Search Terminal"),
+            label: _("Amount of Terminal Search Results: "),
             use_markup: true,
             xalign: 0,
             hexpand: true
-        });    
+        });        
+        var searchTerminalSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.0,100.0,1.0);
+        searchTerminalSlider.set_value(this.settings.get_int("search-terminal"));
+        searchTerminalSlider.connect('value-changed', Lang.bind (this, function(widget) {
+            this.settings.set_int('search-terminal', searchTerminalSlider.get_value());
+        }));
+        searchTerminalSlider.set_property ("expand", true);
         searchTerminalRow.add(searchTerminalLabel);
-        let searchTerminalCombo = new Gtk.ComboBoxText({halign:Gtk.Align.END});
-        searchTerminalCombo.append_text(_('False'));
-        searchTerminalCombo.append_text(_('True'));
-        searchTerminalCombo.set_active(this.settings.get_int('search-terminal'));
-        searchTerminalCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_int('search-terminal', boolean[widget.get_active()]);
-        }));
-
-        searchTerminalRow.add(searchTerminalCombo);
+        searchTerminalSliderRow.add(searchTerminalSlider);
         searchWhereFrame.add(searchTerminalRow);
+        searchWhereFrame.add(searchTerminalSliderRow);
         
         
         
         
-        
+        // Recent Search Amount
+        let searchRecentRow = new AM.FrameBoxRow();
+        let searchRecentSliderRow = new AM.FrameBoxRow();
         let searchRecentLabel = new Gtk.Label({
-            label: _("Search Recent"),
+            label: _("Amount of Recent Files Search Results: "),
             use_markup: true,
             xalign: 0,
             hexpand: true
-        });    
+        });        
+        var searchRecentSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.0,100.0,1.0);
+        searchRecentSlider.set_value(this.settings.get_int("search-recent"));
+        searchRecentSlider.connect('value-changed', Lang.bind (this, function(widget) {
+            this.settings.set_int('search-recent', searchRecentSlider.get_value());
+        }));
+        searchRecentSlider.set_property ("expand", true);
         searchRecentRow.add(searchRecentLabel);
-        let searchRecentCombo = new Gtk.ComboBoxText({halign:Gtk.Align.END});
-        searchRecentCombo.append_text(_('False'));
-        searchRecentCombo.append_text(_('True'));
-        searchRecentCombo.set_active(this.settings.get_int('search-recent'));
-        searchRecentCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_int('search-recent', boolean[widget.get_active()]);
-        }));
-
-        searchRecentRow.add(searchRecentCombo);
+        searchRecentSliderRow.add(searchRecentSlider);
         searchWhereFrame.add(searchRecentRow);
+        searchWhereFrame.add(searchRecentSliderRow);  
         
         
         
-        
-        
-        let searchCalculatorLabel = new Gtk.Label({
-            label: _("Search Calculator"),
+        // Web Bookmarks Search Amount
+        let searchWebmarksRow = new AM.FrameBoxRow();
+        let searchWebmarksSliderRow = new AM.FrameBoxRow();
+        let searchWebmarksLabel = new Gtk.Label({
+            label: _("Amount of Web Bookmarks Search Results: "),
             use_markup: true,
             xalign: 0,
             hexpand: true
-        });    
-        searchCalculatorRow.add(searchCalculatorLabel);
-        let searchCalculatorCombo = new Gtk.ComboBoxText({halign:Gtk.Align.END});
-        searchCalculatorCombo.append_text(_('False'));
-        searchCalculatorCombo.append_text(_('True'));
-        searchCalculatorCombo.set_active(this.settings.get_int('search-calculator'));
-        searchCalculatorCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_int('search-calculator', boolean[widget.get_active()]);
+        });        
+        var searchWebmarksSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.0,100.0,1.0);
+        searchWebmarksSlider.set_value(this.settings.get_int("search-webmarks"));
+        searchWebmarksSlider.connect('value-changed', Lang.bind (this, function(widget) {
+            this.settings.set_int('search-webmarks', searchWebmarksSlider.get_value());
         }));
-
-        searchCalculatorRow.add(searchCalculatorCombo);
-        searchWhereFrame.add(searchCalculatorRow);
+        searchWebmarksSlider.set_property ("expand", true);
+        searchWebmarksRow.add(searchWebmarksLabel);
+        searchWebmarksSliderRow.add(searchWebmarksSlider);
+        searchWhereFrame.add(searchWebmarksRow);
+        searchWhereFrame.add(searchWebmarksSliderRow);  
         
-        
-        
-        
-        
-        let searchWebMarksLabel = new Gtk.Label({
-            label: _("Search WebMarks"),
+        // Places Search Amount
+        let searchPlacesRow = new AM.FrameBoxRow();
+        let searchPlacesSliderRow = new AM.FrameBoxRow();
+        let searchPlacesLabel = new Gtk.Label({
+            label: _("Amount of Places Search Results: "),
             use_markup: true,
             xalign: 0,
             hexpand: true
-        });    
-        searchWebMarksRow.add(searchWebMarksLabel);
-        let searchWebMarksCombo = new Gtk.ComboBoxText({halign:Gtk.Align.END});
-        searchWebMarksCombo.append_text(_('False'));
-        searchWebMarksCombo.append_text(_('True'));
-        searchWebMarksCombo.set_active(this.settings.get_int('search-webmarks'));
-        searchWebMarksCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_int('search-webmarks', boolean[widget.get_active()]);
+        });        
+        var searchPlacesSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.0,100.0,1.0);
+        searchPlacesSlider.set_value(this.settings.get_int("search-places"));
+        searchPlacesSlider.connect('value-changed', Lang.bind (this, function(widget) {
+            this.settings.set_int('search-places', searchPlacesSlider.get_value());
         }));
-
-        searchWebMarksRow.add(searchWebMarksCombo);
-        searchWhereFrame.add(searchWebMarksRow);
-        
-        
-        
-        
-        
-        let searchWikiLabel = new Gtk.Label({
-            label: _("Search Wiki"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: true
-        });    
-        searchWikiRow.add(searchWikiLabel);
-        let searchWikiCombo = new Gtk.ComboBoxText({halign:Gtk.Align.END});
-        searchWikiCombo.append_text(_('False'));
-        searchWikiCombo.append_text(_('True'));
-        searchWikiCombo.set_active(this.settings.get_int('search-wiki'));
-        searchWikiCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_int('search-wiki', boolean[widget.get_active()]);
-        }));
-
-        searchWikiRow.add(searchWikiCombo);
-        searchWhereFrame.add(searchWikiRow);
-        
-        
-        
-        
-        
-        let searchGoogleLabel = new Gtk.Label({
-            label: _("Search Google"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: true
-        });    
-        searchGoogleRow.add(searchGoogleLabel);
-        let searchGoogleCombo = new Gtk.ComboBoxText({halign:Gtk.Align.END});
-        searchGoogleCombo.append_text(_('False'));
-        searchGoogleCombo.append_text(_('True'));
-        searchGoogleCombo.set_active(this.settings.get_int('search-google'));
-        searchGoogleCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_int('search-google', boolean[widget.get_active()]);
-        }));
-
-        searchGoogleRow.add(searchGoogleCombo);
-        searchWhereFrame.add(searchGoogleRow);
+        searchPlacesSlider.set_property ("expand", true);
+        searchPlacesRow.add(searchPlacesLabel);
+        searchPlacesSliderRow.add(searchPlacesSlider);
+        searchWhereFrame.add(searchPlacesRow);
+        searchWhereFrame.add(searchPlacesSliderRow);
         
         this.add(searchWhereFrame);
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        // Location settings
-        let searchLocationFrame = new AM.FrameBox();
-        let searchHorizontalRow = new AM.FrameBoxRow();
-        let searchVerticalRow = new AM.FrameBoxRow();
-        let searchModeRow = new AM.FrameBoxRow();
-        
-        
-        let searchHorizontalLabel = new Gtk.Label({
-            label: _("Searchbar Horizontal Location"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: true
-        });    
-        searchHorizontalRow.add(searchHorizontalLabel);
-        let searchHorizontalCombo = new Gtk.ComboBoxText({halign:Gtk.Align.END});
-        searchHorizontalCombo.append_text(_('Top'));
-        searchHorizontalCombo.append_text(_('Bottom'));
-        searchHorizontalCombo.set_active(this.settings.get_int('search-horizontal'));
-        searchHorizontalCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_int('search-horizontal', boolean[widget.get_active()]);
-        }));
-
-        searchHorizontalRow.add(searchHorizontalCombo);
-        searchLocationFrame.add(searchHorizontalRow);
-        
-        
-        
-        
-        let searchVerticalLabel = new Gtk.Label({
-            label: _("Searchbar Vertical Location"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: true
-        });    
-        searchVerticalRow.add(searchVerticalLabel);
-        let searchVerticalCombo = new Gtk.ComboBoxText({halign:Gtk.Align.END});
-        searchVerticalCombo.append_text(_('Left'));
-        searchVerticalCombo.append_text(_('Right'));
-        searchVerticalCombo.set_active(this.settings.get_int('search-vertical'));
-        searchVerticalCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_int('search-vertical', boolean[widget.get_active()]);
-        }));
-
-        searchVerticalRow.add(searchVerticalCombo);
-        searchLocationFrame.add(searchVerticalRow);
-        
-        
-        
-        
-        let searchModeLabel = new Gtk.Label({
-            label: _("Searchbar Mode"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: true
-        });    
-        searchModeRow.add(searchModeLabel);
-        let searchModeCombo = new Gtk.ComboBoxText({halign:Gtk.Align.END});
-        searchModeCombo.append_text(_('Show'));
-        searchModeCombo.append_text(_('Smart'));
-        searchModeCombo.append_text(_('Hide'));
-        searchModeCombo.set_active(this.settings.get_enum('search-mode'));
-        searchModeCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_enum('search-mode', widget.get_active());
-        }));
-
-        searchModeRow.add(searchModeCombo);
-        searchLocationFrame.add(searchModeRow);
-        
-        
-        
-        
-        this.add(searchLocationFrame);
-        
-        
-        
     }	
 });
 
@@ -1522,6 +1264,78 @@ const IconsPage = new Lang.Class({
         placesOrientationRow.add(placesOrientationCombo);
         placesIconFrame.add(placesOrientationRow);        
         this.add(placesIconFrame);
+        
+        
+        
+        
+        
+        /* User Icons Settings */
+        let userIconFrame = new AM.FrameBox();
+        
+        // User Icon Size
+        let userIconRow = new AM.FrameBoxRow();
+        let userIconSliderRow = new AM.FrameBoxRow();
+        let userIconSizeLabel = new Gtk.Label({
+            label: _("Size of User Icon: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });        
+        var userIconSizeSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.0,128.0,1.0);
+        userIconSizeSlider.set_value(this.settings.get_int("user-icon-size"));
+        userIconSizeSlider.connect('value-changed', Lang.bind (this, function(widget) {
+            this.settings.set_int('user-icon-size', userIconSizeSlider.get_value());
+        }));
+        userIconSizeSlider.set_property ("expand", true);
+        userIconRow.add(userIconSizeLabel);
+        userIconSliderRow.add(userIconSizeSlider);
+        userIconFrame.add(userIconRow);
+        userIconFrame.add(userIconSliderRow);
+        
+        
+        
+        // User Label location
+        let userLabelRow = new AM.FrameBoxRow();
+        let userLabelLabel = new Gtk.Label({
+            label: _("User Label location: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });        
+        let userLabelCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
+        userLabelCombo.append_text(_("Left"));
+        userLabelCombo.append_text(_("Right"));
+        userLabelCombo.append_text(_("Hide"));
+        userLabelCombo.set_active(this.settings.get_enum('user-label'));
+        userLabelCombo.connect('changed', Lang.bind (this, function(widget) {
+                this.settings.set_enum('user-label', widget.get_active());
+        }));
+        userLabelRow.add(userLabelLabel);
+        userLabelRow.add(userLabelCombo);
+        userIconFrame.add(userLabelRow);        
+        this.add(userIconFrame);
+        
+        
+        // Places Button Orientation
+        let userOrientationRow = new AM.FrameBoxRow();
+        let userOrientationLabel = new Gtk.Label({
+            label: _("User button orientation: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });        
+        let userOrientationCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
+        userOrientationCombo.append_text(_("Left"));
+        userOrientationCombo.append_text(_("Right"));
+        userOrientationCombo.append_text(_("Middle"));
+        userOrientationCombo.set_active(this.settings.get_enum('user-button-orientation'));
+        userOrientationCombo.connect('changed', Lang.bind (this, function(widget) {
+                this.settings.set_enum('user-button-orientation', widget.get_active());
+        }));
+        userOrientationRow.add(userOrientationLabel);
+        userOrientationRow.add(userOrientationCombo);
+        userIconFrame.add(userOrientationRow);        
+        this.add(userIconFrame);
         
         
         

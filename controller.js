@@ -103,17 +103,14 @@ const AppFavorites = imports.ui.appFavorites;
         this._settings.connect('changed::grid-icon-size', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::places-icon-size', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::categories-icon-size', Lang.bind(this, this._setLayoutChanges));
-        this._settings.connect('changed::user-icon-size', Lang.bind(this, this._setLayoutChanges));
         // Label Changes
         this._settings.connect('changed::apps-label', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::places-label', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::categories-label', Lang.bind(this, this._setLayoutChanges));
-        this._settings.connect('changed::user-label', Lang.bind(this, this._setLayoutChanges));
         // Orientation Changes
         this._settings.connect('changed::apps-button-orientation', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::categories-button-orientation', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::places-button-orientation', Lang.bind(this, this._setLayoutChanges));
-        this._settings.connect('changed::user-button-orientation', Lang.bind(this, this._setLayoutChanges));
         // ViewMode changes
         this._settings.connect('changed::apps-viewmode', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::categories-viewmode', Lang.bind(this, this._setLayoutChanges));

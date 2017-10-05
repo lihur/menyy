@@ -178,7 +178,7 @@ const ApplicationsMenu = new Lang.Class({
 		this._recent = new Array();																		// Recent Files List
 		
 		// Settings
-		this._searchWaitTime = 350;																		// Put in setting, this is used to determine how long search waits for new input
+		//this._searchWaitTime = this._settings.get_int('search-timeout-time');							// Put in setting, this is used to determine how long search waits for new input
 		this._appGridColumns = this._settings.get_int('apps-grid-column-count');						// Grid Column Count
 		this._appsViewMode = this._settings.get_enum('apps-viewmode');									// Apps View Mode (grid or list or other)
 		this._categoriesViewMode = this._settings.get_enum('categories-viewmode');						// Categories View Mode (left, right, combined with apps or accordion)
@@ -353,11 +353,11 @@ const ApplicationsMenu = new Lang.Class({
 		// Apps Scroll
 		this.appsScrollBox = new St.ScrollView({x_fill: true, y_fill: true, y_align: St.Align.START, style_class: 'vfade menyy-applications-box-scrollview' });
 		this.appsScrollBox.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC);
-		let vScrollApps = this.appsScrollBox.get_vscroll_bar();
-		vScrollApps.connect('scroll-start', Lang.bind(this, function() {
+		this.vScrollApps = this.appsScrollBox.get_vscroll_bar();
+		this.vScrollApps.connect('scroll-start', Lang.bind(this, function() {
 			this.menu.passEvents = true;
 		}));
-		vScrollApps.connect('scroll-stop', Lang.bind(this, function() {
+		this.vScrollApps.connect('scroll-stop', Lang.bind(this, function() {
 			this.menu.passEvents = false;
 		}));
 		this.appsScrollBox.add_actor(this.appsBoxWrapper);
@@ -368,13 +368,14 @@ const ApplicationsMenu = new Lang.Class({
 		// Home Scroll
 		this.homeScrollBox = new St.ScrollView({x_fill: true, y_fill: true, y_align: St.Align.START, style_class: 'vfade menyy-applications-box-scrollview' });
 		this.homeScrollBox.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC);
-		let vScrollHome = this.homeScrollBox.get_vscroll_bar();
-		vScrollHome.connect('scroll-start', Lang.bind(this, function() {
+		this.vScrollHome = this.homeScrollBox.get_vscroll_bar();
+		this.vScrollHome.connect('scroll-start', Lang.bind(this, function() {
 			this.menu.passEvents = true;
 		}));
-		vScrollHome.connect('scroll-stop', Lang.bind(this, function() {
+		this.vScrollHome.connect('scroll-stop', Lang.bind(this, function() {
 			this.menu.passEvents = false;
 		}));
+		
 		this.homeScrollBox.add_actor(this.homeBoxWrapper);
 
 
@@ -385,11 +386,11 @@ const ApplicationsMenu = new Lang.Class({
 			this.categoryScrollBox = new St.ScrollView({y_align: St.Align.START,
 				style_class: 'menyy-categories-box-scrollview menyy-spacing' });
 			this.categoryScrollBox.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC);
-			let vscroll2 = this.categoryScrollBox.get_vscroll_bar();
-			vscroll2.connect('scroll-start', Lang.bind(this, function() {
+			this.vScrollCategories = this.categoryScrollBox.get_vscroll_bar();
+			this.vScrollCategories.connect('scroll-start', Lang.bind(this, function() {
 				this.menu.passEvents = true;
 			}));
-			vscroll2.connect('scroll-stop', Lang.bind(this, function() {
+			this.vScrollCategories.connect('scroll-stop', Lang.bind(this, function() {
 				this.menu.passEvents = false;
 			}));
 			this.categoryScrollBox.add_actor(this.categoryBox);
@@ -401,11 +402,11 @@ const ApplicationsMenu = new Lang.Class({
 		// Places Scroll
 		this.placesScrollBox = new St.ScrollView({x_fill: true, y_fill: true, y_align: St.Align.START, style_class: 'vfade menyy-places-box-scrollview' });
 		this.placesScrollBox.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC);
-		let vScrollPlaces = this.placesScrollBox.get_vscroll_bar();
-		vScrollPlaces.connect('scroll-start', Lang.bind(this, function() {
+		this.vScrollPlaces = this.placesScrollBox.get_vscroll_bar();
+		this.vScrollPlaces.connect('scroll-start', Lang.bind(this, function() {
 			this.menu.passEvents = true;
 		}));
-		vScrollHome.connect('scroll-stop', Lang.bind(this, function() {
+		this.vScrollPlaces.connect('scroll-stop', Lang.bind(this, function() {
 			this.menu.passEvents = false;
 		}));
 		this.placesScrollBox.add_actor(this.placesBox);
@@ -607,8 +608,13 @@ const ApplicationsMenu = new Lang.Class({
 		
 		this.appsBoxWrapper.set_style( 'width: ' + appsWidth + 'px' );
 		this.homeBoxWrapper.set_style( 'width: ' + appsWidth + 'px' );
-
-
+		
+		//TODO(ADD SETTINGS AND REMOVE RE-ASKING FOR SCROLLBARS)
+		//this.vScrollApps.hide();
+		//this.vScrollHome.hide();
+		this.vScrollPlaces.hide();
+		//if (this.vScrollCategories) this.vScrollCategories.hide();		
+		
 		// Categories
 		if (this._categoriesViewMode != CategoriesViewMode.COMBINED) {
 			if (this._settings.get_int('categoriesbox-width') > 0) {
@@ -637,16 +643,10 @@ const ApplicationsMenu = new Lang.Class({
 					'height: ' + (this._settings.get_int('menubox-height')).toString() + 'px'
 			);
 		}
-
-
-
-
-
-
-
-
-
-
+		
+		
+		
+		
 		// Right Click
 		this.rightClickBox.set_style(
 				'min-height: 0px; ' +
@@ -1559,7 +1559,6 @@ const ApplicationsMenu = new Lang.Class({
 		if (!this.placesManager)
 			return null;
 		let bookmarks = this.placesManager.getBookmarks();
-		//global.log("menyy -> listbookmarks: " + bookmarks);
 		let res = [];
 		for (let id = 0; id < bookmarks.length; id++) {
 			if (!pattern || bookmarks[id].name.toLowerCase().indexOf(pattern)!=-1)
@@ -1569,15 +1568,18 @@ const ApplicationsMenu = new Lang.Class({
 	},
 	
 	// LOADS TERMINAL COMMANDS
-	_listTerminalCommands: function(pattern){
+	_listTerminalCommands: function(pattern, amount){
 		let debugMe = false;
+		let res = [];
 		if (commandLineDisplay) {															// if commandlinedisplay imported
 			if (!this.commandLineManager) 													// if the manager is not yet present
 				this.commandLineManager = new commandLineDisplay.CommandLineManager(true);	// create manager
 		} else {																			// if no commandlinedisplay imported
 			this.commandLineManager = null;													// then just ignore this part completely
 		};
-		let res = this.commandLineManager.getCommands(pattern);
+		if (amount > 0) {
+			res = this.commandLineManager.getCommands(pattern, amount);
+		}
 		if (debugMe) global.log("menyy -> _listTerminalCommands '" + pattern + "': " + res);
 		return res;
 	},
@@ -1886,7 +1888,8 @@ const ApplicationsMenu = new Lang.Class({
 	
 	_setSearchTimeout: function(se, prop){
 		this._removeSearchTimeout();
-		this._searchTimeoutId = Mainloop.timeout_add(this._searchWaitTime,
+		//this._searchTimeoutId = Mainloop.timeout_add(this._searchWaitTime,
+		this._searchTimeoutId = Mainloop.timeout_add(this._settings.get_int('search-timeout-time'),
 				Lang.bind(this, function() {
 					// could be null due ot the timeout and last moment change in text
 					// this prevents the whole shell from crashing due to the weird behaviour
@@ -1934,9 +1937,53 @@ const ApplicationsMenu = new Lang.Class({
 		return false;
 	},
 	
+	_searchWithoutTimeOut: function(se, prop){
+		if (this.searchEntry.get_text() != null) {
+			let searchString = this.searchEntry.get_text();
+			//If text is "force shell restart", then restart the shell
+			if (searchString == 'force shell restart') {
+				global.reexec_self();
+			} else if (searchString == 'force open activities'){
+				Main.overview.toggle();
+			}
+		
+			this.searchActive = searchString != '';
+			if (this.searchActive) {
+				this.searchEntry.set_secondary_icon(this._searchActiveIcon);
+				if (this._searchIconClickedId == 0) {
+					this._searchIconClickedId = this.searchEntry.connect('secondary-icon-clicked',
+							Lang.bind(this, function() {
+								this.resetSearch();
+								this._openDefaultCategory();
+							}));
+				}
+				
+				this._doSearch();
+			} else {
+				if (this._searchIconClickedId > 0)
+					this.searchEntry.disconnect(this._searchIconClickedId);
+				this._searchIconClickedId = 0;
+				this.searchEntry.set_secondary_icon(null);
+				if (searchString == "" && this._previousSearchPattern != "") {
+					if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
+						this._selectCategory('categories');
+					} else {
+						this._openDefaultCategory();
+					}
+				}
+				this._previousSearchPattern = "";
+			}
+		}
+		return false;
+	},
+	
 	// Start search timeout
 	_onSearchTextChanged: function (se, prop) {
-		this._setSearchTimeout(se, prop);
+		if (this._settings.get_boolean('search-timeout') == true) {
+			this._setSearchTimeout(se, prop);
+		} else {
+			this._searchWithoutTimeOut(se, prop);
+		}
 	},
 
 	// Carry out a search based on the search text entry value
@@ -1949,13 +1996,11 @@ const ApplicationsMenu = new Lang.Class({
 			return;
 		}
 		
-		// TODO(Create a custom appResults without! custom categories)
-		// TODO(SET LIMIT THROUGH OPTIONS)
 		let appResults = this._listApplications(null, pattern);
-		appResults = appResults.slice(0, 10);
+		appResults = appResults.slice(0, this._settings.get_int('search-apps'));
 		
         // search terminal commands - needs to be muteable
-        let terminalResults = this._listTerminalCommands(pattern);  
+        let terminalResults = this._listTerminalCommands(pattern, (this._settings.get_int('search-terminal')).toString());  
         // Remove items, that already exist in the all apps menu
         if (appResults.length > 0) {
 	        for(var i = appResults.length - 1; i >= 0; i--) {
@@ -1971,16 +2016,16 @@ const ApplicationsMenu = new Lang.Class({
 		let placesResults = new Array();
 		// Search Places
         let places = this._listPlaces(pattern);
-        places = places.slice(0, 100);
+        places = places.slice(0, this._settings.get_int('search-places'));
         for (var i in places) placesResults.push(places[i]); // until fixed, don't show
 
-        // Search Bookmarks
+        //Search Bookmarks
         //let bookmarks = this._listBookmarks(pattern);
         //for (var i in bookmarks) placesResults.push(bookmarks[i]);
         
         // Search Web Bookmarks
         let webBookmarks = this._listWebBookmarks(pattern);
-        webBookmarks = webBookmarks.slice(0, 100);
+        webBookmarks = webBookmarks.slice(0, this._settings.get_int('search-webmarks'));
         for (var i in webBookmarks) placesResults.push(webBookmarks[i]);
         
         // Search Devices
@@ -1989,7 +2034,7 @@ const ApplicationsMenu = new Lang.Class({
         
         // Search recent
         let recentResults = this._listRecent(pattern);
-        recentResults = recentResults.slice(0, 100);
+        recentResults = recentResults.slice(0, this._settings.get_int('search-recent'));
 
 		this._clearAppsBox();
 		

@@ -25,18 +25,18 @@ const DND = imports.ui.dnd;											// DesktopTarget
 const Menyy = imports.misc.extensionUtils.getCurrentExtension();
 const systemButtons = Menyy.imports.systemButtons;
 const menuButtons = Menyy.imports.menuButtons;
-const placeDisplay = Menyy.imports.placeDisplay;
-const commandLineDisplay = Menyy.imports.commandLineDisplay;
+const placeDisplay = Menyy.imports.managers.placeDisplay;
+const commandLineDisplay = Menyy.imports.managers.commandLineDisplay;
 const convenience = Menyy.imports.convenience;
 const MenuButtonWidget = Menyy.imports.menuWidget.MenuButtonWidget;
 
 // Web bookmarks support
-const Chromium = Menyy.imports.webChromium;
-//const Epiphany = Menyy.imports.webEpiphany;
-const Firefox = Menyy.imports.webFirefox;
-const GoogleChrome = Menyy.imports.webGoogleChrome;
-const Midori = Menyy.imports.webMidori;
-const Opera = Menyy.imports.webOpera;
+const Chromium = Menyy.imports.managers.webChromium;
+//const Epiphany = Menyy.imports.managers.webEpiphany;
+const Firefox = Menyy.imports.managers.webFirefox;
+const GoogleChrome = Menyy.imports.managers.webGoogleChrome;
+const Midori = Menyy.imports.managers.webMidori;
+const Opera = Menyy.imports.managers.webOpera;
 
 //SystemButtons
 const PowerButton = systemButtons.PowerButton;
@@ -47,12 +47,11 @@ const LockButton = systemButtons.LockButton;
 
 //MenuButtons
 const CategoryListButton = menuButtons.CategoryListButton;
-const AppListButton = menuButtons.AppListButton;
-//Signals.addSignalMethods(AppListButton.prototype);
 const CategoryGridButton = menuButtons.CategoryGridButton;
-const AppGridButton = menuButtons.AppGridButton;
-Signals.addSignalMethods(AppGridButton.prototype);
-const ShortcutButton = menuButtons.ShortcutButton;
+const AppButton = menuButtons.AppButton;
+//Signals.addSignalMethods(AppButton.prototype);
+//Signals.addSignalMethods(AppGridButton.prototype);
+const ShortcutButton = menuButtons.ShortcutButton;				// Right click for menu uses it
 const UserMenuItem = menuButtons.UserMenuItem;
 const BackMenuItem = menuButtons.BackMenuItem;
 
@@ -62,7 +61,6 @@ var LocationVertical = 0;
 var SearchLocation = 0;
 var CategoryLocation = 0;
 var defaultCategory = 1;
-var searchFixed = false;
 
 
 // ADD ALL OF THIS UNDER THE CONSTANTS FILE AND IMPORT FROM THERE
@@ -102,6 +100,13 @@ const CategoriesViewMode= {
 		COMBINED: 2,
 		ACCORDION: 3
 };
+
+const PlacesViewMode= {
+		LEFT: 0,
+		RIGHT: 1,
+		HIDDEN: 2
+};
+
 
 const SelectMethod = {
 		HOVER: 0,
@@ -175,7 +180,7 @@ const DesktopTarget = new Lang.Class({
 
 	_getSourceAppInfo: function(source) {
 		//global.log("menyy: source: " + source);
-		if (!(source instanceof AppListButton))
+		if (!(source instanceof AppButton))
 			return null;
 		//if (!(source instanceof ApplicationMenuItem))
 		//	return null;
@@ -381,7 +386,8 @@ const ApplicationsMenu = new Lang.Class({
 		this._appGridColumns = this._settings.get_int('apps-grid-column-count');						// Grid Column Count
 		this._appsViewMode = this._settings.get_enum('apps-viewmode');									// Apps View Mode (grid or list or other)
 		this._categoriesViewMode = this._settings.get_enum('categories-viewmode');						// Categories View Mode (left, right, combined with apps or accordion)
-		this._appGridButtonWidth = 64;																	// TODO(ADD SETTING)
+		this._placesViewMode = this._settings.get_enum('places-viewmode');								// Places viewmode
+		this._appGridButtonWidth = 10 + (settings.get_int('grid-icon-size') > 0) ? settings.get_int('grid-icon-size') : 42;																	// TODO(ADD SETTING)
 		this.hoverDelay =  this._settings.get_int('categories-hover-delay');							// hoverDelay
 		this.selectionMethod = null;																	// Click or hover category
 
@@ -396,21 +402,6 @@ const ApplicationsMenu = new Lang.Class({
         
         // Recent files stuff
         this.recentManager = Gtk.RecentManager.get_default();
-
-
-
-
-		//Drag to desktop
-		this._desktopTarget = new DesktopTarget();
-		this._desktopTarget.connect('app-dropped', () => {
-			this.menu.close();
-		});
-		this._desktopTarget.connect('desktop-changed', () => {
-			this._appsButtons.forEach(item => {
-				item.setDragEnabled(this._desktopTarget.hasDesktop);
-			});
-		});
-		
 		// Run functions
 		this._firstCreateLayout();
 		this._display();																				// 
@@ -425,6 +416,16 @@ const ApplicationsMenu = new Lang.Class({
 			this._redisplay();
 		}));*/
 
+		//Drag to desktop
+		this._desktopTarget = new DesktopTarget();
+		this._desktopTarget.connect('app-dropped', () => {
+			this.menu.close();
+		});
+		this._desktopTarget.connect('desktop-changed', () => {
+			this._appsButtons.forEach(item => {
+				item.setDragEnabled(this._desktopTarget.hasDesktop);
+			});
+		});
 
 
 		// Left or right click menu option?
@@ -568,9 +569,7 @@ const ApplicationsMenu = new Lang.Class({
 
 		// Categories, main display, places and homescreen
 		// Always create the box... it's not like it's gonna slow it down or chug memory
-		//if (this._categoriesViewMode != CategoriesViewMode.COMBINED) {
-			this.categoryBox = new St.BoxLayout({ vertical: true, style_class: 'menyy-categories-box-inside menyy-spacing' });
-		//}
+		this.categoryBox = new St.BoxLayout({ vertical: true, style_class: 'menyy-categories-box-inside menyy-spacing' });
 		if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
 			// Apps Box
 			this.appsBox = new St.BoxLayout({vertical: true, style_class: 'menyy-applications-box menyy-spacing' });
@@ -687,18 +686,48 @@ const ApplicationsMenu = new Lang.Class({
 			this.bottomBox.add(this.rightBox);
 		}
 
-		if (LocationVertical == 0) {
-			if (this._categoriesViewMode != CategoriesViewMode.COMBINED) {
+		// add a check on which side the places are or if shown
+		if (this._placesViewMode == PlacesViewMode.RIGHT) {
+			if (this._categoriesViewMode == CategoriesViewMode.LEFT) {
 				this.leftBox.add(this.categoryScrollBox, {expand: true, x_fill: true, y_fill: true, y_align: St.Align.START });
+				this.leftBox.add(this.appsScrollBoxContainer, {y_align: St.Align.START });
+			} else if (this._categoriesViewMode == CategoriesViewMode.RIGHT) {
+				this.leftBox.add(this.appsScrollBoxContainer, {y_align: St.Align.START });
+				this.leftBox.add(this.categoryScrollBox, {expand: true, x_fill: true, y_fill: true, y_align: St.Align.START });
+			} else if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
+				this.leftBox.add(this.appsScrollBoxContainer, {y_align: St.Align.START });			
+			} else { // currently no accordion option
+				this.leftBox.add(this.appsScrollBoxContainer, {y_align: St.Align.START });			
 			}
-			this.leftBox.add(this.appsScrollBoxContainer, {y_align: St.Align.START });
 			this.rightBox.add(this.placesScrollBox);
-		} else {
-			if (this._categoriesViewMode != CategoriesViewMode.COMBINED) {
+		} else if (this._placesViewMode == PlacesViewMode.LEFT){
+			if (this._categoriesViewMode == CategoriesViewMode.LEFT) {
 				this.rightBox.add(this.categoryScrollBox, {expand: true, x_fill: true, y_fill: true, y_align: St.Align.START });
+				this.rightBox.add(this.appsScrollBoxContainer, {y_align: St.Align.START });
+			} else if (this._categoriesViewMode == CategoriesViewMode.RIGHT) {
+				this.rightBox.add(this.appsScrollBoxContainer, {y_align: St.Align.START });
+				this.rightBox.add(this.categoryScrollBox, {expand: true, x_fill: true, y_fill: true, y_align: St.Align.START });
+			} else if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
+				this.rightBox.add(this.appsScrollBoxContainer, {y_align: St.Align.START });			
+			} else { // currently no accordion option
+				this.rightBox.add(this.appsScrollBoxContainer, {y_align: St.Align.START });			
 			}
-			this.rightBox.add(this.appsScrollBoxContainer, {y_align: St.Align.START });
 			this.leftBox.add(this.placesScrollBox);
+		} else {
+			if (this._categoriesViewMode == CategoriesViewMode.LEFT) {
+				this.leftBox.add(this.categoryScrollBox, {expand: true, x_fill: true, y_fill: true, y_align: St.Align.START });
+				this.leftBox.add(this.appsScrollBoxContainer, {y_align: St.Align.START });
+			} else if (this._categoriesViewMode == CategoriesViewMode.RIGHT) {
+				this.leftBox.add(this.appsScrollBoxContainer, {y_align: St.Align.START });
+				this.leftBox.add(this.categoryScrollBox, {expand: true, x_fill: true, y_fill: true, y_align: St.Align.START });
+			} else if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
+				this.leftBox.add(this.appsScrollBoxContainer, {y_align: St.Align.START });			
+			} else { // currently no accordion option
+				this.leftBox.add(this.appsScrollBoxContainer, {y_align: St.Align.START });			
+			}
+			this.rightBox.add(this.placesScrollBox);
+			// Just hide the box for now
+			this.placesScrollBox.hide();
 		}
 
 		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
@@ -796,8 +825,10 @@ const ApplicationsMenu = new Lang.Class({
 
 		// RELOAD LAYOUT RELATED SETTINGS!
 		this._appsViewMode = this._settings.get_enum('apps-viewmode');
+		this._placesViewMode = this._settings.get_enum('places-viewmode');
 		this._categoriesViewMode = this._settings.get_enum('categories-viewmode');
 		this._appGridColumns = this._settings.get_int('apps-grid-column-count');
+		this._appGridButtonWidth = 10 + (this._settings.get_int('grid-icon-size') > 0) ? this._settings.get_int('grid-icon-size') : 42;
 
 		// CREATE LAYOUT
 		this._createLayout();
@@ -808,16 +839,20 @@ const ApplicationsMenu = new Lang.Class({
 	// Sets layout size according to settings
 	// TODO(MAKE CLEANER VERSION OF LAYOUT STYLE FUNCTION)
 	_setLayoutSizes: function() {
+		let appsWidth;
 		// Set layout sizes
 		this.appsScrollBoxContainer.set_style(
 				'height: ' + (this._settings.get_int('menubox-height')).toString() + 'px'
 		);
-		this.appsBoxWrapper.set_style(
-				'width: ' + (this._settings.get_int('appsbox-width')).toString() + 'px'
-		);
-		this.homeBoxWrapper.set_style(
-				'width: ' + (this._settings.get_int('appsbox-width')).toString() + 'px'
-		);
+		
+		if (this._appsViewMode == ApplicationsViewMode.GRID) {
+			appsWidth = this._appGridButtonWidth * this._appGridColumns * 1.65;
+		} else {
+			appsWidth = this._settings.get_int('appsbox-width');
+		}
+		
+		this.appsBoxWrapper.set_style( 'width: ' + appsWidth + 'px' );
+		this.homeBoxWrapper.set_style( 'width: ' + appsWidth + 'px' );
 
 
 		// Categories
@@ -2088,7 +2123,7 @@ const ApplicationsMenu = new Lang.Class({
 		for (let i = 0; i < shortcuts.length; ++i) {
 			let app = shortcuts[i];
 			
-			let shortcutButton = new AppListButton(app, this, shortcutType, 'places');
+			let shortcutButton = new AppButton(app, this, shortcutType, 'places');
 			this.placesBox.add_actor(shortcutButton.actor);
 		}
 	},
@@ -2255,11 +2290,11 @@ const ApplicationsMenu = new Lang.Class({
 			for (let i in home) {
 				let app = home[i];
 				if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
-					let appButton = new AppListButton(app, this, appType, 'apps');
+					let appButton = new AppButton(app, this, appType, 'apps');
 					this.homeBox.add_actor(appButton.actor);
 				} else {
-					let appButton = new AppListButton(app, this, appType, 'apps');
-					//this.homeBox.add_actor(appListButton.actor);
+					let appButton = new AppButton(app, this, appType, 'apps');
+					//this.homeBox.add_actor(AppButton.actor);
 					appButton.buttonbox.width = this._appGridButtonWidth;
 					let gridLayout = this.homeBox.layout_manager;
 					gridLayout.pack(appButton.actor, column, rownum);
@@ -2276,13 +2311,13 @@ const ApplicationsMenu = new Lang.Class({
 			appType = ApplicationType.APPLICATION;
 			for (let i in apps) {
 				let app = apps[i];
-				//let appListButton = new AppListButton(app, this, appType, 'apps');
-				//this.appsBox.add_actor(appListButton.actor);
+				//let AppButton = new AppButton(app, this, appType, 'apps');
+				//this.appsBox.add_actor(AppButton.actor);
 				if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
-					let appButton = new AppListButton(app, this, appType, 'apps');
+					let appButton = new AppButton(app, this, appType, 'apps');
 					this.appsBox.add_actor(appButton.actor);
 				} else {
-					let appButton = new AppListButton(app, this, appType, 'apps');
+					let appButton = new AppButton(app, this, appType, 'apps');
 					//this.appsBox.add_actor(appButton.actor);
 					appButton.buttonbox.width = this._appGridButtonWidth;
 					let gridLayout = this.appsBox.layout_manager;
@@ -2301,10 +2336,10 @@ const ApplicationsMenu = new Lang.Class({
             for (let i in terminal) {
                 let app = terminal[i];
                     if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
-                    	let appButton = new AppListButton(app, this, appType, 'apps');
+                    	let appButton = new AppButton(app, this, appType, 'apps');
     					this.appsBox.add_actor(appButton.actor);
                     } else { // GridView
-                    	let appButton = new AppListButton(app, this, appType, 'apps');
+                    	let appButton = new AppButton(app, this, appType, 'apps');
     					//this.appsBox.add_actor(appButton.actor);
     					appButton.buttonbox.width = this._appGridButtonWidth;
     					let gridLayout = this.appsBox.layout_manager;
@@ -2324,10 +2359,10 @@ const ApplicationsMenu = new Lang.Class({
             for (let i in places) {
                 let app = places[i];
                     if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
-                    	let appButton = new AppListButton(app, this, appType, 'apps');
+                    	let appButton = new AppButton(app, this, appType, 'apps');
     					this.appsBox.add_actor(appButton.actor);
                     } else { // GridView
-                    	let appButton = new AppListButton(app, this, appType, 'apps');
+                    	let appButton = new AppButton(app, this, appType, 'apps');
     					//this.appsBox.add_actor(appButton.actor);
     					appButton.buttonbox.width = this._appGridButtonWidth;
     					let gridLayout = this.appsBox.layout_manager;
@@ -2350,10 +2385,10 @@ const ApplicationsMenu = new Lang.Class({
                 // only add if not already in this._recent or refreshing
                 if (!this._recent[app.name]) {
                     if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
-                    	let appButton = new AppListButton(app, this, appType, 'apps');
+                    	let appButton = new AppButton(app, this, appType, 'apps');
     					this.appsBox.add_actor(appButton.actor);
                     } else { // GridView
-                    	let appButton = new AppListButton(app, this, appType, 'apps');
+                    	let appButton = new AppButton(app, this, appType, 'apps');
     					//this.appsBox.add_actor(appButton.actor);
     					appButton.buttonbox.width = this._appGridButtonWidth;
     					let gridLayout = this.appsBox.layout_manager;

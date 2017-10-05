@@ -75,6 +75,7 @@ const BaseMenuItem = new Lang.Class({
  }
 });
 
+
 // Menu item to launch GNOME activities overview
 // FROM ARCMENU
 const ActivitiesMenuItem = new Lang.Class({
@@ -134,7 +135,7 @@ const UserMenuItem = new Lang.Class({
             y_align: Clutter.ActorAlign.CENTER, 
          });
     	
-        let style = "popup-menu-item popup-submenu-menu-item";
+        let style = "popup-menu-item popup-submenu-menu-item menyy-user-button";
         this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.START, y_align: St.Align.START });
         this.actor._delegate = this;
 
@@ -467,7 +468,7 @@ const CategoryGridButton = new Lang.Class({
 
     _init: function (dir, altNameText, altIconName) {
     	this._settings = convenience.getSettings('org.gnome.shell.extensions.menyy');
-    	this._iconSize = this._settings.get_int('apps-icon-size');		// change
+    	this._iconSize = this._settings.get_int('grid-icon-size');		// change
 																		// to
 																		// grid
 																		// icon
@@ -631,7 +632,7 @@ const AppButton = new Lang.Class({
 			this._iconSize = (settings.get_int('places-icon-size') > 0) ? settings.get_int('places-icon-size') : 16;
 			// this._iconSize -= 4;
 	    	this._showIcon = (settings.get_int('places-icon-size') > 0) ? true : false;
-	    	style = "popup-menu-item menyy-shortcut-button";
+	    	style = "popup-menu-item menyy-shortcuts-button";
 		} else if (this._appsViewMode == ApplicationsViewMode.LIST){
 			this._labelStyle = 'menyy-apps-button-label';
 			this._iconStyle = 'menyy-apps-button-icon'
@@ -641,8 +642,8 @@ const AppButton = new Lang.Class({
 		} else {
 			this._labelStyle = 'menyy-apps-grid-button-label';
 			this._iconStyle = 'menyy-apps-grid-button-icon'
-			this._iconSize = (settings.get_int('apps-icon-size') > 0) ? settings.get_int('apps-icon-size') : 28;			// ask a spearate grid icon size
-			this._showIcon = (settings.get_int('apps-icon-size') > 0) ? true : false;										// ask a spearate grid icon size
+			this._iconSize = (settings.get_int('grid-icon-size') > 0) ? settings.get_int('grid-icon-size') : 32;
+			this._showIcon = (settings.get_int('grid-icon-size') > 0) ? true : false;
 			style = "popup-menu-item popup-submenu-menu-item menyy-apps-grid-button";
 		}
 		

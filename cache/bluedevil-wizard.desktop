@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = bluedevil-wizard
+Comment = Automatically generated Terminal App
+Terminal = true
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = bluedevil-wizard

@@ -64,25 +64,26 @@ const MenyyPreferencesWidget= new GObject.Class({
         let behaviourSettingsPage = new BehaviourSettingsPage(this.settings);
         notebook.append_page(behaviourSettingsPage, behaviourSettingsPage.title);
         
-        
         let layOutPage = new LayOutPage(this.settings);
         notebook.append_page(layOutPage, layOutPage.title);
         
+        let iconsPage = new IconsPage(this.settings);
+        notebook.append_page(iconsPage, iconsPage.title);
         
         let panelButtonPage = new PanelButtonPage(this.settings);
         notebook.append_page(panelButtonPage, panelButtonPage.title);
         
-        let categoriesPage = new CategoriesPage(this.settings);
-        notebook.append_page(categoriesPage, categoriesPage.title);
+        //let categoriesPage = new CategoriesPage(this.settings);
+        //notebook.append_page(categoriesPage, categoriesPage.title);
         
-        let appsPage = new AppsPage(this.settings);
-        notebook.append_page(appsPage, appsPage.title);
+        //let appsPage = new AppsPage(this.settings);
+        //notebook.append_page(appsPage, appsPage.title);
         
-        let placesPage = new PlacesPage(this.settings);
-        notebook.append_page(placesPage, placesPage.title);
+        //let placesPage = new PlacesPage(this.settings);
+        //notebook.append_page(placesPage, placesPage.title);
         
-        let searchPage = new SearchPage(this.settings);
-        notebook.append_page(searchPage, searchPage.title);
+        //let searchPage = new SearchPage(this.settings);
+        //notebook.append_page(searchPage, searchPage.title);
 
         let aboutPage = new AboutPage(this.settings);
         notebook.append_page(aboutPage, aboutPage.title);
@@ -539,7 +540,7 @@ const AboutPage = new Lang.Class({
     }
 });
 
-
+/*
 const CategoriesPage = new Lang.Class({
     Name: 'CategoriesPage',
     Extends: AM.NotebookPage,
@@ -604,55 +605,6 @@ const CategoriesPage = new Lang.Class({
         categoryLabelRow.add(categoriesLabelCombo);
         categoryIconFrame.add(categoryLabelRow);        
         this.add(categoryIconFrame);
-        
-        // Category Layout Options
-        let categoriesViewFrame = new AM.FrameBox();
-        
-        // Category view mode options
-        let categoriesViewModeRow = new AM.FrameBoxRow();
-        let categoriesViewModeLabel = new Gtk.Label({
-            label: _("Categories View Mode"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: true
-        });
-        
-        let categoriesViewModeCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
-        categoriesViewModeCombo.append_text(_("Left"));
-        categoriesViewModeCombo.append_text(_("Right"));
-        categoriesViewModeCombo.append_text(_("Combined"));
-        categoriesViewModeCombo.append_text(_("Accordion"))
-        categoriesViewModeCombo.set_active(this.settings.get_enum('categories-viewmode'));
-        categoriesViewModeCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_enum('categories-viewmode', widget.get_active());
-        }));
-        categoriesViewModeRow.add(categoriesViewModeLabel);
-        categoriesViewModeRow.add(categoriesViewModeCombo);
-        categoriesViewFrame.add(categoriesViewModeRow);
-        
-        
-        
-        // Category size options
-        let categoriesBoxSizeRow = new AM.FrameBoxRow();
-        let categoriesBoxSizeLabel = new Gtk.Label({
-            label: _("Categories Pane size in percent"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: false
-        });
-        categoriesBoxSizeRow.add(categoriesBoxSizeLabel);
-        var categoriesBoxSizeSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.0,100.0,1.0);
-        categoriesBoxSizeSlider.set_value(this.settings.get_int("categories-size"));
-        categoriesBoxSizeSlider.connect('value-changed', Lang.bind (this, function(widget) {
-            this.settings.set_int('categories-size', categoriesBoxSizeSlider.get_value());
-        }));
-        categoriesBoxSizeSlider.set_property ("expand", true);
-        categoriesBoxSizeRow.add(categoriesBoxSizeSlider);
-        categoriesViewFrame.add(categoriesBoxSizeRow);
-        
-        this.add(categoriesViewFrame);
-        
-        
         
         // Categories Behaviour frame
         let categoriesBehaveFrame = new AM.FrameBox();
@@ -804,98 +756,6 @@ const AppsPage = new Lang.Class({
         appsLabelRow.add(appsLabelCombo);
         appsIconFrame.add(appsLabelRow);        
         this.add(appsIconFrame);
-        
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        // Apps view mode options
-        let appsViewFrame = new AM.FrameBox();
-        
-        
-        let appsViewModeRow = new AM.FrameBoxRow();
-        let appsViewModeLabel = new Gtk.Label({
-            label: _("Applications View Mode"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: true
-        });
-        
-        let appsViewModeCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
-        appsViewModeCombo.append_text(_("List"));
-        appsViewModeCombo.append_text(_("Grid"));
-        //appsViewModeCombo.append_text(_("SmartList"));	// Live tiles & daemon buttons etc
-        //appsViewModeCombo.append_text(_("SmartGrid"));	//
-        appsViewModeCombo.set_active(this.settings.get_enum('apps-viewmode'));
-        appsViewModeCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_enum('apps-viewmode', widget.get_active());
-        }));
-        appsViewModeRow.add(appsViewModeLabel);
-        appsViewModeRow.add(appsViewModeCombo);
-        appsViewFrame.add(appsViewModeRow);
-        
-        
-        
-        
-        
-        let columnCount = [3, 4, 5 , 6, 7];
-        let appsGridColumnCountRow = new AM.FrameBoxRow();
-        let appsGridColumnCountLabel = new Gtk.Label({label: _("Number of columns in Application Grid"),
-                                                    hexpand:true, xalign:0});
-        let appsGridColumnCountCombo = new Gtk.ComboBoxText({halign:Gtk.Align.END});
-            appsGridColumnCountCombo.set_size_request(120, -1);
-            appsGridColumnCountCombo.append_text(_('3'));
-            appsGridColumnCountCombo.append_text(_('4'));
-            appsGridColumnCountCombo.append_text(_('5'));
-            appsGridColumnCountCombo.append_text(_('6'));
-            appsGridColumnCountCombo.append_text(_('7'));
-            appsGridColumnCountCombo.set_active(columnCount.indexOf(this.settings.get_int('apps-grid-column-count')));
-            appsGridColumnCountCombo.connect('changed', Lang.bind (this, function(widget) {
-                    this.settings.set_int('apps-grid-column-count', columnCount[widget.get_active()]);
-            }));
-
-
-        appsGridColumnCountRow.add(appsGridColumnCountLabel);
-        appsGridColumnCountRow.add(appsGridColumnCountCombo);
-        appsViewFrame.add(appsGridColumnCountRow);
-        
-        
-        
-        // Apps + Categories size options
-        let appsBoxSizeRow = new AM.FrameBoxRow();
-        let appsBoxSizeLabel = new Gtk.Label({
-            label: _("Application + Categories Pane size in percent"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: false
-        });
-        appsBoxSizeRow.add(appsBoxSizeLabel);
-        var appsBoxSizeSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.0,100.0,1.0);
-        appsBoxSizeSlider.set_value(this.settings.get_int("apps-size"));
-        appsBoxSizeSlider.connect('value-changed', Lang.bind (this, function(widget) {
-            this.settings.set_int('apps-size', appsBoxSizeSlider.get_value());
-        }));
-        appsBoxSizeSlider.set_property ("expand", true);
-        appsBoxSizeRow.add(appsBoxSizeSlider);
-        appsViewFrame.add(appsBoxSizeRow);
-        
-        this.add(appsViewFrame);
-        
-        
     }
 });
 
@@ -965,27 +825,7 @@ const PlacesPage = new Lang.Class({
         
         
         
-        let placesLocationFrame = new AM.FrameBox();
-        // places location
-        let placesLocationRow = new AM.FrameBoxRow();
-        let placesLocationLabel = new Gtk.Label({
-            label: _("Places Box Location"),
-            use_markup: true,
-            xalign: 0,
-            hexpand: true
-        });        
-        let placesLocationCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
-        placesLocationCombo.append_text(_("Left"));
-        placesLocationCombo.append_text(_("Right"));
-        placesLocationCombo.append_text(_("Hide"));
-        placesLocationCombo.set_active(this.settings.get_enum('places-location'));
-        placesLocationCombo.connect('changed', Lang.bind (this, function(widget) {
-                this.settings.set_enum('places-location', widget.get_active());
-        }));
-        placesLocationRow.add(placesLocationLabel);
-        placesLocationRow.add(placesLocationCombo);
-        placesLocationFrame.add(placesLocationRow);        
-        this.add(placesLocationFrame);
+        
         
         
         // Make moveable list with all the things that places can show!
@@ -994,7 +834,7 @@ const PlacesPage = new Lang.Class({
         
     }
 });
-
+*/
 
 const SearchPage = new Lang.Class({
     Name: 'SearchPage',
@@ -1439,15 +1279,303 @@ const LayOutPage = new Lang.Class({
         
         
         this.add(layoutMenuFrame);
-		
-		
-		
-		
+        
+        
+        // Apps view mode options
+        let appsViewFrame = new AM.FrameBox();
+        let appsViewModeRow = new AM.FrameBoxRow();
+        let appsViewModeLabel = new Gtk.Label({
+            label: _("Applications View Mode"),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });
+        let appsViewModeCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
+        appsViewModeCombo.append_text(_("List"));
+        appsViewModeCombo.append_text(_("Grid"));
+        appsViewModeCombo.set_active(this.settings.get_enum('apps-viewmode'));
+        appsViewModeCombo.connect('changed', Lang.bind (this, function(widget) {
+                this.settings.set_enum('apps-viewmode', widget.get_active());
+        }));
+        appsViewModeRow.add(appsViewModeLabel);
+        appsViewModeRow.add(appsViewModeCombo);
+        appsViewFrame.add(appsViewModeRow);
+        let columnCount = [3, 4, 5 , 6, 7];
+        let appsGridColumnCountRow = new AM.FrameBoxRow();
+        let appsGridColumnCountLabel = new Gtk.Label({label: _("Number of columns in Application Grid"),
+                                                    hexpand:true, xalign:0});
+        let appsGridColumnCountCombo = new Gtk.ComboBoxText({halign:Gtk.Align.END});
+            appsGridColumnCountCombo.set_size_request(120, -1);
+            appsGridColumnCountCombo.append_text(_('3'));
+            appsGridColumnCountCombo.append_text(_('4'));
+            appsGridColumnCountCombo.append_text(_('5'));
+            appsGridColumnCountCombo.append_text(_('6'));
+            appsGridColumnCountCombo.append_text(_('7'));
+            //Wonder why it doesn't allow for more than 7 columns right now?
+            //appsGridColumnCountCombo.append_text(_('8'));
+            //appsGridColumnCountCombo.append_text(_('9'));
+            appsGridColumnCountCombo.set_active(columnCount.indexOf(this.settings.get_int('apps-grid-column-count')));
+            appsGridColumnCountCombo.connect('changed', Lang.bind (this, function(widget) {
+                    this.settings.set_int('apps-grid-column-count', columnCount[widget.get_active()]);
+            }));
+        appsGridColumnCountRow.add(appsGridColumnCountLabel);
+        appsGridColumnCountRow.add(appsGridColumnCountCombo);
+        appsViewFrame.add(appsGridColumnCountRow);
+        
+        
+        this.add(appsViewFrame);
+        
+        
+        
+        
+        
+        // Category Layout Options
+        let categoriesViewFrame = new AM.FrameBox();
+        
+        // Category view mode options
+        let categoriesViewModeRow = new AM.FrameBoxRow();
+        let categoriesViewModeLabel = new Gtk.Label({
+            label: _("Categories View Mode"),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });
+        
+        let categoriesViewModeCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
+        categoriesViewModeCombo.append_text(_("Left"));
+        categoriesViewModeCombo.append_text(_("Right"));
+        categoriesViewModeCombo.append_text(_("Combined"));
+        //categoriesViewModeCombo.append_text(_("Accordion"))
+        categoriesViewModeCombo.set_active(this.settings.get_enum('categories-viewmode'));
+        categoriesViewModeCombo.connect('changed', Lang.bind (this, function(widget) {
+                this.settings.set_enum('categories-viewmode', widget.get_active());
+        }));
+        categoriesViewModeRow.add(categoriesViewModeLabel);
+        categoriesViewModeRow.add(categoriesViewModeCombo);
+        categoriesViewFrame.add(categoriesViewModeRow);        
+        this.add(categoriesViewFrame);
+        
+        
+        
+        
+        let placesLocationFrame = new AM.FrameBox();
+        // places location
+        let placesLocationRow = new AM.FrameBoxRow();
+        let placesLocationLabel = new Gtk.Label({
+            label: _("Places Box Location"),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });        
+        let placesLocationCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
+        placesLocationCombo.append_text(_("Left"));
+        placesLocationCombo.append_text(_("Right"));
+        placesLocationCombo.append_text(_("Hide"));
+        placesLocationCombo.set_active(this.settings.get_enum('places-viewmode'));
+        placesLocationCombo.connect('changed', Lang.bind (this, function(widget) {
+                this.settings.set_enum('places-viewmode', widget.get_active());
+        }));
+        placesLocationRow.add(placesLocationLabel);
+        placesLocationRow.add(placesLocationCombo);
+        placesLocationFrame.add(placesLocationRow);        
+        this.add(placesLocationFrame);
+        
+        
 	}
 });
 
 
+const IconsPage = new Lang.Class({
+    Name: 'IconsPage',
+    Extends: AM.NotebookPage,
 
+    _init: function(settings) {
+        this.parent(_('Icons'));
+        this.settings = settings;
+        
+        
+        
+        /* Apps Icons Settings */
+        let appsIconFrame = new AM.FrameBox();
+        
+        // Apps Icon Size
+        let appsIconRow = new AM.FrameBoxRow();
+        let appsIconSliderRow = new AM.FrameBoxRow();
+        let appsIconSizeLabel = new Gtk.Label({
+            label: _("Size of Application Icons: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });        
+        var appsIconSizeSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.0,128.0,1.0);
+        appsIconSizeSlider.set_value(this.settings.get_int("apps-icon-size"));
+        appsIconSizeSlider.connect('value-changed', Lang.bind (this, function(widget) {
+            this.settings.set_int('apps-icon-size', appsIconSizeSlider.get_value());
+        }));
+        appsIconSizeSlider.set_property ("expand", true);
+        appsIconRow.add(appsIconSizeLabel);
+        appsIconSliderRow.add(appsIconSizeSlider);
+        appsIconFrame.add(appsIconRow);
+        appsIconFrame.add(appsIconSliderRow);
+        
+        
+        
+        // Apps Label location
+        let appsLabelRow = new AM.FrameBoxRow();
+        let appsLabelLabel = new Gtk.Label({
+            label: _("Application Label location: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });        
+        let appsLabelCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
+        appsLabelCombo.append_text(_("Left"));
+        appsLabelCombo.append_text(_("Right"));
+        appsLabelCombo.append_text(_("Hide"));
+        appsLabelCombo.set_active(this.settings.get_enum('apps-label'));
+        appsLabelCombo.connect('changed', Lang.bind (this, function(widget) {
+                this.settings.set_enum('apps-label', widget.get_active());
+        }));
+        appsLabelRow.add(appsLabelLabel);
+        appsLabelRow.add(appsLabelCombo);
+        appsIconFrame.add(appsLabelRow);        
+        this.add(appsIconFrame);
+        
+        
+        
+        
+        
+        
+        /* Categories Icon Settings*/
+        let categoryIconFrame = new AM.FrameBox();
+        
+        // Categories Icon Size
+        let categoryIconRow = new AM.FrameBoxRow();
+        let categoryIconSliderRow = new AM.FrameBoxRow();
+        let categoriesIconSizeLabel = new Gtk.Label({
+            label: _("Size of Category Icons: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });        
+        //let iconSizes = [0, 16, 22, 24, 32, 48, 64, 96, 128];
+        var categoriesIconSizeSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.0,128.0,1.0);
+        categoriesIconSizeSlider.set_value(this.settings.get_int("categories-icon-size"));
+        categoriesIconSizeSlider.connect('value-changed', Lang.bind (this, function(widget) {
+            this.settings.set_int('categories-icon-size', categoriesIconSizeSlider.get_value());
+        }));
+        categoriesIconSizeSlider.set_property ("expand", true);
+        categoryIconRow.add(categoriesIconSizeLabel);
+        categoryIconSliderRow.add(categoriesIconSizeSlider);
+        categoryIconFrame.add(categoryIconRow);
+        categoryIconFrame.add(categoryIconSliderRow);
+        
+        
+        // Category Icon location
+        let categoryLabelRow = new AM.FrameBoxRow();
+        let categoriesLabelLabel = new Gtk.Label({
+            label: _("Category Label location: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });        
+        let categoriesLabelCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
+        categoriesLabelCombo.append_text(_("Left"));
+        categoriesLabelCombo.append_text(_("Right"));
+        categoriesLabelCombo.append_text(_("Hide"));
+        categoriesLabelCombo.set_active(this.settings.get_enum('categories-label'));
+        categoriesLabelCombo.connect('changed', Lang.bind (this, function(widget) {
+                this.settings.set_enum('categories-label', widget.get_active());
+        }));
+        categoryLabelRow.add(categoriesLabelLabel);
+        categoryLabelRow.add(categoriesLabelCombo);
+        categoryIconFrame.add(categoryLabelRow);        
+        this.add(categoryIconFrame);
+        
+        
+        
+        
+        
+        
+        
+        
+        /* Places Icons Settings */
+        let placesIconFrame = new AM.FrameBox();
+        
+        // Apps Icon Size
+        let placesIconRow = new AM.FrameBoxRow();
+        let placesIconSliderRow = new AM.FrameBoxRow();
+        let placesIconSizeLabel = new Gtk.Label({
+            label: _("Size of Place Icons: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });        
+        var placesIconSizeSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.0,128.0,1.0);
+        placesIconSizeSlider.set_value(this.settings.get_int("places-icon-size"));
+        placesIconSizeSlider.connect('value-changed', Lang.bind (this, function(widget) {
+            this.settings.set_int('places-icon-size', placesIconSizeSlider.get_value());
+        }));
+        placesIconSizeSlider.set_property ("expand", true);
+        placesIconRow.add(placesIconSizeLabel);
+        placesIconSliderRow.add(placesIconSizeSlider);
+        placesIconFrame.add(placesIconRow);
+        placesIconFrame.add(placesIconSliderRow);
+        
+        
+        
+        // Places Label location
+        let placesLabelRow = new AM.FrameBoxRow();
+        let placesLabelLabel = new Gtk.Label({
+            label: _("Places Label location: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });        
+        let placesLabelCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
+        placesLabelCombo.append_text(_("Left"));
+        placesLabelCombo.append_text(_("Right"));
+        placesLabelCombo.append_text(_("Hide"));
+        placesLabelCombo.set_active(this.settings.get_enum('places-label'));
+        placesLabelCombo.connect('changed', Lang.bind (this, function(widget) {
+                this.settings.set_enum('places-label', widget.get_active());
+        }));
+        placesLabelRow.add(placesLabelLabel);
+        placesLabelRow.add(placesLabelCombo);
+        placesIconFrame.add(placesLabelRow);        
+        this.add(placesIconFrame);
+        
+        
+        
+        
+        
+        
+        
+        /* Grid Icons Settings */
+        let gridIconFrame = new AM.FrameBox();
+        
+        // Grid Icon Size
+        let gridIconRow = new AM.FrameBoxRow();
+        let gridIconSliderRow = new AM.FrameBoxRow();
+        let gridIconSizeLabel = new Gtk.Label({
+            label: _("Size of Grid Icons: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });        
+        var gridIconSizeSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.0,128.0,1.0);
+        gridIconSizeSlider.set_value(this.settings.get_int("grid-icon-size"));
+        gridIconSizeSlider.connect('value-changed', Lang.bind (this, function(widget) {
+            this.settings.set_int('grid-icon-size', gridIconSizeSlider.get_value());
+        }));
+        gridIconSizeSlider.set_property ("expand", true);
+        gridIconRow.add(gridIconSizeLabel);
+        gridIconSliderRow.add(gridIconSizeSlider);
+        gridIconFrame.add(gridIconRow);
+        gridIconFrame.add(gridIconSliderRow);
+        this.add(gridIconFrame);
+	}
+});
 
 
 

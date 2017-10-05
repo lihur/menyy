@@ -54,7 +54,7 @@
     <value value='2' nick='SmartList'/>
     <value value='3' nick='SmartGrid'/>
   </enum>
-  <enum id='org.gnome.shell.extensions.menyy.places-location'>
+  <enum id='org.gnome.shell.extensions.menyy.places-viewmode'>
     <value value="0" nick="Left"/>
     <value value="1" nick="Right"/>
     <value value="2" nick="Hide"/>
@@ -219,9 +219,14 @@
       <default>'Left'</default>
       <summary>Location of places label</summary>
     </key>
-    <key name="places-location" enum="org.gnome.shell.extensions.menyy.places-location">
+    <key name="places-viewmode" enum="org.gnome.shell.extensions.menyy.places-viewmode">
       <default>'Right'</default>
       <summary>Location of places box</summary>
+    </key>
+    
+    <key type="i" name="grid-icon-size">
+      <default>32</default>
+      <summary>Size of the grid icon.</summary>
     </key>
     
     

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = bluetoothctl
+Comment = Automatically generated Terminal App
+Terminal = true
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = bluetoothctl

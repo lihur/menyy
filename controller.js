@@ -96,13 +96,20 @@ const AppFavorites = imports.ui.appFavorites;
         this._settings.connect('changed::categoriesbox-width', Lang.bind(this, this._setLayoutSizes));
         this._settings.connect('changed::placesbox-width', Lang.bind(this, this._setLayoutSizes));
         
-        // Layout mode changes
-        this._settings.connect('changed::apps-viewmode', Lang.bind(this, this._setLayoutChanges));
-        this._settings.connect('changed::apps-grid-column-count', Lang.bind(this, this._setLayoutChanges));
+        //*********************//
+        // Layout mode changes //
+        //*********************//
+        // Icon Sizes
         this._settings.connect('changed::apps-icon-size', Lang.bind(this, this._setLayoutChanges));
-        this._settings.connect('changed::categories-icon-size', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::grid-icon-size', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::places-icon-size', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::categories-icon-size', Lang.bind(this, this._setLayoutChanges));
         
+        // ViewMode changes
+        this._settings.connect('changed::apps-viewmode', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::categories-viewmode', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::places-viewmode', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::apps-grid-column-count', Lang.bind(this, this._setLayoutChanges));
         
         
         // Favorites change _loadFavorites();

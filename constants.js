@@ -63,6 +63,55 @@ const MENYY_LOGO = {
     Path: '/media/logo.png',
     Size: [216, 229] // width, height
 };
+
+// Replace place with folder and recent with file!
+const AppType = {
+		APPLICATION: 0,
+		FOLDER: 1,
+		FILE: 2,
+		TERMINAL: 3,
+		WEBBOOKMARK: 4,
+		OTHER: 5
+};
+
+const visibleMenus = {
+		ALL: 0,
+		APPS_ONLY: 1,
+		SYSTEM_ONLY: 2
+};
+const ApplicationsViewMode = {
+		LIST: 0,
+		GRID: 1
+};
+const CategoriesViewMode = {
+		LEFT: 0,
+		RIGHT: 1,
+		COMBINED: 2,
+		ACCORDION: 3
+};
+
+const PlacesViewMode = {
+		LEFT: 0,
+		RIGHT: 1,
+		HIDDEN: 2
+};
+
+
+const SelectMethod = {
+		HOVER: 0,
+		SELECT: 1
+};
+const HomeView = {
+		NONE: 0,
+		CATEGORIES: 1,
+		FREQUENT: 2,
+		FAVORITES: 3,
+		CUSTOM: 4,
+		ALL: 5,
+		RECENT: 6
+};
+
+
 const GNU_SOFTWARE = '<span size="small">' +
     'This program comes with absolutely no warranty.\n' +
     'See the <a href="https://gnu.org/licenses/old-licenses/gpl-2.0.html">' +

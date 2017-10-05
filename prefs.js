@@ -73,17 +73,8 @@ const MenyyPreferencesWidget= new GObject.Class({
         let panelButtonPage = new PanelButtonPage(this.settings);
         notebook.append_page(panelButtonPage, panelButtonPage.title);
         
-        //let categoriesPage = new CategoriesPage(this.settings);
-        //notebook.append_page(categoriesPage, categoriesPage.title);
-        
-        //let appsPage = new AppsPage(this.settings);
-        //notebook.append_page(appsPage, appsPage.title);
-        
-        //let placesPage = new PlacesPage(this.settings);
-        //notebook.append_page(placesPage, placesPage.title);
-        
-        //let searchPage = new SearchPage(this.settings);
-        //notebook.append_page(searchPage, searchPage.title);
+        let searchPage = new SearchPage(this.settings);
+        notebook.append_page(searchPage, searchPage.title);
 
         let aboutPage = new AboutPage(this.settings);
         notebook.append_page(aboutPage, aboutPage.title);
@@ -188,8 +179,172 @@ const BehaviourSettingsPage = new Lang.Class({
         // add the frames
         this.add(disableHotCornerFrame);
         this.add(menuKeybindingFrame);
+        
+        
+        
+        
+        
+        /*
+         * Homeview settings
+         */
+        let homeViewFrame = new AM.FrameBox();
+
+        // first row: hot key
+        let homeViewRow = new AM.FrameBoxRow();
+        let homeViewLabel = new Gtk.Label({
+            label: _("Set Default Category"),
+            xalign: 0,
+            hexpand: true
+        });
+        let homeViewCombo = new Gtk.ComboBoxText({ halign:Gtk.Align.END });
+        homeViewCombo.append_text(_("Categories"));
+        homeViewCombo.append_text(_("Frequent"));
+        homeViewCombo.append_text(_("Favorites"));
+        homeViewCombo.append_text(_("All"));
+        //homeViewCombo.append_text(_("Recent"));
+        //homeViewCombo.append_text(_("Shortcuts"));
+        homeViewCombo.set_active(this.settings.get_enum('default-category'));
+        homeViewCombo.connect('changed', Lang.bind (this, function(widget) {
+                this.settings.set_enum('default-category', widget.get_active());
+        }));
+        homeViewRow.add(homeViewLabel);
+        homeViewRow.add(homeViewCombo);
+        homeViewFrame.add(homeViewRow);
+        this.add(homeViewFrame);
     }
 });
+
+
+
+/*
+const WorkspaceNameModel = new GObject.Class({
+    Name: 'WorkspaceIndicator.WorkspaceNameModel',
+    GTypeName: 'WorkspaceNameModel',
+    Extends: Gtk.ListStore,
+
+    Columns: {
+        LABEL: 0,
+    },
+
+    _init: function(params) {
+        this.parent(params);
+        this.set_column_types([GObject.TYPE_STRING]);
+
+        this._settings = new Gio.Settings({ schema_id: WORKSPACE_SCHEMA });
+        //this._settings.connect('changed::workspace-names', Lang.bind(this, this._reloadFromSettings));
+
+        this._reloadFromSettings();
+
+        // overriding class closure doesn't work, because GtkTreeModel
+        // plays tricks with marshallers and class closures
+        this.connect('row-changed', Lang.bind(this, this._onRowChanged));
+        this.connect('row-inserted', Lang.bind(this, this._onRowInserted));
+        this.connect('row-deleted', Lang.bind(this, this._onRowDeleted));
+    },
+
+    _reloadFromSettings: function() {
+        if (this._preventChanges)
+            return;
+        this._preventChanges = true;
+
+        let newNames = this._settings.get_strv(WORKSPACE_KEY);
+
+        let i = 0;
+        let [ok, iter] = this.get_iter_first();
+        while (ok && i < newNames.length) {
+            this.set(iter, [this.Columns.LABEL], [newNames[i]]);
+
+            ok = this.iter_next(iter);
+            i++;
+        }
+
+        while (ok)
+            ok = this.remove(iter);
+
+        for ( ; i < newNames.length; i++) {
+            iter = this.append();
+            this.set(iter, [this.Columns.LABEL], [newNames[i]]);
+        }
+
+        this._preventChanges = false;
+    },
+
+    _onRowChanged: function(self, path, iter) {
+        if (this._preventChanges)
+            return;
+        this._preventChanges = true;
+
+        let index = path.get_indices()[0];
+        let names = this._settings.get_strv(WORKSPACE_KEY);
+
+        if (index >= names.length) {
+            // fill with blanks
+            for (let i = names.length; i <= index; i++)
+                names[i] = '';
+        }
+
+        names[index] = this.get_value(iter, this.Columns.LABEL);
+
+        this._settings.set_strv(WORKSPACE_KEY, names);
+
+        this._preventChanges = false;
+    },
+
+    _onRowInserted: function(self, path, iter) {
+        if (this._preventChanges)
+            return;
+        this._preventChanges = true;
+
+        let index = path.get_indices()[0];
+        let names = this._settings.get_strv(WORKSPACE_KEY);
+        let label = this.get_value(iter, this.Columns.LABEL) || '';
+        names.splice(index, 0, label);
+
+        this._settings.set_strv(WORKSPACE_KEY, names);
+
+        this._preventChanges = false;
+    },
+
+    _onRowDeleted: function(self, path) {
+        if (this._preventChanges)
+            return;
+        this._preventChanges = true;
+
+        let index = path.get_indices()[0];
+        let names = this._settings.get_strv(WORKSPACE_KEY);
+
+        if (index >= names.length)
+            return;
+
+        names.splice(index, 1);
+
+        // compact the array
+        for (let i = names.length -1; i >= 0 && !names[i]; i++)
+            names.pop();
+
+        this._settings.set_strv(WORKSPACE_KEY, names);
+
+        this._preventChanges = false;
+    },
+});
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const PanelButtonPage = new Lang.Class({
     Name: 'PanelButtonPage',
@@ -1149,15 +1304,30 @@ const LayOutPage = new Lang.Class({
 	_init: function(settings) {
         this.parent(_('Layout'));
         this.settings = settings;
-		
+        
+        		
 		
 		let layoutMenuFrame = new AM.FrameBox();
-		let layoutMenuUnitRow = new AM.FrameBox();
+		
+		let layoutMenuUnitRow = new AM.FrameBoxRow();
 		let layoutMenuHeightRow = new AM.FrameBoxRow();
 		let layoutMenuWidthRow = new AM.FrameBoxRow();
 		let layoutAppsBoxWidthRow = new AM.FrameBoxRow();
 		let layoutCategoriesBoxWidthRow = new AM.FrameBoxRow();
 		let layoutPlacesBoxWidthRow = new AM.FrameBoxRow();
+		
+		
+		
+		// Drag and drop lists of layout ordering
+		let layoutBoxesFrame = new AM.FrameBox();
+		let layoutHorizontalBoxesRow = new AM.FrameBoxRow();
+		let layoutExtraBoxesRow = new AM.FrameBoxRow();
+		let layoutSearchBoxesRow = new AM.FrameBoxRow();
+		
+		
+		
+		
+		
 		
 		
 		// Menu Height
@@ -1300,20 +1470,15 @@ const LayOutPage = new Lang.Class({
         appsViewModeRow.add(appsViewModeLabel);
         appsViewModeRow.add(appsViewModeCombo);
         appsViewFrame.add(appsViewModeRow);
-        let columnCount = [3, 4, 5 , 6, 7];
+        let columnCount = Array.from(new Array(22), (x,i) => i + 3);
         let appsGridColumnCountRow = new AM.FrameBoxRow();
         let appsGridColumnCountLabel = new Gtk.Label({label: _("Number of columns in Application Grid"),
                                                     hexpand:true, xalign:0});
         let appsGridColumnCountCombo = new Gtk.ComboBoxText({halign:Gtk.Align.END});
             appsGridColumnCountCombo.set_size_request(120, -1);
-            appsGridColumnCountCombo.append_text(_('3'));
-            appsGridColumnCountCombo.append_text(_('4'));
-            appsGridColumnCountCombo.append_text(_('5'));
-            appsGridColumnCountCombo.append_text(_('6'));
-            appsGridColumnCountCombo.append_text(_('7'));
-            //Wonder why it doesn't allow for more than 7 columns right now?
-            //appsGridColumnCountCombo.append_text(_('8'));
-            //appsGridColumnCountCombo.append_text(_('9'));
+            for (var i in columnCount) {
+            	appsGridColumnCountCombo.append_text(_(columnCount[i].toString()));
+            }
             appsGridColumnCountCombo.set_active(columnCount.indexOf(this.settings.get_int('apps-grid-column-count')));
             appsGridColumnCountCombo.connect('changed', Lang.bind (this, function(widget) {
                     this.settings.set_int('apps-grid-column-count', columnCount[widget.get_active()]);
@@ -1563,7 +1728,7 @@ const IconsPage = new Lang.Class({
             xalign: 0,
             hexpand: true
         });        
-        var gridIconSizeSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.0,128.0,1.0);
+        var gridIconSizeSlider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 32.0,128.0,1.0);
         gridIconSizeSlider.set_value(this.settings.get_int("grid-icon-size"));
         gridIconSizeSlider.connect('value-changed', Lang.bind (this, function(widget) {
             this.settings.set_int('grid-icon-size', gridIconSizeSlider.get_value());

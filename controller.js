@@ -89,22 +89,25 @@ const AppFavorites = imports.ui.appFavorites;
         
         
         
+        /////////////////////////
+        // Layout mode changes //
+        /////////////////////////
         // Layout size changes
         this._settings.connect('changed::menu-size-unit', Lang.bind(this, this._setLayoutSizes));
         this._settings.connect('changed::menubox-height', Lang.bind(this, this._setLayoutSizes));
         this._settings.connect('changed::appsbox-width', Lang.bind(this, this._setLayoutSizes));
         this._settings.connect('changed::categoriesbox-width', Lang.bind(this, this._setLayoutSizes));
         this._settings.connect('changed::placesbox-width', Lang.bind(this, this._setLayoutSizes));
-        
-        //*********************//
-        // Layout mode changes //
-        //*********************//
         // Icon Sizes
         this._settings.connect('changed::apps-icon-size', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::grid-icon-size', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::places-icon-size', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::categories-icon-size', Lang.bind(this, this._setLayoutChanges));
-        
+        // Label Changes
+        this._settings.connect('changed::apps-label', Lang.bind(this, this._setLayoutChanges));
+        //this._settings.connect('changed::grid-label', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::places-label', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::categories-label', Lang.bind(this, this._setLayoutChanges));
         // ViewMode changes
         this._settings.connect('changed::apps-viewmode', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::categories-viewmode', Lang.bind(this, this._setLayoutChanges));
@@ -112,6 +115,11 @@ const AppFavorites = imports.ui.appFavorites;
         this._settings.connect('changed::apps-grid-column-count', Lang.bind(this, this._setLayoutChanges));
         
         
+        
+        
+        
+        this._settings.connect('changed::default-category', Lang.bind(this, this._setDefaultCategory));
+
         // Favorites change _loadFavorites();
         //global.settings.connect('changed::favorite-apps', Lang.bind(this, this._menuButton._loadFavorites));
         AppFavorites.getAppFavorites().connect('changed', Lang.bind(this, this._loadFavorites));
@@ -128,9 +136,15 @@ const AppFavorites = imports.ui.appFavorites;
     },
     
     // Update the text of the menu button as specified in the settings
+    _setDefaultCategory: function() {
+    	this._menuButton._setDefaultCategory();
+    },
+    
+    // Update the text of the menu button as specified in the settings
     _setLayoutSizes: function() {
     	this._menuButton._setLayoutSizes();
     },
+    
     
     _setLayoutChanges: function() {
     	this._menuButton._reCreateLayout();

@@ -1,8 +1,8 @@
 [Desktop Entry]
-Name = bluemoon
+Name = e2image
 Comment = Automatically generated Terminal App
 Terminal = true
 Type = Application
 StartupNotify = True
 Categories = Other
-Exec = bluemoon
+Exec = e2image

@@ -64,14 +64,15 @@ const MENYY_LOGO = {
     Size: [216, 229] // width, height
 };
 
-// Replace place with folder and recent with file!
+
 const AppType = {
 		APPLICATION: 0,
 		FOLDER: 1,
 		FILE: 2,
 		TERMINAL: 3,
 		WEBBOOKMARK: 4,
-		OTHER: 5
+		PLACE: 5,
+		OTHER: 6
 };
 
 const visibleMenus = {
@@ -101,14 +102,14 @@ const SelectMethod = {
 		HOVER: 0,
 		SELECT: 1
 };
+
 const HomeView = {
-		NONE: 0,
-		CATEGORIES: 1,
-		FREQUENT: 2,
-		FAVORITES: 3,
-		CUSTOM: 4,
-		ALL: 5,
-		RECENT: 6
+		CATEGORIES: 0,
+		FREQUENT: 1,
+		FAVORITES: 2,
+		ALL: 3,
+		RECENT: 4,
+		SHORTCUTS: 5
 };
 
 

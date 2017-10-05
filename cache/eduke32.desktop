@@ -1,8 +1,8 @@
 [Desktop Entry]
-Name = lucli
+Name = eduke32
 Comment = Automatically generated Terminal App
 Terminal = true
 Type = Application
 StartupNotify = True
 Categories = Other
-Exec = lucli
+Exec = eduke32

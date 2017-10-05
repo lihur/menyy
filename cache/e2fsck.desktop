@@ -1,8 +1,8 @@
 [Desktop Entry]
-Name = bluedevil-sendfile
+Name = e2fsck
 Comment = Automatically generated Terminal App
 Terminal = true
 Type = Application
 StartupNotify = True
 Categories = Other
-Exec = bluedevil-sendfile
+Exec = e2fsck

@@ -1,8 +1,8 @@
 [Desktop Entry]
-Name = bluetoothd
+Name = e4crypt
 Comment = Automatically generated Terminal App
 Terminal = true
 Type = Application
 StartupNotify = True
 Categories = Other
-Exec = bluetoothd
+Exec = e4crypt

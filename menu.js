@@ -63,70 +63,14 @@ var CategoryLocation = 0;
 var defaultCategory = 1;
 
 
-// ADD ALL OF THIS UNDER THE CONSTANTS FILE AND IMPORT FROM THERE
-// RENAME RECENT WITH FILE OR CREATE FILES/FOLDERS SEPARATELY?
-const ApplicationType = {
-		APPLICATION: 0,
-		PLACE: 1,
-		RECENT: 2,
-		TERMINAL:3
-};
-
-/*
-const AppType = {
-		APPLICATION: 0,
-		TERMINAL: 1,
-		FILE: 2,
-		FOLDER:3,
-		PLACE:4,
-		WEBBOOKMARK: 6,
-		OTHER: 7
-};
- */
-
-
-const visibleMenus = {
-		ALL: 0,
-		APPS_ONLY: 1,
-		SYSTEM_ONLY: 2
-};
-const ApplicationsViewMode = {
-		LIST: 0,
-		GRID: 1
-};
-const CategoriesViewMode= {
-		LEFT: 0,
-		RIGHT: 1,
-		COMBINED: 2,
-		ACCORDION: 3
-};
-
-const PlacesViewMode= {
-		LEFT: 0,
-		RIGHT: 1,
-		HIDDEN: 2
-};
-
-
-const SelectMethod = {
-		HOVER: 0,
-		SELECT: 1
-}
-const HomeView = {
-		NONE: 0,
-		CATEGORIES: 1,
-		FREQUENT: 2,
-		FAVORITES: 3,
-		CUSTOM: 4,
-		ALL: 5,
-		RECENT: 6
-}
-
-
-
-const HomeViewSettings = HomeView.FREQUENT;
-//const HomeViewSettings = HomeView.CATEGORIES;
-
+const constants = Menyy.imports.constants;
+const AppType = constants.AppType;
+const visibleMenus = constants.visibleMenus;
+const ApplicationsViewMode = constants.ApplicationsViewMode;
+const CategoriesViewMode = constants.CategoriesViewMode;
+const PlacesViewMode = constants.PlacesViewMode;
+const SelectMethod = constants.SelectMethod;
+const HomeView = constants.HomeView;
 
 //TODO(MOVE ELSEWHERE!)
 //Drag to desktop functionality
@@ -387,8 +331,9 @@ const ApplicationsMenu = new Lang.Class({
 		this._appsViewMode = this._settings.get_enum('apps-viewmode');									// Apps View Mode (grid or list or other)
 		this._categoriesViewMode = this._settings.get_enum('categories-viewmode');						// Categories View Mode (left, right, combined with apps or accordion)
 		this._placesViewMode = this._settings.get_enum('places-viewmode');								// Places viewmode
-		this._appGridButtonWidth = 10 + (settings.get_int('grid-icon-size') > 0) ? settings.get_int('grid-icon-size') : 42;																	// TODO(ADD SETTING)
+		this._appGridButtonWidth = 20 + (settings.get_int('grid-icon-size'));							// grid icon size in px
 		this.hoverDelay =  this._settings.get_int('categories-hover-delay');							// hoverDelay
+		this.HomeViewSettings = this._settings.get_enum('default-category');							// Default category to open
 		this.selectionMethod = null;																	// Click or hover category
 
 		// Panel button stuff
@@ -788,19 +733,6 @@ const ApplicationsMenu = new Lang.Class({
 			y_fill: false,
 			y_align: St.Align.START
 		});
-
-		//TODO(FIGURE OUT HOW TO USE SEPARATORS WITH KEYBOARD INPUT AND THEN PLACE THOSE)
-		//let separator = new PopupMenu.PopupSeparatorMenuItem();
-		//this.placesBox.add(separator.actor, { expand: false,
-		//	x_fill: true, y_fill: false,
-		//	y_align: St.Align.START
-		//});
-
-
-
-
-
-
 		// RUN FUNCTIONS
 		this._createAltLayout();		// For the time being, creates this layout here as well
 		this._loadPlaces();				// ADDS PLACES to PLACES MENU
@@ -828,10 +760,18 @@ const ApplicationsMenu = new Lang.Class({
 		this._placesViewMode = this._settings.get_enum('places-viewmode');
 		this._categoriesViewMode = this._settings.get_enum('categories-viewmode');
 		this._appGridColumns = this._settings.get_int('apps-grid-column-count');
-		this._appGridButtonWidth = 10 + (this._settings.get_int('grid-icon-size') > 0) ? this._settings.get_int('grid-icon-size') : 42;
+		this._appGridButtonWidth = 20 + (this._settings.get_int('grid-icon-size') > 0) ? this._settings.get_int('grid-icon-size') : 52;
 
 		// CREATE LAYOUT
 		this._createLayout();
+		this._loadHome();
+	},
+	
+	
+	_setDefaultCategory: function() {
+		global.log("menyy homeview pre: " + this.HomeViewSettings);
+		this.HomeViewSettings = this._settings.get_enum('default-category');				// Default category to open
+		global.log("menyy homeview aft: " + this.HomeViewSettings);
 		this._loadHome();
 	},
 
@@ -846,7 +786,7 @@ const ApplicationsMenu = new Lang.Class({
 		);
 		
 		if (this._appsViewMode == ApplicationsViewMode.GRID) {
-			appsWidth = this._appGridButtonWidth * this._appGridColumns * 1.65;
+			appsWidth = (this._appGridButtonWidth + 40) * this._appGridColumns;		// (grid button size + padding) * columns
 		} else {
 			appsWidth = this._settings.get_int('appsbox-width');
 		}
@@ -1309,15 +1249,15 @@ const ApplicationsMenu = new Lang.Class({
         /*
         // Set selected app name/description
         if (this._activeContainer == this.placesBox || this._activeContainer == this.appsBox) {
-            if (itemActor._delegate._type == ApplicationType.APPLICATION) {
+            if (itemActor._delegate._type == AppType.APPLICATION) {
                this.selectedAppTitle.set_text(itemActor._delegate.app.get_name());
                if (itemActor._delegate.app.get_description()) this.selectedAppDescription.set_text(itemActor._delegate.app.get_description());
                else this.selectedAppDescription.set_text("");
-            } else if (itemActor._delegate._type == ApplicationType.PLACE) {
+            } else if (itemActor._delegate._type == AppType.FOLDER) {
                this.selectedAppTitle.set_text(itemActor._delegate.app.name);
                if (itemActor._delegate.app.description) this.selectedAppDescription.set_text(itemActor._delegate.app.description);
                else this.selectedAppDescription.set_text("");
-            } else if (itemActor._delegate._type == ApplicationType.RECENT) {
+            } else if (itemActor._delegate._type == AppType.FOLDER) {
                this.selectedAppTitle.set_text(itemActor._delegate.app.name);
                if (itemActor._delegate.app.description) this.selectedAppDescription.set_text(itemActor._delegate.app.description);
                else this.selectedAppDescription.set_text("");
@@ -1530,10 +1470,10 @@ const ApplicationsMenu = new Lang.Class({
 
 	// Load Default Apps Panel Items
 	_loadHome: function() {
-		if (HomeViewSettings != HomeView.CATEGORIES) {
+		if (this.HomeViewSettings != HomeView.CATEGORIES) {
 			if (this.homeBox)
 				this.homeBox.destroy_all_children();
-			this._displayButtons(_, this._listApplications(HomeViewSettings));
+			this._displayButtons(_, this._listApplications(this.HomeViewSettings));
 		}
 
 	},
@@ -2039,7 +1979,7 @@ const ApplicationsMenu = new Lang.Class({
 		}
 		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
 			this.backButton.actor.hide();
-			if (HomeViewSettings != HomeView.CATEGORIES) this.backToButton.actor.show();
+			if (this.HomeViewSettings != HomeView.CATEGORIES) this.backToButton.actor.show();
 			this.goToButton.actor.hide();
 		}
 	},
@@ -2056,7 +1996,7 @@ const ApplicationsMenu = new Lang.Class({
 		let shortcuts = new Array();
 		let shortcutType;
 		shortcuts = this._listRightClick();
-		shortcutType = ApplicationType.PLACE;
+		shortcutType = AppType.PLACE;
 		for (let i = 0; i < shortcuts.length; ++i) {
 			let app = shortcuts[i];
 			// TODO( ADD FUNCTIONALITY TO THE BUTTON INSTEAD OR USE APPLICATION BUTTON!)
@@ -2115,10 +2055,10 @@ const ApplicationsMenu = new Lang.Class({
 			//global.log("menyy -> devices: " + devices);
 			let allPlaces = places.concat(bookmarks.concat(devices));
 			shortcuts = allPlaces;
-			shortcutType = ApplicationType.PLACE;
+			shortcutType = AppType.PLACE;
 		} else {
 			shortcuts = this._favorites;
-			shortcutType = ApplicationType.APPLICATION;
+			shortcutType = AppType.APPLICATION;
 		}
 		for (let i = 0; i < shortcuts.length; ++i) {
 			let app = shortcuts[i];
@@ -2286,7 +2226,7 @@ const ApplicationsMenu = new Lang.Class({
 		
 
 		if (home){
-			appType = ApplicationType.APPLICATION;
+			appType = AppType.APPLICATION;
 			for (let i in home) {
 				let app = home[i];
 				if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
@@ -2308,7 +2248,7 @@ const ApplicationsMenu = new Lang.Class({
 		}
 
 		if (apps){
-			appType = ApplicationType.APPLICATION;
+			appType = AppType.APPLICATION;
 			for (let i in apps) {
 				let app = apps[i];
 				//let AppButton = new AppButton(app, this, appType, 'apps');
@@ -2332,7 +2272,7 @@ const ApplicationsMenu = new Lang.Class({
 		}
 		
         if (terminal){
-            appType = ApplicationType.TERMINAL;
+            appType = AppType.TERMINAL;
             for (let i in terminal) {
                 let app = terminal[i];
                     if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
@@ -2355,7 +2295,8 @@ const ApplicationsMenu = new Lang.Class({
         }
 
         if (places){
-            appType = ApplicationType.PLACE;
+            //appType = AppType.PLACE;
+        	appType = AppType.WEBBOOKMARK;		// HACK UNTIL I MOVE STUFF INSIDE THE MANAGERS GENERATING THE APPS 
             for (let i in places) {
                 let app = places[i];
                     if (this._appsViewMode == ApplicationsViewMode.LIST) { // ListView
@@ -2379,7 +2320,7 @@ const ApplicationsMenu = new Lang.Class({
         }
 
         if (recent){
-            appType = ApplicationType.RECENT;
+            appType = AppType.FILE;
             for (let i in recent) {
                 let app = recent[i];
                 // only add if not already in this._recent or refreshing
@@ -2438,7 +2379,7 @@ const ApplicationsMenu = new Lang.Class({
 			let category = button._dir || button;
 			this.currentCategory = category;
 			if (category == 'default') {
-				if (HomeViewSettings != HomeView.CATEGORIES) {
+				if (this.HomeViewSettings != HomeView.CATEGORIES) {
 					this.homeScrollBox.show();
 					this.appsScrollBox.hide();
 				} else {
@@ -2446,7 +2387,7 @@ const ApplicationsMenu = new Lang.Class({
 					this._selectCategory('categories');
 				}
 				if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
-					if (HomeViewSettings != HomeView.CATEGORIES) this.goToButton.actor.show();
+					if (this.HomeViewSettings != HomeView.CATEGORIES) this.goToButton.actor.show();
 					this.backButton.actor.hide();
 					this.backToButton.actor.hide();
 				}
@@ -2456,7 +2397,7 @@ const ApplicationsMenu = new Lang.Class({
 				// this._loadCategories();
 				if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
 					this._loadCategories();
-					if (HomeViewSettings != HomeView.CATEGORIES) this.backToButton.actor.show();
+					if (this.HomeViewSettings != HomeView.CATEGORIES) this.backToButton.actor.show();
 					this.backButton.actor.hide();
 					this.goToButton.actor.hide();
 				}
@@ -2507,18 +2448,17 @@ const ApplicationsMenu = new Lang.Class({
 
 		// Loading categories for home screen
 		if (typeof category_menu_id == 'number'){
-			if (category_menu_id == 0) {
-				// Skip for now
-			} else if (category_menu_id == 1) {
+			if (category_menu_id == 0) {				// 0 is Categories
 				this._loadCategories();
-			} else if (category_menu_id == 2) {
+			} else if (category_menu_id == 1) {			// 1 is frequent
 				applist = this._frequentApps;
-				// global.log("menyy: getting applist freq")
-			} else if (category_menu_id == 3) {
+			} else if (category_menu_id == 2) {			// 2 is favorites
 				applist = this._favorites;
-			} else if (category_menu_id == 4) {
-				// Skip for now
-			} else if (category_menu_id == 6) {
+			} else if (category_menu_id == 3) {			// 3 is all
+				applist = this._allAppsList;
+			} else if (category_menu_id == 4) {			// 4 is recent
+				applist = this._listRecent();
+			} else if (category_menu_id == 5) {			// 5 is Shortcuts
 				// Skip for now
 			} else {
 				applist = this._allAppsList;
@@ -2684,7 +2624,6 @@ const ApplicationsMenu = new Lang.Class({
 		appResults = appResults.slice(0, 10);
 		
         // search terminal commands - needs to be muteable
-        // TODO(MAKE THEM LISTABLE AND RUNNABLE)
         let terminalResults = this._listTerminalCommands(pattern);  
         // Remove items, that already exist in the all apps menu
         if (appResults.length > 0) {
@@ -2708,7 +2647,7 @@ const ApplicationsMenu = new Lang.Class({
 		// TODO(SET LIMIT THROUGH OPTIONS - currently 100)
         let places = this._listPlaces(pattern);
         places = places.slice(0, 100);
-        for (var i in places) placesResults.push(places[i]);
+        //for (var i in places) placesResults.push(places[i]); // until fixed, don't show
 
         // Search Bookmarks
         //let bookmarks = this._listBookmarks(pattern);

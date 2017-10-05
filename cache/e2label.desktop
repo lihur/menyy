@@ -1,8 +1,8 @@
 [Desktop Entry]
-Name = bluetoothctl
+Name = e2label
 Comment = Automatically generated Terminal App
 Terminal = true
 Type = Application
 StartupNotify = True
 Categories = Other
-Exec = bluetoothctl
+Exec = e2label

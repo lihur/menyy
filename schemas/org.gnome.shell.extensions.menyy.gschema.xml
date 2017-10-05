@@ -59,12 +59,19 @@
     <value value="1" nick="Right"/>
     <value value="2" nick="Hide"/>
   </enum>
-    <enum id='org.gnome.shell.extensions.menyy.search-mode'>
+  <enum id='org.gnome.shell.extensions.menyy.search-mode'>
     <value value="0" nick="Show"/>
     <value value="1" nick="Smart"/>
     <value value="2" nick="Hide"/>
   </enum>
-  
+  <enum id='org.gnome.shell.extensions.menyy.default-category'>
+    <value value="0" nick="Categories"/>
+    <value value="1" nick="Frequent"/>
+    <value value="2" nick="Favorites"/>
+    <value value="3" nick="All"/>
+    <value value="4" nick="Recent"/>
+    <value value="5" nick="Shortcuts"/>
+  </enum>
   
   
   
@@ -307,6 +314,13 @@
     <key type="i" name="placesbox-width">
       <default>15</default>
       <summary>Menu width</summary>
+    </key>
+    
+    
+    
+    <key name="default-category" enum="org.gnome.shell.extensions.menyy.default-category">
+      <default>'Frequent'</default>
+      <summary>Which Custom Category represents the first screen, when the menu is opened</summary>
     </key>
     
     

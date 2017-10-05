@@ -1,8 +1,8 @@
 [Desktop Entry]
-Name = luit
+Name = addgnupghome
 Comment = Automatically generated Terminal App
 Terminal = true
 Type = Application
 StartupNotify = True
 Categories = Other
-Exec = luit
+Exec = addgnupghome

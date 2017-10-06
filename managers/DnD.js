@@ -10,6 +10,7 @@ const AppButton = menuButtons.AppButton;
 
 const constants = Menyy.imports.constants;
 const AppType = constants.AppType;
+const cache_path = Menyy.path + "/cache/";
 
 
 const DesktopTarget = new Lang.Class({
@@ -207,7 +208,30 @@ const DesktopTarget = new Lang.Class({
 			} catch(e) {
 				log('Failed to copy to desktop: ' + e.message);
 			}
+		} /*else if (source._type == AppType.WEBBOOKMARK) {
+			//this.emit('app-dropped');
+			return false;
+		} else if (source._type == AppType.TERMINAL) {
+        	//app = this.source.app.app;
+			//path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+    		//file = Gio.file_new_for_path(path + "/" + this.source._get_app_id(AppType.FILE).replace(/^.*[\\\/]/, ''));
+			let fileUri = cache_path + this.source.app.app.get_id();
+			if (!fileUri)
+				return false;
+			this.emit('app-dropped');
+			let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+			
+			let src = Gio.file_new_for_path(fileUri);
+			let dst = Gio.File.new_for_path(GLib.build_filenamev([desktop, source.app.uri.replace(/^.*[\\\/]/, '')]));
+			try {
+				// copy_async() isn't introspectable :-(
+				src.copy(dst, Gio.FileCopyFlags.OVERWRITE, null, null);
+				this._markTrusted(dst);
+			} catch(e) {
+				log('Failed to copy to desktop: ' + e.message);
+			}
 		}
+		*/
 
 		return true;
 	}

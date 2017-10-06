@@ -976,6 +976,10 @@ const AppButton = new Lang.Class({
         } else if (this._type == AppType.FILE || this._type == AppType.FOLDER) {
             let gicon = Gio.content_type_get_icon(this.app.mime);
             appIcon = new St.Icon({gicon: gicon, icon_size: this._iconSize});
+        } else if (this._type == AppType.TERMINAL) {
+        	appIcon = new St.Icon({gicon: this.app.icon, icon_size: this._iconSize});
+        } else if (this._type == AppType.WEBBOOKMARK) {
+        	appIcon = new St.Icon({gicon: this.app.icon, icon_size: this._iconSize});
         }
         return appIcon;
     },

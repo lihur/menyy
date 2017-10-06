@@ -137,6 +137,7 @@ const AppItemMenu = new Lang.Class({
             	} else {
                     let app = cache_path + this.source.app.app.get_id();
                     // TODO(copy the file to a proper location or monkeypatch to use custom folders)
+                    // .local/share/applications
             		favs.addFavorite(this.source.app.app.get_id());
             		
             	}

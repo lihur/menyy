@@ -353,11 +353,11 @@ const ApplicationsMenu = new Lang.Class({
 		// Apps Scroll
 		this.appsScrollBox = new St.ScrollView({x_fill: true, y_fill: true, y_align: St.Align.START, style_class: 'vfade menyy-applications-box-scrollview' });
 		this.appsScrollBox.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC);
-		this.vScrollApps = this.appsScrollBox.get_vscroll_bar();
-		this.vScrollApps.connect('scroll-start', Lang.bind(this, function() {
+		vScrollApps = this.appsScrollBox.get_vscroll_bar();
+		vScrollApps.connect('scroll-start', Lang.bind(this, function() {
 			this.menu.passEvents = true;
 		}));
-		this.vScrollApps.connect('scroll-stop', Lang.bind(this, function() {
+		vScrollApps.connect('scroll-stop', Lang.bind(this, function() {
 			this.menu.passEvents = false;
 		}));
 		this.appsScrollBox.add_actor(this.appsBoxWrapper);
@@ -368,11 +368,11 @@ const ApplicationsMenu = new Lang.Class({
 		// Home Scroll
 		this.homeScrollBox = new St.ScrollView({x_fill: true, y_fill: true, y_align: St.Align.START, style_class: 'vfade menyy-applications-box-scrollview' });
 		this.homeScrollBox.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC);
-		this.vScrollHome = this.homeScrollBox.get_vscroll_bar();
-		this.vScrollHome.connect('scroll-start', Lang.bind(this, function() {
+		vScrollHome = this.homeScrollBox.get_vscroll_bar();
+		vScrollHome.connect('scroll-start', Lang.bind(this, function() {
 			this.menu.passEvents = true;
 		}));
-		this.vScrollHome.connect('scroll-stop', Lang.bind(this, function() {
+		vScrollHome.connect('scroll-stop', Lang.bind(this, function() {
 			this.menu.passEvents = false;
 		}));
 		
@@ -386,11 +386,11 @@ const ApplicationsMenu = new Lang.Class({
 			this.categoryScrollBox = new St.ScrollView({y_align: St.Align.START,
 				style_class: 'menyy-categories-box-scrollview menyy-spacing' });
 			this.categoryScrollBox.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC);
-			this.vScrollCategories = this.categoryScrollBox.get_vscroll_bar();
-			this.vScrollCategories.connect('scroll-start', Lang.bind(this, function() {
+			vScrollCategories = this.categoryScrollBox.get_vscroll_bar();
+			vScrollCategories.connect('scroll-start', Lang.bind(this, function() {
 				this.menu.passEvents = true;
 			}));
-			this.vScrollCategories.connect('scroll-stop', Lang.bind(this, function() {
+			vScrollCategories.connect('scroll-stop', Lang.bind(this, function() {
 				this.menu.passEvents = false;
 			}));
 			this.categoryScrollBox.add_actor(this.categoryBox);
@@ -402,11 +402,11 @@ const ApplicationsMenu = new Lang.Class({
 		// Places Scroll
 		this.placesScrollBox = new St.ScrollView({x_fill: true, y_fill: true, y_align: St.Align.START, style_class: 'vfade menyy-places-box-scrollview' });
 		this.placesScrollBox.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC);
-		this.vScrollPlaces = this.placesScrollBox.get_vscroll_bar();
-		this.vScrollPlaces.connect('scroll-start', Lang.bind(this, function() {
+		vScrollPlaces = this.placesScrollBox.get_vscroll_bar();
+		vScrollPlaces.connect('scroll-start', Lang.bind(this, function() {
 			this.menu.passEvents = true;
 		}));
-		this.vScrollPlaces.connect('scroll-stop', Lang.bind(this, function() {
+		vScrollPlaces.connect('scroll-stop', Lang.bind(this, function() {
 			this.menu.passEvents = false;
 		}));
 		this.placesScrollBox.add_actor(this.placesBox);
@@ -609,11 +609,45 @@ const ApplicationsMenu = new Lang.Class({
 		this.appsBoxWrapper.set_style( 'width: ' + appsWidth + 'px' );
 		this.homeBoxWrapper.set_style( 'width: ' + appsWidth + 'px' );
 		
-		//TODO(ADD SETTINGS AND REMOVE RE-ASKING FOR SCROLLBARS)
-		//this.vScrollApps.hide();
-		//this.vScrollHome.hide();
-		this.vScrollPlaces.hide();
-		//if (this.vScrollCategories) this.vScrollCategories.hide();		
+		
+		/*
+		 * Scroll settings
+		 */
+		let vScrollApps;
+		let vScrollHome;
+		let vScrollCategories;
+		let vScrollPlaces;
+		if (this._settings.get_boolean('show-apps-scrollbar') == true) {
+			vScrollApps = this.appsScrollBox.get_vscroll_bar();
+			vScrollHome = this.homeScrollBox.get_vscroll_bar();
+			
+			vScrollApps.show();
+			vScrollHome.show();
+		} else {
+			vScrollApps = this.appsScrollBox.get_vscroll_bar();
+			vScrollHome = this.appsHomeBox.get_vscroll_bar();
+			
+			vScrollApps.hide();
+			vScrollHome.hide();
+		}
+		if (this._settings.get_boolean('show-categories-scrollbar') == true) {
+			if (this.categoriesScrollBox) vScrollCategories = this.categoriesScrollBox.get_vscroll_bar();
+			
+			if (vScrollCategories) this.vScrollCategories.show();
+		} else {
+			if (this.categoriesScrollBox) vScrollCategories = this.categoriesScrollBox.get_vscroll_bar();
+			
+			if (vScrollCategories) this.vScrollCategories.hide();
+		}
+		if (this._settings.get_boolean('show-places-scrollbar') == true) {
+			vScrollPlaces = this.placesScrollBox.get_vscroll_bar();
+			
+			vScrollPlaces.show();
+		} else {
+			vScrollPlaces = this.placesScrollBox.get_vscroll_bar();
+			
+			vScrollPlaces.hide();
+		}
 		
 		// Categories
 		if (this._categoriesViewMode != CategoriesViewMode.COMBINED) {

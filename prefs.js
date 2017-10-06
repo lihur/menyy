@@ -1040,6 +1040,73 @@ const LayOutPage = new Lang.Class({
         this.add(placesLocationFrame);
         
         
+        
+        /*
+         * Apps Box Scrollbar
+         */
+        let showAppsScrollbarFrame = new AM.FrameBox();
+        let showAppsScrollbarRow = new AM.FrameBoxRow();
+        let showAppsScrollbarLabel = new Gtk.Label({
+            label: _("Show Scrollbar In Applications: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });
+        let showAppsScrollbarSwitch = new Gtk.Switch({ halign: Gtk.Align.END });
+        showAppsScrollbarSwitch.set_active(this.settings.get_boolean('show-apps-scrollbar'));
+        showAppsScrollbarSwitch.connect('notify::active', Lang.bind(this, function(check) {
+            this.settings.set_boolean('show-apps-scrollbar', check.get_active());
+        }));
+        showAppsScrollbarRow.add(showAppsScrollbarLabel);
+        showAppsScrollbarRow.add(showAppsScrollbarSwitch);
+        showAppsScrollbarFrame.add(showAppsScrollbarRow);
+        this.add(showAppsScrollbarFrame);
+        
+        
+        /*
+         * Categories Box Scrollbar
+         */
+        let showCategoriesScrollbarFrame = new AM.FrameBox();
+        let showCategoriesScrollbarRow = new AM.FrameBoxRow();
+        let showCategoriesScrollbarLabel = new Gtk.Label({
+            label: _("Show Scrollbar In Categories: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });
+        let showCategoriesScrollbarSwitch = new Gtk.Switch({ halign: Gtk.Align.END });
+        showCategoriesScrollbarSwitch.set_active(this.settings.get_boolean('show-categories-scrollbar'));
+        showCategoriesScrollbarSwitch.connect('notify::active', Lang.bind(this, function(check) {
+            this.settings.set_boolean('show-categories-scrollbar', check.get_active());
+        }));
+        showCategoriesScrollbarRow.add(showCategoriesScrollbarLabel);
+        showCategoriesScrollbarRow.add(showCategoriesScrollbarSwitch);
+        showCategoriesScrollbarFrame.add(showCategoriesScrollbarRow);
+        this.add(showCategoriesScrollbarFrame);
+        
+        
+        /*
+         * Places Box Scrollbar
+         */
+        let showPlacesScrollbarFrame = new AM.FrameBox();
+        let showPlacesScrollbarRow = new AM.FrameBoxRow();
+        let showPlacesScrollbarLabel = new Gtk.Label({
+            label: _("Show Scrollbar In Places: "),
+            use_markup: true,
+            xalign: 0,
+            hexpand: true
+        });
+        let showPlacesScrollbarSwitch = new Gtk.Switch({ halign: Gtk.Align.END });
+        showPlacesScrollbarSwitch.set_active(this.settings.get_boolean('show-places-scrollbar'));
+        showPlacesScrollbarSwitch.connect('notify::active', Lang.bind(this, function(check) {
+            this.settings.set_boolean('show-places-scrollbar', check.get_active());
+        }));
+        showPlacesScrollbarRow.add(showPlacesScrollbarLabel);
+        showPlacesScrollbarRow.add(showPlacesScrollbarSwitch);
+        showPlacesScrollbarFrame.add(showPlacesScrollbarRow);
+        this.add(showPlacesScrollbarFrame);
+        
+        
 	}
 });
 

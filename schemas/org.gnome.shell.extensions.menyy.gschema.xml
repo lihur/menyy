@@ -369,5 +369,21 @@
       <summary>Categories button orientation</summary>
     </key>
     
+    
+    <key type="b" name="show-apps-scrollbar">
+      <default>true</default>
+      <summary>Show Applications Box Scrollbar</summary>
+    </key>
+    <key type="b" name="show-categories-scrollbar">
+      <default>true</default>
+      <summary>Show Categories Box Scrollbar</summary>
+    </key>
+    <key type="b" name="show-places-scrollbar">
+      <default>false</default>
+      <summary>Show Places Box Scrollbar</summary>
+    </key>
+    
+    
+    
   </schema>
 </schemalist>

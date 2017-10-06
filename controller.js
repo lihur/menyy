@@ -116,7 +116,10 @@ const AppFavorites = imports.ui.appFavorites;
         this._settings.connect('changed::categories-viewmode', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::places-viewmode', Lang.bind(this, this._setLayoutChanges));
         this._settings.connect('changed::apps-grid-column-count', Lang.bind(this, this._setLayoutChanges));
-        
+        // Scrollbar changes
+        this._settings.connect('changed::show-apps-scrollbar', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::show-categories-scrollbar', Lang.bind(this, this._setLayoutChanges));
+        this._settings.connect('changed::show-places-scrollbar', Lang.bind(this, this._setLayoutChanges)); 
         
         
         

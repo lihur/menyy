@@ -3,6 +3,10 @@ const Gio = imports.gi.Gio;
 const Lang = imports.lang;
 const Meta = imports.gi.Meta;
 const DND = imports.ui.dnd;
+const Gtk = imports.gi.Gtk;
+const Clutter = imports.gi.Clutter;
+
+
 
 const Menyy = imports.misc.extensionUtils.getCurrentExtension();
 const menuButtons = Menyy.imports.menuButtons;
@@ -13,13 +17,17 @@ const AppType = constants.AppType;
 const cache_path = Menyy.path + "/cache/";
 
 
-const DesktopTarget = new Lang.Class({
-	Name: 'DesktopTarget',
+const DragTarget = new Lang.Class({
+	Name: 'DragTarget',
 
 	_init: function() {
 		this._desktop = null;
 		this._desktopDestroyedId = 0;
 
+		this._targetList = [];
+		this._targetsDestroyedId = [];
+		
+		
 		this._windowAddedId =
 			global.window_group.connect('actor-added',
 					Lang.bind(this, this._onWindowAdded));
@@ -33,12 +41,21 @@ const DesktopTarget = new Lang.Class({
 		return this._desktop != null;
 	},
 
+	get hasTarget() {
+		return this._target != null;
+	},
+
 	_onWindowAdded: function(group, actor) {
+		// remove open targets
+		this._targetList = [];
+		this._targetsDestroyedId = [];
 		if (!(actor instanceof Meta.WindowActor))
 			return;
-
-		if (actor.meta_window.get_window_type() == Meta.WindowType.DESKTOP)
+		if (actor.meta_window.get_window_type() == Meta.WindowType.DESKTOP){
 			this._setDesktop(actor);
+		} else if (actor.meta_window.get_window_type() == Meta.WindowType.NORMAL) {
+			//this._addTarget(actor);
+		}
 	},
 
 	_setDesktop: function(desktop) {
@@ -50,7 +67,7 @@ const DesktopTarget = new Lang.Class({
 		}
 
 		this._desktop = desktop;
-		this.emit('desktop-changed');
+		this.emit('target-changed');
 
 		if (this._desktop) {
 			this._desktopDestroyedId = this._desktop.connect('destroy', () => {
@@ -60,6 +77,35 @@ const DesktopTarget = new Lang.Class({
 		}
 	},
 
+
+	_addTarget: function(target) {
+		this._targetsDestroyedId.push(0);
+		this._targetList.push(target);
+		this._setTargets(this._targetList);
+	},
+	
+	_setTargets: function(targetList) {
+		for (var ct in targetList) {
+			let current = targetList[ct];
+			if (current) {
+				current.disconnect();
+				this._targetsDestroyedId[ct] = 0;
+
+				delete current._delegate;
+			}
+
+			this._targetList[ct] = current;
+			this.emit('target-changed');
+
+			if (current) {
+				this._targetsDestroyedId[ct] = current.connect('destroy', () => {
+					this._setTargets(null);
+				});
+				current._delegate = this;
+			}
+		}
+	},
+	
 	_getSourceAppInfo: function(source) {
 		if (!(source instanceof AppButton)) {
 			return null;
@@ -71,7 +117,7 @@ const DesktopTarget = new Lang.Class({
 			}
 		}
 	},
-	
+
 	_getSourceFileInfo: function(source) {
 		if (!(source instanceof AppButton)) {
 			return null;
@@ -139,116 +185,138 @@ const DesktopTarget = new Lang.Class({
 	},
 
 	handleDragOver: function(source, actor, x, y, time) {
+		//global.log("menyy dragged over " + global.get_stage().get_actor_at_pos(Clutter.PickMode.ALL, x,y).get_parent().get_parent().get_meta_window().get_wm_class());
 		let appInfo = this._getSourceAppInfo(source);
 		if (!appInfo)
 			return DND.DragMotionResult.CONTINUE;
 
 		return DND.DragMotionResult.COPY_DROP;
-	},	
+	},
 
 	acceptDrop: function(source, actor, x, y, time) {
-		if (source._type == AppType.APPLICATION) {
-			let appInfo = this._getSourceAppInfo(source);
-			if (!appInfo)
-				return false;
-	
-			this.emit('app-dropped');
-	
-			let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-	
-			let src = Gio.File.new_for_path(appInfo.get_filename());
-			let dst = Gio.File.new_for_path(GLib.build_filenamev([desktop, src.get_basename()]));
-	
-			try {
-				// copy_async() isn't introspectable :-(
-				src.copy(dst, Gio.FileCopyFlags.OVERWRITE, null, null);
-				this._markTrusted(dst);
-			} catch(e) {
-				log('Failed to copy to desktop: ' + e.message);
-			}
-		} else if (source._type == AppType.FILE) {
-			let fileUri = this._getSourceFileInfo(source);
-			if (!fileUri)
-				return false;
-			this.emit('app-dropped');
-			let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-			
-			let src = Gio.file_new_for_path(fileUri);
-			let dst = Gio.File.new_for_path(GLib.build_filenamev([desktop, source.app.uri.replace(/^.*[\\\/]/, '')]));
-			try {
-				// copy_async() isn't introspectable :-(
-				src.copy(dst, Gio.FileCopyFlags.OVERWRITE, null, null);
-				this._markTrusted(dst);
-			} catch(e) {
-				log('Failed to copy to desktop: ' + e.message);
-			}
-		} else if (source._type == AppType.FOLDER) {
-			//let fileUri = this._getSourceFileInfo(source);
-			let fileUri = source.app.uri.replace('file://','');
-			if (!fileUri)
-				return false;
-			this.emit('app-dropped');
-			let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-			//let src = Gio.file_new_for_path(fileUri);
-			let dst = Gio.File.new_for_path(GLib.build_filenamev([desktop, source.app.uri.replace(/^.*[\\\/]/, '')]));	
-			try {
-				dst.make_symbolic_link(fileUri,  null);
-			} catch(e) {
-				log('Failed to copy to desktop: ' + e.message);
-			}
-		} else if (source._type == AppType.PLACE) {
-			let fileUri = source.app.file.get_path();
-			if (!fileUri)
-				return false;
-			this.emit('app-dropped');
-			let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-			let dst = Gio.File.new_for_path(GLib.build_filenamev([desktop, source.app.file.get_basename()]));	
-			try {
-				dst.make_symbolic_link(fileUri,  null);
-			} catch(e) {
-				log('Failed to copy to desktop: ' + e.message);
-			}
-		} else if (source._type == AppType.WEBBOOKMARK) {
-			global.log("menyy webbookmark uri: " + source.app.uri);
-			const contents =   "[Desktop Entry]\n" +
-			  "Name = Link to " + source.app.name + "\n" +
-			  "Comment = Automatically generated Web Shortcut\n" +
-			  "Type = Link\n" +
-			  "Icon = text-html\n" +
-			  "URL = " + source.app.uri + "\n" +
-			  "";
-			let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-			let file = Gio.File.new_for_path(GLib.build_filenamev([desktop, source.app.name + ".desktop"]));
-			try {
-				{
-		            if (file.query_exists (null)) {
-		            	file.delete(null);
-		            }
-		            let dos = file.create(Gio.FileCreateFlags.NONE, null);
-		            dos.write(contents, null, contents.length);
-		            this._markTrusted(file);
-				} // Streams closed at this point
-	        } catch (e) {
-	        	Main.notifyError(_("Failed to create file \"%s\"").format(this.name), e.message);
-	        }
-		} else if (source._type == AppType.TERMINAL) {
-			let fileUri = cache_path + source.app.app.get_id();
-			if (!fileUri)
-				return false;
-			this.emit('app-dropped');
-			let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-			
-			let src = Gio.file_new_for_path(fileUri);
-			let dst = Gio.File.new_for_path(GLib.build_filenamev([desktop, src.get_basename()]));
-			try {
-				// copy_async() isn't introspectable :-(
-				src.copy(dst, Gio.FileCopyFlags.OVERWRITE, null, null);
-				this._markTrusted(dst);
-			} catch(e) {
-				log('Failed to copy to desktop: ' + e.message);
-			}
+		// get drop target name and window type
+		/*
+		let name;
+		let windowType;
+		if (global.get_stage().get_actor_at_pos(Clutter.PickMode.ALL, x,y).get_parent().get_parent().get_meta_window() != null) {
+			name = global.get_stage().get_actor_at_pos(Clutter.PickMode.ALL, x,y).get_parent().get_parent().get_meta_window().get_wm_class();
+			windowType = global.get_stage().get_actor_at_pos(Clutter.PickMode.ALL, x,y).get_parent().get_parent().get_meta_window().get_window_type();
+		} else {
+			name = "-1";
+			windowType = -1;
 		}
-
+		
+		global.log("menyy name " + name);
+		global.log("menyy windowType " + windowType);
+		*/
+		
+		
+		
+			if (source._type == AppType.APPLICATION) {
+				let appInfo = this._getSourceAppInfo(source);
+				if (!appInfo)
+					return false;
+	
+				this.emit('app-dropped');
+	
+				let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+	
+				let src = Gio.File.new_for_path(appInfo.get_filename());
+				let dst = Gio.File.new_for_path(GLib.build_filenamev([desktop, src.get_basename()]));
+	
+				try {
+					// copy_async() isn't introspectable :-(
+					src.copy(dst, Gio.FileCopyFlags.OVERWRITE, null, null);
+					this._markTrusted(dst);
+				} catch(e) {
+					log('Failed to copy to desktop: ' + e.message);
+				}
+			} else if (source._type == AppType.FILE) {
+				let fileUri = this._getSourceFileInfo(source);
+				if (!fileUri)
+					return false;
+				this.emit('app-dropped');
+				let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+	
+				let src = Gio.file_new_for_path(fileUri);
+				let dst = Gio.File.new_for_path(GLib.build_filenamev([desktop, source.app.uri.replace(/^.*[\\\/]/, '')]));
+				try {
+					// copy_async() isn't introspectable :-(
+					src.copy(dst, Gio.FileCopyFlags.OVERWRITE, null, null);
+					this._markTrusted(dst);
+				} catch(e) {
+					log('Failed to copy to desktop: ' + e.message);
+				}
+			} else if (source._type == AppType.FOLDER) {
+				//let fileUri = this._getSourceFileInfo(source);
+				let fileUri = source.app.uri.replace('file://','');
+				if (!fileUri)
+					return false;
+				this.emit('app-dropped');
+				let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+				//let src = Gio.file_new_for_path(fileUri);
+				let dst = Gio.File.new_for_path(GLib.build_filenamev([desktop, source.app.uri.replace(/^.*[\\\/]/, '')]));	
+				try {
+					dst.make_symbolic_link(fileUri,  null);
+				} catch(e) {
+					log('Failed to copy to desktop: ' + e.message);
+				}
+			} else if (source._type == AppType.PLACE) {
+				let fileUri = source.app.file.get_path();
+				if (!fileUri)
+					return false;
+				this.emit('app-dropped');
+				let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+				let dst = Gio.File.new_for_path(GLib.build_filenamev([desktop, source.app.file.get_basename()]));	
+				try {
+					dst.make_symbolic_link(fileUri,  null);
+				} catch(e) {
+					log('Failed to copy to desktop: ' + e.message);
+				}
+			} else if (source._type == AppType.WEBBOOKMARK) {
+				const contents =   "[Desktop Entry]\n" +
+				"Name = Link to " + source.app.name + "\n" +
+				"Comment = Automatically generated Web Shortcut\n" +
+				"Type = Link\n" +
+				"Icon = text-html\n" +
+				"URL = " + source.app.uri + "\n" +
+				"";
+	
+				if (!contents)
+					return false;
+				this.emit('app-dropped');
+	
+				let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+				let file = Gio.File.new_for_path(GLib.build_filenamev([desktop, source.app.name + ".desktop"]));
+				try {
+					{
+						if (file.query_exists (null)) {
+							file.delete(null);
+						}
+						let dos = file.create(Gio.FileCreateFlags.NONE, null);
+						dos.write(contents, null, contents.length);
+						this._markTrusted(file);
+					} // Streams closed at this point
+				} catch (e) {
+					Main.notifyError(_("Failed to create file \"%s\"").format(this.name), e.message);
+				}
+			} else if (source._type == AppType.TERMINAL) {
+				let fileUri = cache_path + source.app.app.get_id();
+				if (!fileUri)
+					return false;
+				this.emit('app-dropped');
+				let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+	
+				let src = Gio.file_new_for_path(fileUri);
+				let dst = Gio.File.new_for_path(GLib.build_filenamev([desktop, src.get_basename()]));
+				try {
+					// copy_async() isn't introspectable :-(
+					src.copy(dst, Gio.FileCopyFlags.OVERWRITE, null, null);
+					this._markTrusted(dst);
+				} catch(e) {
+					log('Failed to copy to desktop: ' + e.message);
+				}
+			}
 		return true;
 	}
 });

@@ -1,119 +1,62 @@
 //PS! These dev notes in the beginning are not for this particular file, but the whole project
 /////////////////////////////////////////////////////////////////////////////////////////////////
+//PRIORITY BUGS
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//TODO(FIX IN SETTINGS SET SCROLLBAR CHANGES TO CHANGE WHOLE LAYOUT)
+//TODO(REMOVE URI ENCAPSULATION FOR DND and RIGHT CLICK, because some files can't be copied otherwise)
+//TODO(FIX TAB RESETS SEARCH CATEGORY)
+/////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY 0
 /////////////////////////////////////////////////////////////////////////////////////////////////
-//TODO(ADD THUMBNAILS AS SETTING)
+//TODO(CREATE A FILE MANAGER DRAG & DROP TARGET FOR EVERYTHING)
+//TODO(CREATE A BROWSER DRAG & DROP)
+//TODO(WEB SEARCHES, WIKI SEARCH)
+//TODO(COLORCODE + COLORNAME SEARCHES ;P)
+//TODO(CALCULATOR SEARCHES)
+//TODO(UNICODE CHARACTER and EMOTICON SEARCHES)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY 1
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//TODO(MAKE PLACES BUTTONS REARRANGEABLE)
 //TODO(UPDATE PLACES ON CHANGE)
-//TODO(ADD RIGHT CLICK copy to desktop TO WEB BOOKMARKS)
-//TODO(ADD RIGHT CLICK copy to desktop TO TERMINAL APPS)
+//TODO(ADD SYSTEM MONITOR + OPTIONS AS PLACE and RIGHT CLICK)
+//TODO(ADD DESCRIPTION BOX IN SEARCH)
+//TODO(MAKE PLACES BUTTONS REARRANGEABLE)
+//TODO(MAKE SYSTEM BUTTONS REARRANGEABLE)
+//TODO(MAKE VERTICAL LAYOUT REARRANGEABLE)
+//TODO(MAKE MENU RIGHT CLICK REARRANGEABLE)
+//TODO(MAKE BAR1 (TABS), and BAR2 (SEARCH))
+//TODO(ADD OPTION TO USE ANY CUSTOM CATEGORY AS TAB INSTEAD)
+//TODO(MAKE BAR1 and BAR2 REARRANGEABLE)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY 2
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //TODO(ADD CUSTOM APP OPEN INDICATORS and options)
 //TODO(ADD VIEW BUTTON AND OPTIONS)
 //TODO(ADD ACTIVITIES BUTTON AND OPTIONS)
-//TODO(ADD FILES AND FOLDERS SEARCH)
-//TODO(ADD SYSTEM MONITOR + OPTIONS AS PLACE and RIGHT CLICK)
 //TODO(ADD RECENT APPS AS CATEGORY (IF POSSIBLE))
 //TODO(ADD CLEAR RECENTS INTO OPTIONS OR RIGHT CLICK)
-//TODO(FIX CHROMIUM BOOKMARKS not showing!!!)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY 3
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//TODO(MAKE SYSTEM BUTTONS REARRANGEABLE)
 //TODO(Show under settings if gir1.2-gda-5.0 is installed, help installing)
-//TODO(FIX TAB RESETS SEARCH CATEGORY)
 //TODO(CONNECT TERMINAL APPS WITH THE REST OF APPS SOMEHOW!!)
+//TODO(ADD OPEN WITH and OPEN LOCATION for recent (any) files, folders)
+//TODO(FIX CHROMIUM BOOKMARKS not showing!!!)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY >9000
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//TODO(ADD OPEN WITH and OPEN LOCATION for recent (any) files)
-//TODO(ADD OPEN LOCATION for folders
-//TODO(MAKE ADDING SEARCH RESULTS SHOW UP ASYNC)
-//TODO(WEB SEARCHES)
-//TODO(FILE SEARCHES)
-//TODO(FOLDER SEARCHES)
-//TODO(COLORCODE + COLORNAME SEARCHES ;P)
-//TODO(CALCULATOR SEARCHES)
-//TODO(UNICODE CHARACTER and EMOTICON SEARCHES)
 //TODO(PAUSE MPRIS PLAYERS ON SLEEP)
 //TODO(PLACE ITSELF IN DASH TO DOCK)
 //TODO(FIX OPERA BOOKMARKS)
 //TODO(FIX EPIPHANY)
-//TODO(CREATE A BROWSER DRAG & DROP)
-//TODO(CREATE A FILE MANAGER DRAG & DROP TARGET FOR EVERYTHING)
 //TODO(CREATE REARRANGE THROUGH DRAG AND DROP IN MENUS)
 //TODO(DRAG TO OTHER CATEGORIES)
 //TODO(ADD POSSIBILITY FOR SYSTEM BUTTONS SEPARATE MENU)
 //TODO(ADD POSSIBILITY FOR SYSTEM BUTTONS TO EXPAND, IF ROOM LIMITED)
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//DONE(FIX EMPTY SPACE UNDER USER BUTTON) it was a spacer :D
-//DONE(CATEGORIES IN COMBINED WONT OPEN)
-//DONE(REMOVE KEYBOARD FOCUS ON PRESS ENTER)
-//DONE(BACK BUTTON WON'T OPEN)
-//DONE(BACK BUTTON WON'T FOCUS)
-//DONE(USER BUTTON WON'T OPEN)
-//DONE(ADD RECENT APPS)
-//DONE(FIX RIGHT CLICK MENU ITEM NOT CLOSING MENU)
-//DONE(FIX RIGHT CLICK MENU ITEM NOT RELEASING FOCUS)
-//DONE(Search results limited by length)
-//DONE(FIX INPUT STOLEN IF RIGHT CLICK MENU IS OPEN WHILE CLOSING MENU WITH KEYBOARD)
-//DONE(FIX PLACES RIGHT CLICK)
-//DONE(FIX SYSTEM BUTTONS WON'T FOCUS)
-//DONE(FIX SYSTEM BUTTONS WON'T ACTIVATE)
-//DONE(MAKE SEARCH WAIT FOR INPUT TO FINISH BEFORE BEGINNING!)
-//DONE(RUN TERMINAL COMMANDS THROUGH SEARCH) - this would allow the extension to remove the restart hack
-//DONE(MOVING THE MANAGERS TO A SUBDIRECTORY)
-//DONE(MOVE CONSTANTS TO CONSTANTS FILE)
-//DONE(ADD WEB AS CATEGORY)
-//DONE(ADD SETTINGS FOR SEPARATE GRID ICON SIZE)
-//DONE(LISTEN AND REACT TO PLACES CHANGES)
-//DONE(CREATE FEATURE TO AUTOMATICALLY DETECT A DEFAULT HEIGHT/WIDTH FOR GRID)
-//DONE(LOAD HOME SCREEN SETTINGS)
-//DONE(CONNECT LAYOUT TO SETTINGS AND LISTENER)
-//DONE(Add homeview settings and listener)
-//DONE(FIX SETTINGS SEARCHES not always showing up)
-//DONE(MAKE TERMINAL APPS LISTABLE AND RUNNABLE)
-//DONE(FIX NEITHER ICON NOR LABEL SHOWING, then show LABEL)
-//DONE(Add repeating enum constants into constants file and load from there)
-//DONE(ADD GRID FUNCTIONALITY TO THE BUTTON INSTEAD)
-//DONE(CONNECT GRID AND LIST CATEGORIES OPTIONS)
-//DONE(MOVE APPTYPE INSIDE OF MANAGERS TO SIMPLIFY CODE)
-//DONE(CLEAN UP DISPLAYBUTTON AND ITS USE!)
-//DONE(PUT CATEGORYBUTTON BEHAVIOUR INSIDE THE BUTTON)
-//DONE(CONNECT HOVER TIME STUFF WITH SETTINGS)
-//DONE(FIX ALL APPLICATIONS LISTEN FOR CHANGES)
-//DONE(CHECK IF LOCK SCREEN EVEN POSSIBLE)
-//DONE(FIX RACE CONDITION? IN GENERATING THE ALL APPS LIST)
-//DONE(ADD OPTIONS TO SET EVERY BUTTONS ORIENTATION left, right or middle to help set iconless text to one side)
-//DONE(FIX CATEGORIES HIDDEN ICON = NO LABEL)
-//DONE(SEPARATED DRAG AND DROP TARGET CODE AND ADDED FILE SUPPORT)
-//DONE(MAKE TEXT ORIENTATION CHANGE TOWARDS THE ICON)
-//DONE(SIMPLIFY CSS and fix CSS LOADING)
-//DONE(ADD MAXIMUM NUMBER OF SEARCH RESULTS for each category in settings)
-//DONE(ADD SEARCH WAIT TIME TO SETTINGS AND CONNECT)
-//DONE(ADDED SYMLINK TO DESKTOP FOR FOLDERS)
-//DONE(ADD D&D to FOLDERS)
-//DONE(ADD D&D to PLACES)
-//DONE(DISABLE RIGHT CLICK MENU D&D)
-//DONE(FIX D&D FOR TERMINAL)
-//DONE(FIX D&D FOR WEBBOOKMARKS)
-//DONE(ADD OPTION TO HIDE SCROLLBARS FOR EACH BOX)
-//DONE(ADD TERMINAL APP D&D TO DESKTOP)
-//DONE(ADD PLACES DRAG AND DROP)
-//DONE(ADD D&D to WEB BOOKMARKS)
-//DONE(ADD APPTYPE SHORTCUT)
-//DONE(SEPARATE APP SHORTCUTS FROM PLACESMANAGER)
-//DONE(ADD THUMBNAILS)
-//DONE(SIMPLIFY SHORTCUT BUTTON CODE)
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//WONTFIX	(FIX SETTINGS SEARCHES not always showing up)
-//			It's due to a bug in gnome shells menu file
-/////////////////////////////////////////////////////////////////////////////////////////////////////
+//DONE(THUMBNAILS)
+//DONE(FILE SEARCH)
+
 
 //Gnome-Shell and GTK files
 const Clutter = imports.gi.Clutter;
@@ -133,11 +76,6 @@ const appSys = Shell.AppSystem.get_default();
 const Gio = imports.gi.Gio;
 const Mainloop = imports.mainloop;
 
-//const Meta = imports.gi.Meta;										// DesktopTarget
-//const DND = imports.ui.dnd;											// DesktopTarget
-
-
-
 //My extension files
 const Menyy = imports.misc.extensionUtils.getCurrentExtension();
 const systemButtons = Menyy.imports.systemButtons;
@@ -145,6 +83,7 @@ const menuButtons = Menyy.imports.menuButtons;
 const placeDisplay = Menyy.imports.managers.placeDisplay;
 const shortcutsDisplay = Menyy.imports.managers.shortcutsDisplay;
 const commandLineDisplay = Menyy.imports.managers.commandLineDisplay;
+const searchFilesFolders = Menyy.imports.managers.searchfilesfolders;
 const convenience = Menyy.imports.convenience;
 const MenuButtonWidget = Menyy.imports.menuWidget.MenuButtonWidget;
 
@@ -155,8 +94,8 @@ const Firefox = Menyy.imports.managers.webFirefox;
 const GoogleChrome = Menyy.imports.managers.webGoogleChrome;
 const Midori = Menyy.imports.managers.webMidori;
 const Opera = Menyy.imports.managers.webOpera;
-const DesktopTarget = Menyy.imports.managers.DnD.DesktopTarget;
-Signals.addSignalMethods(DesktopTarget.prototype);
+const DragTarget = Menyy.imports.managers.DnD.DragTarget;
+Signals.addSignalMethods(DragTarget.prototype);
 
 //SystemButtons
 const PowerButton = systemButtons.PowerButton;
@@ -331,13 +270,13 @@ const ApplicationsMenu = new Lang.Class({
 		}));*/
 
 		//Drag to desktop
-		this._desktopTarget = new DesktopTarget();
-		this._desktopTarget.connect('app-dropped', () => {
+		this._dragTarget = new DragTarget();
+		this._dragTarget.connect('app-dropped', () => {
 			this.menu.close();
 		});
-		this._desktopTarget.connect('desktop-changed', () => {
+		this._dragTarget.connect('target-changed', () => {
 			this._appsButtons.forEach(item => {
-				item.setDragEnabled(this._desktopTarget.hasDesktop);
+				item.setDragEnabled(this._dragTarget.hasDesktop);
 			});
 		});
 
@@ -472,7 +411,7 @@ const ApplicationsMenu = new Lang.Class({
 		// Apps Scroll
 		this.appsScrollBox = new St.ScrollView({x_fill: true, y_fill: true, y_align: St.Align.START, style_class: 'vfade menyy-applications-box-scrollview' });
 		this.appsScrollBox.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC);
-		vScrollApps = this.appsScrollBox.get_vscroll_bar();
+		let vScrollApps = this.appsScrollBox.get_vscroll_bar();
 		vScrollApps.connect('scroll-start', Lang.bind(this, function() {
 			this.menu.passEvents = true;
 		}));
@@ -487,7 +426,7 @@ const ApplicationsMenu = new Lang.Class({
 		// Home Scroll
 		this.homeScrollBox = new St.ScrollView({x_fill: true, y_fill: true, y_align: St.Align.START, style_class: 'vfade menyy-applications-box-scrollview' });
 		this.homeScrollBox.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC);
-		vScrollHome = this.homeScrollBox.get_vscroll_bar();
+		let vScrollHome = this.homeScrollBox.get_vscroll_bar();
 		vScrollHome.connect('scroll-start', Lang.bind(this, function() {
 			this.menu.passEvents = true;
 		}));
@@ -505,7 +444,7 @@ const ApplicationsMenu = new Lang.Class({
 			this.categoryScrollBox = new St.ScrollView({y_align: St.Align.START,
 				style_class: 'menyy-categories-box-scrollview menyy-spacing' });
 			this.categoryScrollBox.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC);
-			vScrollCategories = this.categoryScrollBox.get_vscroll_bar();
+			let vScrollCategories = this.categoryScrollBox.get_vscroll_bar();
 			vScrollCategories.connect('scroll-start', Lang.bind(this, function() {
 				this.menu.passEvents = true;
 			}));
@@ -521,7 +460,7 @@ const ApplicationsMenu = new Lang.Class({
 		// Places Scroll
 		this.placesScrollBox = new St.ScrollView({x_fill: true, y_fill: true, y_align: St.Align.START, style_class: 'vfade menyy-places-box-scrollview' });
 		this.placesScrollBox.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC);
-		vScrollPlaces = this.placesScrollBox.get_vscroll_bar();
+		let vScrollPlaces = this.placesScrollBox.get_vscroll_bar();
 		vScrollPlaces.connect('scroll-start', Lang.bind(this, function() {
 			this.menu.passEvents = true;
 		}));
@@ -703,9 +642,7 @@ const ApplicationsMenu = new Lang.Class({
 	
 	
 	_setDefaultCategory: function() {
-		global.log("menyy homeview pre: " + this.HomeViewSettings);
 		this.HomeViewSettings = this._settings.get_enum('default-category');				// Default category to open
-		global.log("menyy homeview aft: " + this.HomeViewSettings);
 		this._loadHome();
 	},
 
@@ -738,25 +675,27 @@ const ApplicationsMenu = new Lang.Class({
 		let vScrollPlaces;
 		if (this._settings.get_boolean('show-apps-scrollbar') == true) {
 			vScrollApps = this.appsScrollBox.get_vscroll_bar();
-			vScrollHome = this.homeScrollBox.get_vscroll_bar();
+			if (this.homeScrollBox) vScrollHome = this.homeScrollBox.get_vscroll_bar();
 			
 			vScrollApps.show();
-			vScrollHome.show();
+			if (this.homeScrollBox) vScrollHome.show();
 		} else {
 			vScrollApps = this.appsScrollBox.get_vscroll_bar();
-			vScrollHome = this.appsHomeBox.get_vscroll_bar();
+			if (this.homeScrollBox) vScrollHome = this.homeScrollBox.get_vscroll_bar();
 			
 			vScrollApps.hide();
-			vScrollHome.hide();
+			if (this.homeScrollBox) vScrollHome.hide();
 		}
 		if (this._settings.get_boolean('show-categories-scrollbar') == true) {
-			if (this.categoriesScrollBox) vScrollCategories = this.categoriesScrollBox.get_vscroll_bar();
-			
-			if (vScrollCategories) this.vScrollCategories.show();
+			if (this.categoryScrollBox) {
+				vScrollCategories = this.categoryScrollBox.get_vscroll_bar();
+				vScrollCategories.show();
+			}
 		} else {
-			if (this.categoriesScrollBox) vScrollCategories = this.categoriesScrollBox.get_vscroll_bar();
-			
-			if (vScrollCategories) this.vScrollCategories.hide();
+			if (this.categoryScrollBox) {
+				vScrollCategories = this.categoryScrollBox.get_vscroll_bar();
+				vScrollCategories.hide();
+			}
 		}
 		if (this._settings.get_boolean('show-places-scrollbar') == true) {
 			vScrollPlaces = this.placesScrollBox.get_vscroll_bar();
@@ -1736,6 +1675,24 @@ const ApplicationsMenu = new Lang.Class({
 		if (debugMe) global.log("menyy -> _listTerminalCommands '" + pattern + "': " + res);
 		return res;
 	},
+	
+	
+	// LOADS TERMINAL COMMANDS
+	_listFilesFolders: function(location, pattern, amount){
+		let debugMe = false;
+		let res = [];
+		if (searchFilesFolders) {															// if commandlinedisplay imported
+			if (!this.searchFilesManager) 													// if the manager is not yet present
+				this.searchFilesManager = new searchFilesFolders.searchFilesManager(true);	// create manager
+		} else {																			// if no commandlinedisplay imported
+			this.searchFilesManager = null;													// then just ignore this part completely
+		};
+		if (amount > 0) {
+			res = this.searchFilesManager.getFiles(location, pattern, amount);
+		}
+		if (debugMe) global.log("menyy -> _searchFilesFolders '" + pattern + "': " + res);
+		return res;
+	},
 
 	
 	// LOADS WEB BOOKMARKS
@@ -1810,8 +1767,6 @@ const ApplicationsMenu = new Lang.Class({
 		//TODO(CHECK IF APPTYPE FILE OR FOLDER)
 		for (let id = 0; id < recentFiles.length; id++) {
 			let recentInfo = recentFiles[id];
-			//global.log("menyy file uri: " + recentInfo.get_uri());
-			//global.log("menyy file typ: " + recentInfo.get_mime_type());
 			if (recentInfo.get_mime_type() == 'inode/directory') {
 				type = AppType.FOLDER;
 			} else {
@@ -2166,6 +2121,12 @@ const ApplicationsMenu = new Lang.Class({
 	        	}
 	        }
         }
+        
+        let homePath = GLib.get_home_dir() + "/";
+        //let filesResults = this._listFilesFolders(homePath , pattern, 10);
+        let filesResults = this._listFilesFolders("/home/priit/Downloads/" , pattern, 10);
+        
+        
 		let placesResults = new Array();
 		// Search Places
         let places = this._listPlaces(pattern);
@@ -2192,6 +2153,7 @@ const ApplicationsMenu = new Lang.Class({
 		this._clearAppsBox();
 		
 		for (var i in terminalResults) appResults.push(terminalResults[i]);
+		for (var i in filesResults) appResults.push(filesResults[i]);
 		for (var i in placesResults) appResults.push(placesResults[i]);
 		for (var i in recentResults) appResults.push(recentResults[i]);
 		this._displayButtons(appResults, this.appsBox);

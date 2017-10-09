@@ -591,7 +591,7 @@ const BaseMenuItem = new Lang.Class({
 				this.selectionMethod = this._settings.get_enum('categories-selection-method');
 			}
 			this.hoverDelay =  this._settings.get_int('categories-hover-delay');
-			let _hoverTimeOutId;
+			this._hoverTimeOutId = null;
 
 			let style;
 			let styleLabel;
@@ -1050,6 +1050,7 @@ const BaseMenuItem = new Lang.Class({
 					this.app.launch();
 				}
 			} else if (this._type == AppType.FILE || this._type == AppType.FOLDER){
+				global.log("menyy app uri: " + this.app.uri.toString());
 				Gio.app_info_launch_default_for_uri(this.app.uri, global.create_app_launch_context(0, -1));
 			} else if (this._type == AppType.TERMINAL) {
 				this.app.launch();
@@ -1182,22 +1183,24 @@ const BaseMenuItem = new Lang.Class({
 
 		_setPopupTimeout: function() {
 			this._removeMenuTimeout();
-			this._menuTimeoutId = Mainloop.timeout_add(AppDisplay.MENU_POPUP_TIMEOUT,
-					Lang.bind(this, function() {
-						if (!this._isDragged){
-							this._isTimeOutOpen = true;
-							this._isLeftDown = false;
-							this._menuTimeoutId = 0;
-							this.popupMenu();
-						} else {
-							this.actor.remove_style_pseudo_class('pressed');
-							this.actor.remove_style_class_name('selected');
-							return false;
-						}
-					}));
-			GLib.Source.set_name_by_id(this._menuTimeoutId, '[gnome-shell] this.popupMenu');
-			//global.log("menyy: setpopuptimeout ending")
-			return false;
+			if (!this._isDragged){
+				this._menuTimeoutId = Mainloop.timeout_add(AppDisplay.MENU_POPUP_TIMEOUT,
+						Lang.bind(this, function() {
+							if (!this._isDragged){
+								this._isTimeOutOpen = true;
+								this._isLeftDown = false;
+								this._menuTimeoutId = 0;
+								this.popupMenu();
+							} else {
+								this.actor.remove_style_pseudo_class('pressed');
+								this.actor.remove_style_class_name('selected');
+								return false;
+							}
+						}));
+				GLib.Source.set_name_by_id(this._menuTimeoutId, '[gnome-shell] this.popupMenu');
+				//global.log("menyy: setpopuptimeout ending")
+				return false;
+			}
 		},
 
 		getDragActor: function() {
@@ -1266,7 +1269,6 @@ const BaseMenuItem = new Lang.Class({
 		Name: 'Menyy.ShortcutButton',
 
 		_init: function (app, appType) {
-			global.log("menyy shortcutbutton: " + app.icon);
 			this._iconSize = 16;
 			this._showIcon = true;
 			this.app = app;

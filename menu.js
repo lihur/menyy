@@ -5,14 +5,11 @@
 //TODO(FIX IN SETTINGS SET SCROLLBAR CHANGES TO CHANGE WHOLE LAYOUT)
 //TODO(REMOVE URI ENCAPSULATION FOR DND and RIGHT CLICK, because some files can't be copied otherwise)
 //TODO(FIX TAB RESETS SEARCH CATEGORY)
+//TODO(EMPTY SEARCH leaves an undefined app???)
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY 0
 /////////////////////////////////////////////////////////////////////////////////////////////////
-//TODO(CREATE A FILE MANAGER DRAG & DROP TARGET FOR EVERYTHING)
-//TODO(CREATE A BROWSER DRAG & DROP)
 //TODO(WEB SEARCHES, WIKI SEARCH)
-//TODO(COLORCODE + COLORNAME SEARCHES ;P)
-//TODO(CALCULATOR SEARCHES)
 //TODO(UNICODE CHARACTER and EMOTICON SEARCHES)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY 1
@@ -41,7 +38,6 @@
 //TODO(Show under settings if gir1.2-gda-5.0 is installed, help installing)
 //TODO(CONNECT TERMINAL APPS WITH THE REST OF APPS SOMEHOW!!)
 //TODO(ADD OPEN WITH and OPEN LOCATION for recent (any) files, folders)
-//TODO(FIX CHROMIUM BOOKMARKS not showing!!!)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY >9000
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -49,13 +45,23 @@
 //TODO(PLACE ITSELF IN DASH TO DOCK)
 //TODO(FIX OPERA BOOKMARKS)
 //TODO(FIX EPIPHANY)
+//TODO(FIX CHROMIUM BOOKMARKS not showing!!!)
 //TODO(CREATE REARRANGE THROUGH DRAG AND DROP IN MENUS)
 //TODO(DRAG TO OTHER CATEGORIES)
 //TODO(ADD POSSIBILITY FOR SYSTEM BUTTONS SEPARATE MENU)
 //TODO(ADD POSSIBILITY FOR SYSTEM BUTTONS TO EXPAND, IF ROOM LIMITED)
 //////////////////////////////////////////////////////////////////////////////////////////////////
+//PRIORITY IMPOSSIBLE??????
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//TODO(CREATE A FILE MANAGER DRAG & DROP TARGET FOR EVERYTHING)
+//TODO(CREATE A BROWSER DRAG & DROP)
+////////////////////////////////////////////////////////////////////////////////////////////////////
 //DONE(THUMBNAILS)
 //DONE(FILE SEARCH)
+//DONE(CALCULATOR SEARCHES)
+//DONE(COLORCODE + COLORNAME SEARCHES ;P)
+
+
 
 
 //Gnome-Shell and GTK files
@@ -80,22 +86,29 @@ const Mainloop = imports.mainloop;
 const Menyy = imports.misc.extensionUtils.getCurrentExtension();
 const systemButtons = Menyy.imports.systemButtons;
 const menuButtons = Menyy.imports.menuButtons;
-const placeDisplay = Menyy.imports.managers.placeDisplay;
-const shortcutsDisplay = Menyy.imports.managers.shortcutsDisplay;
-const commandLineDisplay = Menyy.imports.managers.commandLineDisplay;
-const searchFilesFolders = Menyy.imports.managers.searchfilesfolders;
 const convenience = Menyy.imports.convenience;
 const MenuButtonWidget = Menyy.imports.menuWidget.MenuButtonWidget;
+const placeDisplay = Menyy.imports.managers.placeDisplay;
+const shortcutsDisplay = Menyy.imports.managers.shortcutsDisplay;
+const DragTarget = Menyy.imports.managers.DnD.DragTarget;
 
-// Web bookmarks support
+
+
+// Search providers
+const binarySearches = Menyy.imports.managers.binarySearches;
+const commandLineDisplay = Menyy.imports.managers.commandLineDisplay;
+const searchFilesFolders = Menyy.imports.managers.searchfilesfolders;
 const Chromium = Menyy.imports.managers.webChromium;
-//const Epiphany = Menyy.imports.managers.webEpiphany;
 const Firefox = Menyy.imports.managers.webFirefox;
 const GoogleChrome = Menyy.imports.managers.webGoogleChrome;
 const Midori = Menyy.imports.managers.webMidori;
 const Opera = Menyy.imports.managers.webOpera;
-const DragTarget = Menyy.imports.managers.DnD.DragTarget;
+//const Epiphany = Menyy.imports.managers.webEpiphany;
 Signals.addSignalMethods(DragTarget.prototype);
+
+
+
+
 
 //SystemButtons
 const PowerButton = systemButtons.PowerButton;
@@ -225,6 +238,7 @@ const ApplicationsMenu = new Lang.Class({
 		this.searchEntryText = null;																	// Search text that will get entered by user
 		this._searchIconClickedId = 0;																	// 
 		this._searchTimeoutId = 0;																		// Used to make search wait for new input
+		this.binarySearchManager = new binarySearches.binarySearches();
 		
 		this._activeContainer = null;																	// Destroy me later maybe?
 
@@ -2103,7 +2117,7 @@ const ApplicationsMenu = new Lang.Class({
 		if (pattern.length == 0) {
 			return;
 		}
-		
+
 		let appResults = this._listApplications(null, pattern);
 		appResults = appResults.slice(0, this._settings.get_int('search-apps'));
 		
@@ -2122,9 +2136,24 @@ const ApplicationsMenu = new Lang.Class({
 	        }
         }
         
+		let calculator = this.binarySearchManager.calculator(pattern);
+		
+		if (calculator != null) {
+			appResults.push(calculator);
+		}
+		
+		
+		let colourSearch = this.binarySearchManager.colourBook(pattern);
+		
+		
+		if (colourSearch != null) {
+			appResults.push(colourSearch);
+		}
+		
+        
+        
         let homePath = GLib.get_home_dir() + "/";
-        //let filesResults = this._listFilesFolders(homePath , pattern, 10);
-        let filesResults = this._listFilesFolders("/home/priit/Downloads/" , pattern, 10);
+        let filesResults = this._listFilesFolders(homePath + "/Downloads/" , pattern, 10);
         
         
 		let placesResults = new Array();

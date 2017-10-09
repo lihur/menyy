@@ -73,7 +73,9 @@ const AppType = {
 		WEBBOOKMARK: 4,
 		PLACE: 5,
 		SHORTCUT: 6,
-		OTHER: 7
+		ANSWER: 7,
+		COLOURANSWER: 8,
+		OTHER: 9
 };
 
 const visibleMenus = {

@@ -316,6 +316,9 @@ const DragTarget = new Lang.Class({
 				} catch(e) {
 					log('Failed to copy to desktop: ' + e.message);
 				}
+			} else {
+				return false;
+				this.emit('app-dropped');
 			}
 		return true;
 	}

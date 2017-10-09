@@ -809,7 +809,7 @@ const BaseMenuItem = new Lang.Class({
 			this._labelStyle = null;
 			this._iconStyle = null;
 			this._appGridButtonWidth = button._appGridButtonWidth;
-			this._showLabel = true; //TODO(DETERMINE BY SETTINGS INSTEAD)
+			this._showLabel = true;
 			let homePath = GLib.get_home_dir();	
 			let style;
 
@@ -834,9 +834,9 @@ const BaseMenuItem = new Lang.Class({
 			}
 
 			if (this._appsViewMode == ApplicationsViewMode.LIST || location == 'places'){
-				if (settings.get_enum('apps-button-orientation') == 1 && (this._type == AppType.APPLICATION || this._type == AppType.FILE || this._type == AppType.FOLDER || this._type == AppType.WEBBOOKMARK || this._type == AppType.TERMINAL)) {
+				if (settings.get_enum('apps-button-orientation') == 1 && (this._type != AppType.PLACE)) {
 					this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.END, y_align: St.Align.MIDDLE});
-				} else if (settings.get_enum('apps-button-orientation') == 2 && (this._type == AppType.APPLICATION || this._type == AppType.FILE || this._type == AppType.FOLDER || this._type == AppType.WEBBOOKMARK || this._type == AppType.TERMINAL)) {
+				} else if (settings.get_enum('apps-button-orientation') == 2 && (this._type != AppType.PLACE)) {
 					this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
 				} else if (settings.get_enum('places-button-orientation') == 1 && (this._type == AppType.PLACE)) {
 					this.actor = new St.Button({ reactive: true, style_class: style, x_align: St.Align.END, y_align: St.Align.MIDDLE});
@@ -896,6 +896,16 @@ const BaseMenuItem = new Lang.Class({
 				this.icon = new St.Icon({gicon: app.icon, icon_size: this._iconSize});
 				if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
 				this.label = new St.Label({ text: app.name, style_class: this._labelStyle });
+			} else if (this._type == AppType.ANSWER) {
+				this.icon = new St.Icon({gicon: app.icon, icon_size: this._iconSize});
+				if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
+				this.label = new St.Label({ text: app.name, style_class: this._labelStyle });
+			} else if (this._type == AppType.COLOURANSWER) {
+				this.icon = new St.Icon({gicon: app.icon, icon_size: this._iconSize});
+				if(!this.icon) this.icon = new St.Icon({icon_name: 'error', icon_size: this._iconSize, icon_type: St.IconType.FULLCOLOR});
+				this.label = new St.Label({ text: app.name, style_class: this._labelStyle });
+				//this.actor.set_style( 'background-color: ' + this.app.colour);
+				this.icon.set_style( 'background-color: ' + this.app.colour);
 			}
 
 			// Create button
@@ -904,6 +914,9 @@ const BaseMenuItem = new Lang.Class({
 			} else { 
 				this.buttonbox = new St.BoxLayout({vertical: true});
 			}
+			
+			
+			
 
 			// Create an icon container (for theming and indicator support)
 			this._iconContainer = new St.BoxLayout({vertical: true});
@@ -936,19 +949,19 @@ const BaseMenuItem = new Lang.Class({
 				this.label.clutter_text.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR);
 				this.label.clutter_text.set_line_wrap(true);
 
-				if (settings.get_enum('apps-label') == 0 && (this._type == AppType.APPLICATION || this._type == AppType.FILE || this._type == AppType.FOLDER || this._type == AppType.WEBBOOKMARK || this._type == AppType.TERMINAL)) {
+				if (settings.get_enum('apps-label') == 0 && (this._type != AppType.PLACE)) {
 					this.label.add_style_class_name('menyy-text-left');
 					this._iconContainer.add_style_class_name('menyy-general-button-icon-right');
 
 					this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
 					this.buttonbox.add(this.label, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
-				} else if (settings.get_enum('apps-label') == 1  && (this._type == AppType.APPLICATION || this._type == AppType.FILE || this._type == AppType.FOLDER || this._type == AppType.WEBBOOKMARK || this._type == AppType.TERMINAL)){
+				} else if (settings.get_enum('apps-label') == 1  && (this._type != AppType.PLACE)){
 					this.label.add_style_class_name('menyy-text-right');
 					this._iconContainer.add_style_class_name('menyy-general-button-icon-left');
 
 					this.buttonbox.add(this.label, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.MIDDLE});
 					this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.START, y_align: St.Align.END});
-				} else if ((this._type == AppType.APPLICATION || this._type == AppType.FILE || this._type == AppType.FOLDER || this._type == AppType.WEBBOOKMARK || this._type == AppType.TERMINAL)  && this._showIcon) {
+				} else if ((this._type != AppType.PLACE)  && this._showIcon) {
 					this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
 
 
@@ -967,7 +980,7 @@ const BaseMenuItem = new Lang.Class({
 				} else if (this._type == AppType.PLACE && this._showIcon){
 					this.buttonbox.add(this._iconContainer, {x_fill: false, y_fill: false, x_align: St.Align.MIDDLE, y_align: St.Align.MIDDLE});
 				} else {
-					if ((this._type == AppType.APPLICATION || this._type == AppType.FILE || this._type == AppType.FOLDER || this._type == AppType.WEBBOOKMARK || this._type == AppType.TERMINAL)) {
+					if ((this._type != AppType.PLACE)) {
 						if (settings.get_enum('apps-button-orientation') == 1) {
 							this.label.add_style_class_name('menyy-text-right');
 						} else if (settings.get_enum('apps-button-orientation') == 2) {
@@ -1054,6 +1067,8 @@ const BaseMenuItem = new Lang.Class({
 				Gio.app_info_launch_default_for_uri(this.app.uri, global.create_app_launch_context(0, -1));
 			} else if (this._type == AppType.TERMINAL) {
 				this.app.launch();
+			} else if (this._type == AppType.ANSWER) {
+				this.app.launch();
 			}
 			this.parent(event);
 			this._button._toggleMenu();
@@ -1061,38 +1076,40 @@ const BaseMenuItem = new Lang.Class({
 		},
 
 		popupMenu: function() {
-			this._button.toggleMenuFlag = false;
-			this._removeMenuTimeout();
-
-			if (this._draggable)
-				this._draggable.fakeRelease();
-
-			if (!this._menu) {
-				this._menu = new RightClickMenus.AppItemMenu(this);
-				this._menu.connect('activate-window', Lang.bind(this, function (menu, window) {
-					this.activateWindow(window);
-				}));
-				this._menu.connect('open-state-changed', Lang.bind(this, function (menu, isPoppedUp) {
-					if (!isPoppedUp)
-						this._onMenuPoppedDown();
-				}));
-				let id = Main.overview.connect('hiding', Lang.bind(this, function () {
-				}));
-				this.actor.connect('destroy', function() {
-					Main.overview.disconnect(id);
-				});
-
-				this._menuManager.addMenu(this._menu);
+			if (this._type != AppType.ANSWER) {
+				this._button.toggleMenuFlag = false;
+				this._removeMenuTimeout();
+	
+				if (this._draggable)
+					this._draggable.fakeRelease();
+	
+				if (!this._menu) {
+					this._menu = new RightClickMenus.AppItemMenu(this);
+					this._menu.connect('activate-window', Lang.bind(this, function (menu, window) {
+						this.activateWindow(window);
+					}));
+					this._menu.connect('open-state-changed', Lang.bind(this, function (menu, isPoppedUp) {
+						if (!isPoppedUp)
+							this._onMenuPoppedDown();
+					}));
+					let id = Main.overview.connect('hiding', Lang.bind(this, function () {
+					}));
+					this.actor.connect('destroy', function() {
+						Main.overview.disconnect(id);
+					});
+	
+					this._menuManager.addMenu(this._menu);
+				}
+	
+				this.emit('menu-state-changed', true);
+	
+				this.actor.set_hover(true);
+				this._menu.popup();
+				// Don't close the menu if right button is released and don't require
+				// double click if held down left button is released
+				if (!this._isTimeOutOpen) (this._menuManager.ignoreRelease());
+				return false;
 			}
-
-			this.emit('menu-state-changed', true);
-
-			this.actor.set_hover(true);
-			this._menu.popup();
-			// Don't close the menu if right button is released and don't require
-			// double click if held down left button is released
-			if (!this._isTimeOutOpen) (this._menuManager.ignoreRelease());
-			return false;
 		},
 
 		_onKeyboardPopupMenu: function() {
@@ -1215,6 +1232,8 @@ const BaseMenuItem = new Lang.Class({
 			} else if (this._type == AppType.TERMINAL) {
 				appIcon = new St.Icon({gicon: this.app.icon, icon_size: this._iconSize});
 			} else if (this._type == AppType.WEBBOOKMARK) {
+				appIcon = new St.Icon({gicon: this.app.icon, icon_size: this._iconSize});
+			} else if (this._type == AppType.ANSWER) {
 				appIcon = new St.Icon({gicon: this.app.icon, icon_size: this._iconSize});
 			}
 			return appIcon;

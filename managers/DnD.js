@@ -144,7 +144,7 @@ const DesktopTarget = new Lang.Class({
 			return DND.DragMotionResult.CONTINUE;
 
 		return DND.DragMotionResult.COPY_DROP;
-	},
+	},	
 
 	acceptDrop: function(source, actor, x, y, time) {
 		if (source._type == AppType.APPLICATION) {
@@ -208,21 +208,38 @@ const DesktopTarget = new Lang.Class({
 			} catch(e) {
 				log('Failed to copy to desktop: ' + e.message);
 			}
-		} /*else if (source._type == AppType.WEBBOOKMARK) {
-			//this.emit('app-dropped');
-			return false;
+		} else if (source._type == AppType.WEBBOOKMARK) {
+			global.log("menyy webbookmark uri: " + source.app.uri);
+			const contents =   "[Desktop Entry]\n" +
+			  "Name = Link to " + source.app.name + "\n" +
+			  "Comment = Automatically generated Web Shortcut\n" +
+			  "Type = Link\n" +
+			  "Icon = text-html\n" +
+			  "URL = " + source.app.uri + "\n" +
+			  "";
+			let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
+			let file = Gio.File.new_for_path(GLib.build_filenamev([desktop, source.app.name + ".desktop"]));
+			try {
+				{
+		            if (file.query_exists (null)) {
+		            	file.delete(null);
+		            }
+		            let dos = file.create(Gio.FileCreateFlags.NONE, null);
+		            dos.write(contents, null, contents.length);
+		            this._markTrusted(file);
+				} // Streams closed at this point
+	        } catch (e) {
+	        	Main.notifyError(_("Failed to create file \"%s\"").format(this.name), e.message);
+	        }
 		} else if (source._type == AppType.TERMINAL) {
-        	//app = this.source.app.app;
-			//path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-    		//file = Gio.file_new_for_path(path + "/" + this.source._get_app_id(AppType.FILE).replace(/^.*[\\\/]/, ''));
-			let fileUri = cache_path + this.source.app.app.get_id();
+			let fileUri = cache_path + source.app.app.get_id();
 			if (!fileUri)
 				return false;
 			this.emit('app-dropped');
 			let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
 			
 			let src = Gio.file_new_for_path(fileUri);
-			let dst = Gio.File.new_for_path(GLib.build_filenamev([desktop, source.app.uri.replace(/^.*[\\\/]/, '')]));
+			let dst = Gio.File.new_for_path(GLib.build_filenamev([desktop, src.get_basename()]));
 			try {
 				// copy_async() isn't introspectable :-(
 				src.copy(dst, Gio.FileCopyFlags.OVERWRITE, null, null);
@@ -231,7 +248,6 @@ const DesktopTarget = new Lang.Class({
 				log('Failed to copy to desktop: ' + e.message);
 			}
 		}
-		*/
 
 		return true;
 	}

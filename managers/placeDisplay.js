@@ -129,37 +129,6 @@ const PlaceDeviceInfo = new Lang.Class({
 	}
 });
 
-// Apps Places Info Class
-const PlaceAppInfo = new Lang.Class({
-	Name: 'PlaceAppInfo',
-	Extends: PlaceInfo,
-	
-	//(kind, file, name, icon)
-	_init: function(kind, command, label, icon) {
-		this._icon = icon;
-		this._command = command;
-		this.parent(kind, command, label);
-		this.appType = AppType.PLACE;
-	},
-	
-	// Launch Application separate
-	launch: function(timestamp) {
-		Util.spawnCommandLine(this._command);
-	},
-
-	getIcon: function() {
-		if (UseSymbolicIcons)
-			//return this._command.get_symbolic_icon();
-			return Gio.content_type_get_icon(this._icon);
-		else
-			//return this._mount.get_icon();
-			return Gio.content_type_get_icon(this._icon);
-	}
-});
-
-
-
-
 const DEFAULT_DIRECTORIES = [
 	 GLib.UserDirectory.DIRECTORY_DOCUMENTS,
 	 GLib.UserDirectory.DIRECTORY_DOWNLOAD,
@@ -167,36 +136,6 @@ const DEFAULT_DIRECTORIES = [
 	 GLib.UserDirectory.DIRECTORY_PICTURES,
 	 GLib.UserDirectory.DIRECTORY_VIDEOS
                              ];
-
-
-// As list to concatenate later
-// TODO(Check if needs to be list at all)
-// Applications SOFTWARE
-const APPLICATION_SOFTWARE = [
-	{   label: _("Software"),
-		symbolic: "org.gnome.Software-symbolic",
-		command: "gnome-software" },
-	{   label: _("Settings"),
-		symbolic: "preferences-system-symbolic",
-		command: "gnome-control-center" },
-	{   label: _("Tweak Tool"),
-		symbolic: "gnome-tweak-tool-symbolic",
-		command: "gnome-tweak-tool" },
-	{   label: _("Tweaks"),
-		symbolic: "gnome-tweak-tool-symbolic",
-		command: "gnome-tweaks" },
-	{   label: _("Menu Editor (Alacarte)"),
-		symbolic: "accessories-text-editor-symbolic",
-		command: "alacarte" },
-	{   label: _("Menu Editor (MenuLibre)"),
-		symbolic: "accessories-dictionary-symbolic",
-		command: "menulibre" },
-	{   label: _("Menu Settings"),
-		symbolic: "org.gnome.Books-symbolic",
-		command: "gnome-shell-extension-prefs menyy@lihurp.gmail.com"
-	}
-];
-
 
 const PlacesManager = new Lang.Class({
 	Name: 'PlacesManager',
@@ -208,9 +147,7 @@ const PlacesManager = new Lang.Class({
 				special: [],
 				devices: [],
 				bookmarks: [],
-				network: [],
-				rightClick: [],
-				applications: [],
+				network: []
 		};
 
 		let homePath = GLib.get_home_dir();
@@ -237,9 +174,7 @@ const PlacesManager = new Lang.Class({
 		this._connectVolumeMonitorSignals();
 		this._updateMounts();
 
-		this._bookmarksFile = this._findBookmarksFile();
-		//global.log("menyy -> this._bookmarksFile: + " + this._bookmarksFile);
-		
+		this._bookmarksFile = this._findBookmarksFile();		
 		this._bookmarkTimeoutId = 0;
 		this._monitor = null;
 
@@ -257,54 +192,8 @@ const PlacesManager = new Lang.Class({
 			}));
 			this._reloadBookmarks();
 		}
-		
-		
-		
-		this._loadRightClick();
-		
-		
-		//global.log("menyy -> places -> bookmarks: " + this._places['special']);
 	},
 	
-	// Loads right Click menu
-	// TODO(ADD SETTINGS TO CONTROL WHAT TO LOAD)
-	_loadRightClick: function() {
-		this._rightClick = APPLICATION_SOFTWARE;
-		this._hasMenuEditor = false;
-		this._places.bookmarks = [];
-		
-		
-		
-		(this._rightClick).forEach(Lang.bind(this, function(shortcut) {
-			// Check if command exists and if command has space, only the first part!
-			if (GLib.find_program_in_path(shortcut.command.split(" ")[0])) {
-				this._places.rightClick.push(new PlaceAppInfo('rightClick', shortcut.command,  shortcut.label, shortcut.symbolic));
-			}			
-		}));
-		this.emit('rightClick-updated');
-	},
-	
-	
-	// Loads applications as places
-	// TODO(ADD SETTINGS TO CONTROL WHAT TO LOAD)
-	// TODO(ADD SETTINGS TO ALLOW CUSTOM APPLICATIONS)
-	_loadApplications: function() {
-		this._software = APPLICATION_SOFTWARE;
-		this._places.bookmarks = [];
-		
-		// Add all software
-		(this.software).forEach(Lang.bind(this, function(shortcut) {
-			// Check if command exists and if command has space, only the first part!
-			if (GLib.find_program_in_path(shortcut.command.split(" ")[0])) {
-				this._places.applications.push(new PlaceAppInfo('applications', shortcut.command,  shortcut.label, shortcut.symbolic));
-			}
-		}));
-		this.emit('applications-updated');
-	},
-	
-	
-	
-
 	_connectVolumeMonitorSignals: function() {
 		const signals = ['volume-added', 'volume-removed', 'volume-changed',
 		                 'mount-added', 'mount-removed', 'mount-changed',
@@ -467,19 +356,6 @@ const PlacesManager = new Lang.Class({
 		}
 
 		this._places.bookmarks = bookmarks;
-		
-		/*
-		global.log("menyy: ------------------------------------------------------------");
-		for (var i in bookmarks){
-			global.log("menyy -> bookmarksList: " + bookmarks[i].name);
-		}
-		global.log("menyy: ------------------------------------------------------------");
-		for (var i in this._places.bookmarks){
-			global.log("menyy -> bookmarksFinal: " + this._places.bookmarks[i].name);
-		}
-		global.log("menyy: ------------------------------------------------------------");
-		
-		*/
 		this.emit('bookmarks-updated');
 	},
 
@@ -508,16 +384,6 @@ const PlacesManager = new Lang.Class({
 
 	getMounts: function() {
 		return this._places['devices'];
-	},
-
-	// Application "places"
-	getApplications: function () {
-		return this._places['applications'];
-	},
-	
-	// RIGHTCLICK
-	getRightClickPlaces: function () {
-		return this._places['rightClick'];
 	}
 	
 });

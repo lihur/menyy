@@ -383,6 +383,11 @@
       <summary>Show Places Box Scrollbar</summary>
     </key>
     
+    <key type="b" name="show-thumbnails">
+      <default>true</default>
+      <summary>Show thumbnails as icons, if available</summary>
+    </key>
+    
     
     
   </schema>

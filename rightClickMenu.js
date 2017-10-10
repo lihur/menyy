@@ -1,34 +1,10 @@
-/*
- * Menüü
- * 
- * Based on Zorin Menu: The official applications menu for Zorin OS by:
- * Copyright (C) 2017 Zorin OS
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version. 
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- *
- * Credits:
- * This file is based on code from the Dash to Dock extension by micheleg.
- * Some code was adapted from Configurable Menu by lestcape.
- */
-
-
 const AppDisplay = imports.ui.appDisplay;
 const Lang = imports.lang;
 const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const Util = imports.misc.util;
+const Clutter = imports.gi.Clutter;
+
 
 
 const PanelMenu = imports.ui.panelMenu;
@@ -36,274 +12,342 @@ const GnomeSession = imports.misc.gnomeSession;
 const PopupMenu = imports.ui.popupMenu;
 const AppFavorites = imports.ui.appFavorites;
 const Main = imports.ui.main;
+const Signals = imports.signals;
+const St = imports.gi.St;
+
+// FOR COPY COMMANDS
+const Clipboard = St.Clipboard.get_default();
 
 
 
 const Menyy = imports.misc.extensionUtils.getCurrentExtension();
 const cache_path = Menyy.path + "/cache/";
+const shell_path     = Menyy.path + "/bash_scripts";
 
 const constants = Menyy.imports.constants;
 const AppType = constants.AppType;
 
-/**
- * Extend AppIconMenu
- *
- * - set popup arrow side based on taskbar orientation
- * - Add close windows option based on quitfromdash extension
- *   (https://github.com/deuill/shell-extension-quitfromdash)
+/*
+ *  Create a new popupmenu that could later be adapted to be a generic popupmenu that has a hierarchy!
+ *  (menus within menus like a normal GUI would do it!!!)
  */
+const openWithSubMenu = new Lang.Class({
+	Name: 'Menyy.openWithSubMenu',
+	//Extends: AppDisplay.AppIconMenu,
+	Extends: PopupMenu.PopupMenu,
+
+	_init: function(source) {
+		let side = St.Side.LEFT;
+        if (Clutter.get_default_text_direction() == Clutter.TextDirection.RTL)
+            side = St.Side.RIGHT;
+
+        this.parent(source.actor, 0.5, side);
+
+        // We want to keep the item hovered while the menu is up
+        //this.blockSourceEvents = true;
+
+        this._source = source;
+
+        this.actor.add_style_class_name('app-well-menu');
+
+        // Chain our visibility and lifecycle to that of the source
+        source.actor.connect('notify::mapped', Lang.bind(this, function () {
+            if (!source.actor.mapped)
+                this.close();
+        }));
+        source.actor.connect('destroy', Lang.bind(this, this.destroy));
+
+        Main.uiGroup.add_actor(this.actor);
+        
+		this.connect('activate', Lang.bind(this, this._onActivate));
+		this._button = this._source._button;		
+	},
+	
+	
+	_appendSeparator: function () {
+        let separator = new PopupMenu.PopupSeparatorMenuItem();
+        this.addMenuItem(separator);
+    },
+
+    _appendMenuItem: function(labelText) {
+        // FIXME: app-well-menu-item style
+        let item = new PopupMenu.PopupMenuItem(labelText);
+        this.addMenuItem(item);
+        return item;
+    },
+
+    popup: function(activatingButton) {
+        this._redisplay();
+        this.open();
+    },
+	
+	
+	
+	_onActivate: function (actor, child) {
+		if (child._window) {
+			let metaWindow = child._window;
+			this.emit('activate-window', metaWindow);
+		} else if (child == this._newWindowMenuItem) {
+			this._source.app.open_new_window(-1);
+			this.emit('activate-window', null);
+		}
+		this.close();
+		this._source.close();
+		//this._button._toggleMenu();
+	},
+	
+	
+	
+	_redisplay: function() {
+		this.removeAll();
+		this._openWithItem = this._appendMenuItem("Default");
+		this._openWithItem.connect('activate', Lang.bind(this, function() {
+			Gio.app_info_launch_default_for_uri(this._source.source.app.uri, global.create_app_launch_context(0, -1));
+		}));
+		const list = Gio.app_info_get_all_for_type (this._source.source.app.mime);
+		let launchers = [];
+		for (var i in list) {
+			launchers.push(this._appendMenuItem(list[i].get_name()));
+			launchers[i].connect('activate', Lang.bind(this, function(launcher) {
+				for (var i in list) {
+					if (launcher.label.get_text() == list[i].get_name()) {
+						(list[i]).launch_uris([this._source.source.app.uri], null);
+					}
+				}
+			}))
+		}
+	}	
+});
+Signals.addSignalMethods(openWithSubMenu.prototype);
+
+
+
 
 const AppItemMenu = new Lang.Class({
 	Name: 'Menyy.AppItemMenu',
 	Extends: AppDisplay.AppIconMenu,
 
 	_init: function(source) {
-		this.source = source;
+		this._source = source;
 		this.connect('activate', Lang.bind(this, this._onActivate));
 		this.parent(source);
-		this._button = this.source._button;
+		this._button = this._source._button;
+		this._menuManager = new PopupMenu.PopupMenuManager(this);
 	},
-
-
-	_addToDesktop: function() {
-		//try {
-		let app = this.source.app;
-		let path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-		let file;
-		let destFile;
-		let fileUri;
-		let shortcut = true;
-		if (this.source._type == AppType.APPLICATION) {
-			file = Gio.file_new_for_path(app.get_app_info().get_filename());
-			destFile = Gio.file_new_for_path(path + "/" + app.get_id());
-
-
-			file.copy(destFile, 0, null, function(){});
-			Util.spawnCommandLine("chmod +x \"" + path + "/" + app.get_id() + "\"");
-		} else if (this.source._type == AppType.FILE) {
-			fileUri = this.source.app.uri.replace('file://','');
-			file = Gio.file_new_for_path(fileUri);
-			destFile = Gio.file_new_for_path(path + "/" + this.source.app.uri.replace(/^.*[\\\/]/, ''));
-
-
-			file.copy(destFile, 0, null, function(){});
-			Util.spawnCommandLine("chmod +x \"" + path + "/" + app.get_id() + "\"");
-		} else if (this.source._type == AppType.TERMINAL) {
-			let fileUri = cache_path + this.source.app.app.get_id();
-			if (!fileUri)
-				return false;
-			this.emit('app-dropped');
-			let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-			
-			let src = Gio.file_new_for_path(fileUri);
-			let dst = Gio.File.new_for_path(GLib.build_filenamev([desktop, src.get_basename()]));
-			try {
-				// copy_async() isn't introspectable :-(
-				src.copy(dst, Gio.FileCopyFlags.OVERWRITE, null, null);
-				this._markTrusted(dst);
-			} catch(e) {
-				log('Failed to copy to desktop: ' + e.message);
-			}
-		} else if (this.source._type == AppType.FOLDER) {
-			file = this.source.app.uri.replace('file://','');
-			destFile = Gio.file_new_for_path(path + "/" + this.source.app.uri.replace(/^.*[\\\/]/, ''));
-
-
-			destFile.make_symbolic_link(file,  null);
-		} else if (this.source._type == AppType.PLACE) {
-			file = this.source.app.file.get_path();
-			destFile = Gio.file_new_for_path(path + "/" + this.source.app.file.get_basename());
-
-
-			destFile.make_symbolic_link(file,  null);
-		} else if (this.source._type == AppType.WEBBOOKMARK) {
-			const contents ="[Desktop Entry]\n" +
-							"Name = Link to " + this.source.app.name + "\n" +
-							"Comment = Automatically generated Web Shortcut\n" +
-							"Type = Link\n" +
-							"Icon = text-html\n" +
-							"URL = " + this.source.app.uri + "\n" +
-							"";
-			let desktop = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-			let file = Gio.File.new_for_path(GLib.build_filenamev([desktop, this.source.app.name + ".desktop"]));
-			try {
-				{
-		            if (file.query_exists (null)) {
-		            	file.delete(null);
-		            }
-		            let dos = file.create(Gio.FileCreateFlags.NONE, null);
-		            dos.write(contents, null, contents.length);
-		            //this._markTrusted(file);
-				} // Streams closed at this point
-	        } catch (e) {
-	        	Main.notifyError(_("Failed to create file \"%s\"").format(this.name), e.message);
-	        }
-		} else {
-			global.log("menyy: how have you managed to create a situation without a filetype and gotten so far???");
-		}
-		if (shortcut) {
-			destFile.make_symbolic_link(file,  null);
-		} else {
-			file.copy(destFile, 0, null, function(){});
-			// Need to find a way to do that using the Gio library, but modifying the access::can-execute attribute on the file object seems unsupported
-			Util.spawnCommandLine("chmod +x \"" + path + "/" + app.get_id() + "\"");
-		}
-		return true;
-		//} catch(e) {
-		//    global.log(e);
-		//}
-		return false;
-
-	},
-
 	_onActivate: function (actor, child) {
 		if (child._window) {
 			let metaWindow = child._window;
 			this.emit('activate-window', metaWindow);
+			
+			
+			this.close();
+			this._button._toggleMenu();
 		} else if (child == this._newWindowMenuItem) {
-			this.source.app.open_new_window(-1);
+			this._source.app.open_new_window(-1);
 			this.emit('activate-window', null);
+			
+			
+			this.close();
+			this._button._toggleMenu();
+		} else if (child == this._openWithSubMenu){
+			// (TEMPORARILY) RELEASE THE GRABHELPER HERE SOMEHOW
+			// OR PUSH THE SUBMENU IN FRONT?	
 		} else if (child == this._toggleFavoriteMenuItem) {
 			let favs = AppFavorites.getAppFavorites();
 			let isFavorite;
-			if (this.source._type == AppType.APPLICATION) {
-				isFavorite = favs.isFavorite(this.source.app.get_id());
+			if (this._source._type == AppType.APPLICATION) {
+				isFavorite = favs.isFavorite(this._source.app.get_id());
 			} else {
-				isFavorite = favs.isFavorite(this.source.app.app.get_id());
+				isFavorite = favs.isFavorite(this._source.app.app.get_id());
 				global.log("menyy isfav: " + isFavorite);
 			}
 			if (isFavorite)
-				if (this.source._type == AppType.APPLICATION) {
-					favs.removeFavorite(this.source.app.get_id());
+				if (this._source._type == AppType.APPLICATION) {
+					favs.removeFavorite(this._source.app.get_id());
 				} else {
-					favs.removeFavorite(this.source.app.app.get_id());
+					favs.removeFavorite(this._source.app.app.get_id());
 				}
 			else
-				if (this.source._type == AppType.APPLICATION) {
-					favs.addFavoriteAtPos(this.source.app.get_id(), -1);
+				if (this._source._type == AppType.APPLICATION) {
+					favs.addFavoriteAtPos(this._source.app.get_id(), -1);
 				} else {
-					let app = cache_path + this.source.app.app.get_id();
+					let app = cache_path + this._source.app.app.get_id();
 					// TODO(copy the file to a proper location or monkeypatch to use custom folders)
 					// .local/share/applications
-					favs.addFavorite(this.source.app.app.get_id());
-
+					favs.addFavorite(this._source.app.app.get_id());
+					
 				}
+			this.close();
+			this._button._toggleMenu();
+		} else {
+			// if something's clicked, close the menu
+			this.close();
+			this._button._toggleMenu();
 		}
-		this.close();
-		this._button._toggleMenu();
 	},
 
 	_activateApp: function() {
-		this.source.activate();
+		this._source.activate();
 	},
-
-	_createDefaultMenu: function(app) {
-		let windows =  app.get_windows();
-		// Display the app windows menu items and the separator between windows
-		// of the current desktop and other windows.
-		let activeWorkspace = global.screen.get_active_workspace();
-		let separatorShown = windows.length > 0 && windows[0].get_workspace() != activeWorkspace;
-
-		for (let i = 0; i < windows.length; i++) {
-			if (!separatorShown && windows[i].get_workspace() != activeWorkspace) {
-				this._appendSeparator();
-				separatorShown = true;
+	
+	
+	_openWithSubMenu: function() {
+			if (!this._menu) {
+				this._menu = new openWithSubMenu(this);
+				let id = Main.overview.connect('hiding', Lang.bind(this, function () {
+				}));
+				this.actor.connect('destroy', function() {
+					Main.overview.disconnect(id);
+				});
+				this._menuManager.addMenu(this._menu);
 			}
-			let item = this._appendMenuItem(windows[i].title);
-			item._window = windows[i];
-		}
-
-		if (!app.is_window_backed()) {
-			if (windows.length > 0)
-				this._appendSeparator();
-
-			let isFavorite = AppFavorites.getAppFavorites().isFavorite(app.get_id());
-
-			//this._newWindowMenuItem = this._appendMenuItem(_("New Window"));
-			//this._appendSeparator();
-
-			this._toggleFavoriteMenuItem = this._appendMenuItem(isFavorite ? _("Remove from Favorites") : _("Add to Favorites"));
-		}
+			this.emit('menu-state-changed', true);
+			this.actor.set_hover(true);
+			this._menu.popup();
+			
+			
+			let metaWindow = child._window;
+			this.emit('activate-window', metaWindow);
+			return false;
 	},
-
+	
+	_openWithSubMenuTerminal: function() {
+		this.command = "gnome-terminal --execute " + this._source.app.command;
+		Util.spawnCommandLine(this.command);
+	},
+	
+	
+	//TODO(FIGURE OUT WHY QT APPS WORK, BUT GTK APPS DON'T)
+	_copyFile: function() {
+		let uri;
+		let argv;
+		if (this._source._type == AppType.TERMINAL) {
+			//TODO(REPLACE WITH CACHE FILE, AS IT'S ACTUALLY MORE USEFUL THIS WAY)
+			uri = "file://" + this._source.app.location;
+		} else if (this._source._type == AppType.FILE) {
+			uri = this._source.app.uri;
+		} else if (this._source._type == AppType.FOLDER) {
+			uri = this._source.app.uri;
+		} else if (this._source._type == AppType.WEBBOOKMARK) {
+			uri = this._source.app.uri;
+		} else if (this._source._type == AppType.PLACE) {
+			uri = this._source.app.file.get_uri();
+		} else {
+			uri = "unknown location";
+		}
+		
+		// NEITHER OF THOSE WORK, EVEN THOUGH THEY SHOULD!
+		//argv = "echo " + uri + " | xclip -i -selection clipboard -t text/uri-list";
+		//argv = "xclip -i -selection clipboard -t text/uri-list <<< " + uri;
+		argv = shell_path + "/xclipper.sh " + uri;
+		
+		try {
+			global.log("menyy file copy command: " + argv);
+			Util.spawnCommandLine(argv);
+			//Main.notifyError(_("Copied to selection clipboard via xclipboard"));
+		} catch(e) {
+			Main.notifyError(_("Failed to copy to clipboard \"%s\"").format(this.name), e.message);
+		}
+		
+		
+		//echo file:///path/to/file.extension | xclip -i -selection clipboard -t text/uri-list
+		
+	},
+	
+	_copyFileContents: function() {
+		let argv = "xclip -selection clipboard";
+		let uri;
+		let mime;
+		if (this._source._type == AppType.FILE) {
+			mime = this._source.app.mime;
+			uri = (this._source.app.uri).substring(7);
+		} else {
+			uri = "unknown location";
+		}		
+		try {
+			Util.spawnCommandLine(argv + ' -t ' + mime + ' ' + uri);
+			Main.notifyError(_("Copied to selection clipboard via xclipboard"));
+		} catch(e) {
+			Main.notifyError(_("Failed to copy to clipboard \"%s\"").format(this.name), e.message);
+		}
+		
+	},
+	_copyUri: function() {
+		let uri;
+		if (this._source._type == AppType.TERMINAL) {
+			uri = "file://" + this._source.app.location;
+		} else if ((this._source._type == AppType.FILE) || (this._source._type == AppType.FOLDER)) {
+			uri = this._source.app.uri;
+		} else if (this._source._type == AppType.WEBBOOKMARK) {
+			uri = this._source.app.uri;
+		} else if (this._source._type == AppType.PLACE) {
+			uri = this._source.app.file.get_uri();
+		} else {
+			uri = "unknown location";
+		}
+		Clipboard.set_text(St.ClipboardType.PRIMARY, uri);
+	},
+	
 	_redisplay: function() {
 		this.removeAll();
-
-		//Add an open button to all apps!
+		
+		// Open Buttons
+		
+		// Add an open button to all apps!
 		this._activateAppItem = this._appendMenuItem("Open");
 		this._activateAppItem.connect('activate', Lang.bind(this, function() {
 			this._activateApp();
 		}));
 
 
-
-		//TODO(Add an open with button to all apps!)
-
-
-
-		let app;
-		let path;
-		let file;
-
-		if (this.source._type == AppType.APPLICATION) {
-			app = this.source.app;
-			//global.log("menyy -> normal app -> " + app);
-			path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-			file = Gio.file_new_for_path(path + "/" + app.get_id());
-			this.parent();
-		}  else if (this.source._type == AppType.TERMINAL) {
-			let fileUri = cache_path + this.source.app.app.get_id();
-			path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-			let src = Gio.file_new_for_path(fileUri);
-			file = Gio.File.new_for_path(GLib.build_filenamev([path, src.get_basename()]));
-
-			//this._createDefaultMenu(app);		
-		} else if (this.source._type == AppType.FILE) {
-			app = this.source.app;
-			path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-			file = Gio.file_new_for_path(path + "/" + app.uri.replace(/^.*[\\\/]/, ''));
-
-			//this._createDefaultMenu();   		
-		} else if (this.source._type == AppType.WEBBOOKMARK) {
-			app = this.source.app;
-			path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-			file = Gio.File.new_for_path(GLib.build_filenamev([path, this.source.app.name + ".desktop"]));
-		} else if (this.source._type == AppType.PLACE) {
-			app = this.source.app;
-			path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-			file = Gio.file_new_for_path(path + "/" + this.source.app.file.get_basename());
-		} else if (this.source._type == AppType.FOLDER) {
-			app = this.source.app;
-			path = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP);
-			file = Gio.file_new_for_path(path + "/" + app.uri.replace(/^.*[\\\/]/, ''));
-		} else {
-			global.log("menyy: how have you managed to create a situation without a filetype?");
+		// Add open with menus
+		if ((this._source._type == AppType.FILE) || (this._source._type == AppType.FOLDER)|| (this._source._type == AppType.WEBBOOKMARK)) {
+			//Add an open button to all apps!
+			this._openWithItem = this._appendMenuItem("Open With...");
+			this._openWithItem.connect('activate', Lang.bind(this, function() {
+				this._openWithSubMenu();
+			}));
+		} else if (this._source._type == AppType.TERMINAL) {
+			this._openWithItem = this._appendMenuItem("Open In Terminal");
+			this._openWithItem.connect('activate', Lang.bind(this, function() {
+				this._openWithSubMenuTerminal();
+			}));
 		}
-
-		if ((this.source._type == AppType.APPLICATION) || (this.source._type == AppType.FILE) || (this.source._type == AppType.TERMINAL)) {
-			if (!file.query_exists(null)){
-				this._appendSeparator();
-				this._addToDesktopItem = this._appendMenuItem("Copy to Desktop");
-				this._addToDesktopItem.connect('activate', Lang.bind(this, function() {
-					this._addToDesktop();
-				}));
-			}
-		} else if ((this.source._type == AppType.PLACE) && !(this.source.app.app) || (this.source._type == AppType.FOLDER)) {
-			if (!file.query_exists(null)) {
-				this._appendSeparator();
-				this._addToDesktopItem = this._appendMenuItem("Symlink to Desktop");
-				this._addToDesktopItem.connect('activate', Lang.bind(this, function() {
-					this._addToDesktop();
-				}));
-			}
-		} else if (this.source._type == AppType.WEBBOOKMARK) {
-			if (!file.query_exists(null)) {
-				this._appendSeparator();
-				this._addToDesktopItem = this._appendMenuItem("Add link to Desktop");
-				this._addToDesktopItem.connect('activate', Lang.bind(this, function() {
-					this._addToDesktop();
-				}));
-			}
+		
+		
+		// Copy Buttons
+		this._appendSeparator();
+		
+		if (this._source._type != AppType.WEBBOOKMARK) {
+			//Add a Copy Button to All Apps
+			this._activateAppItem = this._appendMenuItem("Copy file");
+			this._activateAppItem.connect('activate', Lang.bind(this, function() {
+				this._copyFile();
+			}));
+		}
+		
+		// It would be too much trouble to generate temporary files to copy via xclipboard
+		if (this._source._type == AppType.FILE) {
+			//Add a Copy Button to All Apps
+			this._activateAppItem = this._appendMenuItem("Copy contents");
+			this._activateAppItem.connect('activate', Lang.bind(this, function() {
+				this._copyFileContents();
+			}));
+		}
+		
+		
+		//Add a Copy Uri Button to All Apps
+		this._activateAppItem = this._appendMenuItem("Copy location");
+		this._activateAppItem.connect('activate', Lang.bind(this, function() {
+			this._copyUri();
+		}));
+		
+		
+		
+		
+		// For the time being just override for applications
+		if (this._source._type == AppType.APPLICATION) {
+			this.parent();
 		}
 	}
 });

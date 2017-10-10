@@ -6,15 +6,16 @@
 //TODO(REMOVE URI ENCAPSULATION FOR DND and RIGHT CLICK, because some files can't be copied otherwise)
 //TODO(FIX TAB RESETS SEARCH CATEGORY)
 //TODO(EMPTY SEARCH leaves an undefined app???)
+//TODO(UPDATE PLACES ON CHANGE)
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY 0
 /////////////////////////////////////////////////////////////////////////////////////////////////
+//TODO(ADD OPEN WITH TO WEB BOOKMARKS)
+//TODO(ADD COPY TO ALL APPTYPES)
 //TODO(WEB SEARCHES, WIKI SEARCH)
-//TODO(UNICODE CHARACTER and EMOTICON SEARCHES)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY 1
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//TODO(UPDATE PLACES ON CHANGE)
 //TODO(ADD SYSTEM MONITOR + OPTIONS AS PLACE and RIGHT CLICK)
 //TODO(ADD DESCRIPTION BOX IN SEARCH)
 //TODO(MAKE PLACES BUTTONS REARRANGEABLE)
@@ -42,7 +43,7 @@
 //PRIORITY >9000
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //TODO(PAUSE MPRIS PLAYERS ON SLEEP)
-//TODO(PLACE ITSELF IN DASH TO DOCK)
+//TODO(PLACE ITSELF IN DASH TO DOCfK)
 //TODO(FIX OPERA BOOKMARKS)
 //TODO(FIX EPIPHANY)
 //TODO(FIX CHROMIUM BOOKMARKS not showing!!!)
@@ -319,13 +320,7 @@ const ApplicationsMenu = new Lang.Class({
 		return Clutter.EVENT_PROPAGATE;
 	},
 	_onButtonReleaseEvent: function(actor, event){
-		//this._removeMenuTimeout();
 		actor.remove_style_pseudo_class('pressed');
-		//actor.remove_style_class_name('selected');
-		//let button = event.get_button();
-		//if (button != 3) {
-		//    this.activate(event);
-		//}
 		return Clutter.EVENT_STOP;
 	},
 
@@ -794,15 +789,6 @@ const ApplicationsMenu = new Lang.Class({
         if (newScrollValue != currentScrollValue) {
         	sBoxAdj.set_value(newScrollValue);
     	}
-		/*
-        var current_scroll_value = vscroll.get_adjustment().get_value();
-        var box_height = sBox.get_allocation_box().y2-sBox.get_allocation_box().y1;
-        var new_scroll_value = current_scroll_value;
-
-        if (current_scroll_value > buttonBox.y1-20) new_scroll_value = buttonBox.y1-20;
-        if (box_height+current_scroll_value < buttonBox.y2+20) new_scroll_value = buttonBox.y2-box_height+20;
-        if (new_scroll_value!=current_scroll_value) vscroll.get_adjustment().set_value(new_scroll_value);
-        */
     },
 	
 	
@@ -1747,7 +1733,7 @@ const ApplicationsMenu = new Lang.Class({
                     app:   bookmarks[id].appInfo,
                     name:   bookmarks[id].name,
                     icon:   bookmarks[id].appInfo.get_icon(),
-                    mime:   null,
+                    mime:   'text/html',
                     uri:    bookmarks[id].uri,
                     appType: bookmarks[id].appType
                 });

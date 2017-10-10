@@ -1,12 +1,3 @@
-/* ========================================================================================================
- * commandLineDisplay.js - Places Manager for Gnome Shell 3.6
- * --------------------------------------------------------------------------------------------------------
- *  CREDITS:  This code was copied from the Places Status Indicator extension and modified to provide the
- *  functions needed by GnoMenu. Many thanks to gcampax for a great extension.
- * ========================================================================================================
- */
-
-
 const GLib = imports.gi.GLib;
 const Gio = imports.gi.Gio;
 const Shell = imports.gi.Shell;

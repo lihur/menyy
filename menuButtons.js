@@ -876,6 +876,7 @@ const BaseMenuItem = new Lang.Class({
 				this.label = new St.Label({ text: app.name, style_class: this._labelStyle });
 			} else if (this._type == AppType.FILE || this._type == AppType.FOLDER) {
 				if (settings.get_boolean('show-thumbnails') == true) {
+					global.log("menyy thumbnailed files uri: " + this.app.uri);
 					let thumbnail = generateMD5(this.app.uri);
 					let normalThumbnail = homePath + "/.cache/thumbnails/normal/" + thumbnail + ".png";
 					let largeThumbnail = homePath + "/.cache/thumbnails/large/" + thumbnail + ".png";
@@ -1062,8 +1063,9 @@ const BaseMenuItem = new Lang.Class({
 				} else {
 					this.app.launch();
 				}
+			} else if (this._type == AppType.WEBBOOKMARK){
+				this.app.app.launch_uris([this.app.uri], null);
 			} else if (this._type == AppType.FILE || this._type == AppType.FOLDER){
-				global.log("menyy app uri: " + this.app.uri.toString());
 				Gio.app_info_launch_default_for_uri(this.app.uri, global.create_app_launch_context(0, -1));
 			} else if (this._type == AppType.TERMINAL) {
 				this.app.launch();
@@ -1076,7 +1078,7 @@ const BaseMenuItem = new Lang.Class({
 		},
 
 		popupMenu: function() {
-			if (this._type != AppType.ANSWER) {
+			if ((this._type != AppType.ANSWER) || (this._type != AppType.COLOURANSWER)) {
 				this._button.toggleMenuFlag = false;
 				this._removeMenuTimeout();
 	
@@ -1107,7 +1109,7 @@ const BaseMenuItem = new Lang.Class({
 				this._menu.popup();
 				// Don't close the menu if right button is released and don't require
 				// double click if held down left button is released
-				if (!this._isTimeOutOpen) (this._menuManager.ignoreRelease());
+				if (!this._isTimeOutOpen) (this._menuManager.ignoreRelease());				
 				return false;
 			}
 		},

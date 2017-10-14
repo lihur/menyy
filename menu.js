@@ -1,25 +1,32 @@
 //PS! These dev notes in the beginning are not for this particular file, but the whole project
-/////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY BUGS
-/////////////////////////////////////////////////////////////////////////////////////////////////
-//TODO(FIX IN SETTINGS SET SCROLLBAR CHANGES TO CHANGE WHOLE LAYOUT)
-//TODO(REMOVE URI ENCAPSULATION FOR DND and RIGHT CLICK, because some files can't be copied otherwise)
+//////////////////////////////////////////////////////////////////////////////////////////////////
 //TODO(FIX TAB RESETS SEARCH CATEGORY)
-//TODO(EMPTY SEARCH leaves an undefined app???)
 //TODO(UPDATE PLACES ON CHANGE)
-/////////////////////////////////////////////////////////////////////////////////////////////////
+/* TODO
+ * 		JS ERROR: TypeError: this.searchEntry is null
+ * 		ApplicationsMenu<._setSearchTimeout/this._searchTimeoutId<@/home/user/.local/share/gnome-shell/extensions/menyy@lihurp.gmail.com/menu.js:2010:1
+ */
+/* TODO
+ * 		JS ERROR: Exception in callback for signal: changed: TypeError: this._menuButton is null
+ * 		MenuSettingsController<._loadFavorites@/home/user/.local/share/gnome-shell/extensions/menyy@lihurp.gmail.com/controller.js:144:6
+ * 		wrapper@resource:///org/gnome/gjs/modules/lang.js:178:22
+ * 		_emit@resource:///org/gnome/gjs/modules/signals.js:126:27
+ * 		AppFavorites<._onFavsChanged@resource:///org/gnome/shell/ui/appFavorites.js:57:9
+ * 		wrapper@resource:///org/gnome/gjs/modules/lang.js:178:22
+ */
+//////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY 0
-/////////////////////////////////////////////////////////////////////////////////////////////////
-//TODO(ADD OPEN WITH TO WEB BOOKMARKS)
-//TODO(ADD COPY TO ALL APPTYPES)
-//TODO(WEB SEARCHES, WIKI SEARCH)
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//TODO(MAKE PLACES BUTTONS REARRANGEABLE)
+//TODO(MAKE SYSTEM BUTTONS REARRANGEABLE)
+//TODO(MAKE CUSTOM CATEGORIES REARRANGEABLE)
+//TODO(MAKE SEARCH RESULTS REARRANGEABLE)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY 1
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//TODO(ADD SYSTEM MONITOR + OPTIONS AS PLACE and RIGHT CLICK)
 //TODO(ADD DESCRIPTION BOX IN SEARCH)
-//TODO(MAKE PLACES BUTTONS REARRANGEABLE)
-//TODO(MAKE SYSTEM BUTTONS REARRANGEABLE)
 //TODO(MAKE VERTICAL LAYOUT REARRANGEABLE)
 //TODO(MAKE MENU RIGHT CLICK REARRANGEABLE)
 //TODO(MAKE BAR1 (TABS), and BAR2 (SEARCH))
@@ -27,41 +34,52 @@
 //TODO(MAKE BAR1 and BAR2 REARRANGEABLE)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY 2
-///////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
 //TODO(ADD CUSTOM APP OPEN INDICATORS and options)
 //TODO(ADD VIEW BUTTON AND OPTIONS)
 //TODO(ADD ACTIVITIES BUTTON AND OPTIONS)
-//TODO(ADD RECENT APPS AS CATEGORY (IF POSSIBLE))
-//TODO(ADD CLEAR RECENTS INTO OPTIONS OR RIGHT CLICK)
+//TODO(ADD SYSTEM MONITOR + OPTIONS AS PLACE and RIGHT CLICK)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY 3
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//TODO(Show under settings if gir1.2-gda-5.0 is installed, help installing)
+//TODO(WEB SEARCHES, WIKI SEARCH)
+//TODO(ADD RECENT APPS AS CATEGORY (IF POSSIBLE))
+//TODO(ADD CLEAR RECENTS INTO OPTIONS OR RIGHT CLICK)
 //TODO(CONNECT TERMINAL APPS WITH THE REST OF APPS SOMEHOW!!)
-//TODO(ADD OPEN WITH and OPEN LOCATION for recent (any) files, folders)
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//PRIORITY >9000
+//PRIORITY 4
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //TODO(PAUSE MPRIS PLAYERS ON SLEEP)
-//TODO(PLACE ITSELF IN DASH TO DOCfK)
-//TODO(FIX OPERA BOOKMARKS)
 //TODO(FIX EPIPHANY)
-//TODO(FIX CHROMIUM BOOKMARKS not showing!!!)
-//TODO(CREATE REARRANGE THROUGH DRAG AND DROP IN MENUS)
+//TODO(REARRANGE THROUGH DRAG AND DROP IN MENUS)
 //TODO(DRAG TO OTHER CATEGORIES)
 //TODO(ADD POSSIBILITY FOR SYSTEM BUTTONS SEPARATE MENU)
 //TODO(ADD POSSIBILITY FOR SYSTEM BUTTONS TO EXPAND, IF ROOM LIMITED)
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//PRIORITY >9000
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//TODO(PLACE ITSELF IN DASH TO DOCK)
+//TODO(Show under settings if gir1.2-gda-5.0 is installed, help installing)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY IMPOSSIBLE??????
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //TODO(CREATE A FILE MANAGER DRAG & DROP TARGET FOR EVERYTHING)
 //TODO(CREATE A BROWSER DRAG & DROP)
-////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
 //DONE(THUMBNAILS)
 //DONE(FILE SEARCH)
 //DONE(CALCULATOR SEARCHES)
 //DONE(COLORCODE + COLORNAME SEARCHES ;P)
-
+//DONE(ADD OPEN WITH TO WEB BOOKMARKS)
+//DONE(ADD COPY TO ALL APPTYPES)
+//DONE(FIX IN SETTINGS SET SCROLLBAR CHANGES TO CHANGE WHOLE LAYOUT)
+//DONE(REMOVE URI ENCAPSULATION FOR DND and RIGHT CLICK, because some files can't be copied otherwise)
+//DONE(REPLACE "." with homepath, in file results if it shows up wrong for some reason)
+//DONE(DUPLICATE URI-S, SO THUMBNAILS HAVE %20 stuff and COPY HAS SPACES)
+//DONE(ADD OPEN WITH and OPEN LOCATION for recent (any) files, folders)
+//DONE(ADD OPEN WITH TERMINAL FOR TERMINAL APPS)
+//DONE(FIX CHROMIUM BOOKMARKS)
+//DONE(FIX OPERA BOOKMARKS)
 
 
 
@@ -1772,13 +1790,14 @@ const ApplicationsMenu = new Lang.Class({
 			} else {
 				type = AppType.FILE;
 			}
-			if (recentInfo.exists()) {
+			if (recentInfo.exists()) {				
 				if (!pattern || recentInfo.get_display_name().toLowerCase().indexOf(pattern)!=-1) {
 					res.push({
 						name:   recentInfo.get_display_name(),
 						icon:   recentInfo.get_gicon(),
 						mime:   recentInfo.get_mime_type(),
-						uri:    recentInfo.get_uri(),
+						uri:    decodeURIComponent(recentInfo.get_uri()),
+						thumb:  recentInfo.get_uri(),
 						appType: type
 					});
 				}
@@ -2138,8 +2157,8 @@ const ApplicationsMenu = new Lang.Class({
 		
         
         
-        let homePath = GLib.get_home_dir() + "/";
-        let filesResults = this._listFilesFolders(homePath + "/Downloads/" , pattern, 10);
+        let homePath = GLib.get_home_dir();
+        let filesResults = this._listFilesFolders(homePath + "/downloads", pattern, 10);
         
         
 		let placesResults = new Array();

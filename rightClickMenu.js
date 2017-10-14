@@ -102,16 +102,16 @@ const openWithSubMenu = new Lang.Class({
 		this.removeAll();
 		this._openWithItem = this._appendMenuItem("Default");
 		this._openWithItem.connect('activate', Lang.bind(this, function() {
-			Gio.app_info_launch_default_for_uri(this._source.source.app.uri, global.create_app_launch_context(0, -1));
+			Gio.app_info_launch_default_for_uri(this._source._source.app.uri, global.create_app_launch_context(0, -1));
 		}));
-		const list = Gio.app_info_get_all_for_type (this._source.source.app.mime);
+		const list = Gio.app_info_get_all_for_type (this._source._source.app.mime);
 		let launchers = [];
 		for (var i in list) {
 			launchers.push(this._appendMenuItem(list[i].get_name()));
 			launchers[i].connect('activate', Lang.bind(this, function(launcher) {
 				for (var i in list) {
 					if (launcher.label.get_text() == list[i].get_name()) {
-						(list[i]).launch_uris([this._source.source.app.uri], null);
+						(list[i]).launch_uris([this._source._source.app.uri], null);
 					}
 				}
 			}))
@@ -276,8 +276,12 @@ const AppItemMenu = new Lang.Class({
 		let uri;
 		if (this._source._type == AppType.TERMINAL) {
 			uri = "file://" + this._source.app.location;
-		} else if ((this._source._type == AppType.FILE) || (this._source._type == AppType.FOLDER)) {
+		} else if (this._source._type == AppType.FILE){
 			uri = this._source.app.uri;
+			//global.log("menyy file uri " + uri);
+		} else if (this._source._type == AppType.FOLDER) {
+			uri = this._source.app.uri;
+			//global.log("menyy folder uri " + uri);
 		} else if (this._source._type == AppType.WEBBOOKMARK) {
 			uri = this._source.app.uri;
 		} else if (this._source._type == AppType.PLACE) {

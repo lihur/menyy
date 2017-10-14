@@ -49,12 +49,31 @@ const Menyy = imports.misc.extensionUtils.getCurrentExtension();
 const constants = Menyy.imports.constants;
 const AppType = constants.AppType;
 
+function _getBookmarks(folder) {
+	if (typeof folder == 'object') {
+			if (folder.type == 'url') {
+				bookmarks.push ({
+	                appInfo: _appInfo,
+	                name: folder.name,
+	                score: 0,
+	                uri: folder.url,
+	                appType: AppType.WEBBOOKMARK
+	            });
+			} else {
+				for (let subfolder in folder) {
+					_getBookmarks(folder[subfolder])
+				}
+			}
+	}
+}
+
 
 
 function _readBookmarks() {
     bookmarks = [];
 
     let content;
+    let jsonResult;
     let size;
     let success;
 
@@ -69,38 +88,19 @@ function _readBookmarks() {
         return;
     }
 
-    let lines = String(content).split("\n");
+    try {
+        jsonResult = JSON.parse(content);
+    } catch(e) {
+        log("ERROR: " + e.message);
+        return;
+    }
 
-    let isURL = false;
-    let name = null;
-    let url = null;
-
-    for (let i = 0; i < lines.length; i++) {
-        let line = lines[i].trim();
-
-        if (line == "#URL") {
-            isURL = true;
-        } else {
-            if (isURL) {
-                if (line.indexOf("NAME=") == 0) {
-                    name = line.split("NAME=")[1];
-                } else if (line.indexOf("URL=") == 0) {
-                    url = line.split("URL=")[1];
-                } else if (line == "") {
-                    bookmarks.push({
-                        appInfo: _appInfo,
-                        name: name,
-                        score: 0,
-                        uri: url,
-                        appType: AppType.WEBBOOKMARK
-                    });
-
-                    isURL = false;
-                    name = null;
-                    url = null;
-                }
-            }
-        }
+    if (! jsonResult.hasOwnProperty('roots')) {
+        return;
+    }
+    
+    for (let folders in jsonResult.roots) {
+    	_getBookmarks(jsonResult.roots[folders]);
     }
 }
 
@@ -121,9 +121,9 @@ function init() {
     _appInfo = _foundApps.get_app_info();
 
     _bookmarksFile = Gio.File.new_for_path(GLib.build_filenamev(
-        [GLib.get_home_dir(), '.opera', 'bookmarks.adr']));
+    		[GLib.get_user_config_dir(), 'opera', 'Bookmarks']));
 
-    if (! _bookmarksFile.query_exists(null)) {
+    if (! _bookmarksFile.query_exists(null)) {    	
         _reset();
         return;
     }

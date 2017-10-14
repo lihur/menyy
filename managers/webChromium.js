@@ -35,7 +35,7 @@ const Lang = imports.lang;
 const Main = imports.ui.main;
 
 const _appSystem = Shell.AppSystem.get_default();
-const _foundApps = _appSystem.lookup_desktop_wmclass('chromium');
+const _foundApps = _appSystem.lookup_desktop_wmclass('chromium-browser');
 
 var _appInfo = null;
 var _bookmarksFile = null;

@@ -1,12 +1,3 @@
-/* ========================================================================================================
- * commandLineDisplay.js - Places Manager for Gnome Shell 3.6
- * --------------------------------------------------------------------------------------------------------
- *  CREDITS:  This code was copied from the Places Status Indicator extension and modified to provide the
- *  functions needed by GnoMenu. Many thanks to gcampax for a great extension.
- * ========================================================================================================
- */
-
-
 const GLib = imports.gi.GLib;
 const Gio = imports.gi.Gio;
 const Shell = imports.gi.Shell;
@@ -39,8 +30,9 @@ let UseSymbolicIcons = false;
 const fileInfo = new Lang.Class({
 	Name: 'terminalCommandInfo',
 
-	_init: function(name, mime, uri) {
-		this.uri = uri;
+	_init: function(name, mime, thumb, path) {
+		this.thumb = thumb;
+		this.uri = path
 		this.name = name;
 		this.mime = mime;
 		this.icon = Gio.content_type_get_icon(mime);
@@ -62,24 +54,13 @@ const searchFilesManager = new Lang.Class({
 		UseSymbolicIcons = useSymbolic;
 
 		this._commands = [];
-	},
-	
-	_getMethods: function (obj) {
-	    var res = [];
-	    for(var m in obj) {
-	        if(typeof obj[m] == "function") {
-	            res.push(m)
-	        }
-	    }
-	    //return res;
-	    for (var i in res) {
-	    	global.log("menyyproperties " + res[i]);
-	    }
+		this.homePath = GLib.get_home_dir();
 	},
 	
 	// Loads right Click menu
 	_loadFiles: function(location, pattern, amount) {
 		this._files = [];
+		// Shell script takes 3 inputs, location (homepath), search pattern and max amount of results (to speed things up)
 		let argv = shell_path + "/searchFilesFolders.sh '" + location + "' '" + pattern + "' " + amount;
 		let fileList;
 		try {
@@ -93,17 +74,26 @@ const searchFilesManager = new Lang.Class({
 
             throw err;
         }
+        // Make the commandline result to string and then to list. List elements in string are separated by new lines
         fileList = fileList[1].toString().split("\n");
         for (let id = 0; id < fileList.length; id++) {
+        	// if not empty line (because it could happen)
         	if (fileList[id] != ""){
+        		// name is after the last slash in a file
         		const name = fileList[id].substring(fileList[id].lastIndexOf('/')+1);
-        		//const path = fileList[id].substring(0, fileList[id].lastIndexOf('/')+1);
-        		const path = encodeURIComponent(fileList[id]).replace(/%2F/gi, "/");
+        		// file path needs to add file:// and replace the first character with homepath (if it's a dot for some reason?)
+        		const path = "file://" + (fileList[id]).replace(/^./, this.homePath);
+        		// thumbnail path is separate, because it needs to replace (most) special characters, but the thumbnail path couldn't be used to copy files
+        		const thumbnailPath = "file://" + (encodeURIComponent(fileList[id]).replace(/%2F/gi, "/")).replace(/^./, this.homePath);
+        		// mimetype is guessed from filename, not checked
         		const mime = Gio.content_type_guess('filename=' + name, null)[0];
-        		this._files.push(new fileInfo (name, mime, "file://" + path));
+        		// just adds new file
+        		this._files.push(new fileInfo (name, mime, thumbnailPath, path) );
         	}
         }
+        // get rif of filelist, as it's no longer used
 		fileList = null;
+		// send a filelist update
 		this.emit('filelist-updated');
 	},
 	

@@ -35,7 +35,6 @@ const SelectMethod = constants.SelectMethod;
  * global.log("menyyproperties " + res[i]); } },
  */
 
-//TODO(MOVE ELSEWHERE!)
 //Sets icon asynchronously (user icon)
 function setIconAsync(icon, gioFile, fallback_icon_name) {
 	gioFile.load_contents_async(null, function(source, result) {
@@ -49,7 +48,7 @@ function setIconAsync(icon, gioFile, fallback_icon_name) {
 	});
 }
 
-//MOVE ELSEWHERE
+//Sets thumbnails asynchronously
 function setThumbnailAsync(icon, gioFile, largeGioFile, fallback_icon_name, fallback_gicon) {
 	gioFile.load_contents_async(null, function(source, result) {
 		try {
@@ -876,8 +875,8 @@ const BaseMenuItem = new Lang.Class({
 				this.label = new St.Label({ text: app.name, style_class: this._labelStyle });
 			} else if (this._type == AppType.FILE || this._type == AppType.FOLDER) {
 				if (settings.get_boolean('show-thumbnails') == true) {
-					global.log("menyy thumbnailed files uri: " + this.app.uri);
-					let thumbnail = generateMD5(this.app.uri);
+					//global.log("menyy thumbnailed files uri: " + this.app.uri);
+					let thumbnail = generateMD5(this.app.thumb);
 					let normalThumbnail = homePath + "/.cache/thumbnails/normal/" + thumbnail + ".png";
 					let largeThumbnail = homePath + "/.cache/thumbnails/large/" + thumbnail + ".png";
 					let gicon = Gio.content_type_get_icon(app.mime);

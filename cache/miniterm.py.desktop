@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = miniterm.py
+Comment = Automatically generated Terminal App
+Terminal = false
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = miniterm.py

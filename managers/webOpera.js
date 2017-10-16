@@ -35,7 +35,6 @@ const Lang = imports.lang;
 const Main = imports.ui.main;
 
 const _appSystem = Shell.AppSystem.get_default();
-//const _foundApps = _appSystem.initial_search(['opera']);
 const _foundApps = _appSystem.lookup_desktop_wmclass('opera');
 
 var _appInfo = null;
@@ -51,6 +50,7 @@ const AppType = constants.AppType;
 
 function _getBookmarks(folder) {
 	if (typeof folder == 'object') {
+		if(folder.hasOwnProperty('type')) {
 			if (folder.type == 'url') {
 				bookmarks.push ({
 	                appInfo: _appInfo,
@@ -61,9 +61,15 @@ function _getBookmarks(folder) {
 	            });
 			} else {
 				for (let subfolder in folder) {
-					_getBookmarks(folder[subfolder])
+					_getBookmarks(folder[subfolder]);
 				}
 			}
+			
+		} else {
+			for (let subfolder in folder) {
+				_getBookmarks(folder[subfolder]);
+			}
+		}
 	}
 }
 

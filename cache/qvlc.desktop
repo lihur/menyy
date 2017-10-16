@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = qvlc
+Comment = Automatically generated Terminal App
+Terminal = false
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = qvlc

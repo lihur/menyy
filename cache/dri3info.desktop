@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = dri3info
+Comment = Automatically generated Terminal App
+Terminal = true
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = dri3info

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = akonadi_invitations_agent
+Comment = Automatically generated Terminal App
+Terminal = true
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = akonadi_invitations_agent

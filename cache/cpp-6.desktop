@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = cpp-6
+Comment = Automatically generated Terminal App
+Terminal = true
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = cpp-6

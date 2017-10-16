@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = update-default-aspell
+Comment = Automatically generated Terminal App
+Terminal = true
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = update-default-aspell

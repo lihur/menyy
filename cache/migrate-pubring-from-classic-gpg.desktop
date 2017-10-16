@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = migrate-pubring-from-classic-gpg
+Comment = Automatically generated Terminal App
+Terminal = false
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = migrate-pubring-from-classic-gpg

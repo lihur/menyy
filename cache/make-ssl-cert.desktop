@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = make-ssl-cert
+Comment = Automatically generated Terminal App
+Terminal = false
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = make-ssl-cert

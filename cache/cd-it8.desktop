@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = cd-it8
+Comment = Automatically generated Terminal App
+Terminal = false
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = cd-it8

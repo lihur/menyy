@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = xfce4-terminal.wrapper
+Comment = Automatically generated Terminal App
+Terminal = false
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = xfce4-terminal.wrapper

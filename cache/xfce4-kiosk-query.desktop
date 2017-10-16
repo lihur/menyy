@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = xfce4-kiosk-query
+Comment = Automatically generated Terminal App
+Terminal = true
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = xfce4-kiosk-query

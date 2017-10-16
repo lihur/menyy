@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = debconf-apt-progress
+Comment = Automatically generated Terminal App
+Terminal = true
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = debconf-apt-progress

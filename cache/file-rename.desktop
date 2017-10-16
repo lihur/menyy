@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = file-rename
+Comment = Automatically generated Terminal App
+Terminal = false
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = file-rename

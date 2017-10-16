@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = x-terminal-emulator
+Comment = Automatically generated Terminal App
+Terminal = false
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = x-terminal-emulator

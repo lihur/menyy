@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = avahi-publish-address
+Comment = Automatically generated Terminal App
+Terminal = true
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = avahi-publish-address

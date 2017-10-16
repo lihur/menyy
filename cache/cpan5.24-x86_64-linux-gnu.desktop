@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = cpan5.24-x86_64-linux-gnu
+Comment = Automatically generated Terminal App
+Terminal = true
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = cpan5.24-x86_64-linux-gnu

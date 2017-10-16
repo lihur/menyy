@@ -1077,7 +1077,8 @@ const BaseMenuItem = new Lang.Class({
 		},
 
 		popupMenu: function() {
-			if ((this._type != AppType.ANSWER) || (this._type != AppType.COLOURANSWER)) {
+			if ((this._type != AppType.ANSWER) && (this._type != AppType.COLOURANSWER)) {
+			//if ((this._type != AppType.ANSWER) || (this._type != AppType.COLOURANSWER)) {
 				this._button.toggleMenuFlag = false;
 				this._removeMenuTimeout();
 	
@@ -1110,6 +1111,8 @@ const BaseMenuItem = new Lang.Class({
 				// double click if held down left button is released
 				if (!this._isTimeOutOpen) (this._menuManager.ignoreRelease());				
 				return false;
+			} else {
+				this.activate();
 			}
 		},
 

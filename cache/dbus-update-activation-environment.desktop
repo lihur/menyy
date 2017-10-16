@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = dbus-update-activation-environment
+Comment = Automatically generated Terminal App
+Terminal = true
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = dbus-update-activation-environment

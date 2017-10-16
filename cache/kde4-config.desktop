@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = kde4-config
+Comment = Automatically generated Terminal App
+Terminal = true
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = kde4-config

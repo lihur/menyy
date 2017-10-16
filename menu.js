@@ -4,21 +4,14 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //TODO(FIX TAB RESETS SEARCH CATEGORY)
 //TODO(UPDATE PLACES ON CHANGE)
-/* TODO
- * 		JS ERROR: TypeError: this.searchEntry is null
- * 		ApplicationsMenu<._setSearchTimeout/this._searchTimeoutId<@/home/user/.local/share/gnome-shell/extensions/menyy@lihurp.gmail.com/menu.js:2010:1
- */
-/* TODO
- * 		JS ERROR: Exception in callback for signal: changed: TypeError: this._menuButton is null
- * 		MenuSettingsController<._loadFavorites@/home/user/.local/share/gnome-shell/extensions/menyy@lihurp.gmail.com/controller.js:144:6
- * 		wrapper@resource:///org/gnome/gjs/modules/lang.js:178:22
- * 		_emit@resource:///org/gnome/gjs/modules/signals.js:126:27
- * 		AppFavorites<._onFavsChanged@resource:///org/gnome/shell/ui/appFavorites.js:57:9
- * 		wrapper@resource:///org/gnome/gjs/modules/lang.js:178:22
- */
+//TODO(RESET SCROLLBAR ON CLOSE)
+//TODO(RESET (HOME, APPS, CATEGORY...) BOX KEYBOARD FOCUSES ON CLOSE)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY 0
 //////////////////////////////////////////////////////////////////////////////////////////////////
+//TODO(GET RID OF RIGHT CLICK MENU INHERITING GNOME VERSION (WHICH ISN'T REALLY THAT EXPANDABLE))
+//TODO(ADD ICON SETTINGS TO CUSTOM CATEGORIES AND AN OPTION TO USE A BUILT IN CATEGORY THEME)
+/////////////////////////////////////////
 //TODO(MAKE PLACES BUTTONS REARRANGEABLE)
 //TODO(MAKE SYSTEM BUTTONS REARRANGEABLE)
 //TODO(MAKE CUSTOM CATEGORIES REARRANGEABLE)
@@ -49,6 +42,8 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //PRIORITY 4
 //////////////////////////////////////////////////////////////////////////////////////////////////
+//TODO(CREATE A HIERARCHICAL POPUPMENU and CUSTOM RIGHT CLICK MENU)
+//TODO(GIVE MENUS ABILITY TO HAVE HIERARCHY)
 //TODO(PAUSE MPRIS PLAYERS ON SLEEP)
 //TODO(FIX EPIPHANY)
 //TODO(REARRANGE THROUGH DRAG AND DROP IN MENUS)
@@ -65,6 +60,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //TODO(CREATE A FILE MANAGER DRAG & DROP TARGET FOR EVERYTHING)
 //TODO(CREATE A BROWSER DRAG & DROP)
+//TODO(IMPROVE COPY COMMANDS)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //DONE(THUMBNAILS)
 //DONE(FILE SEARCH)
@@ -80,6 +76,8 @@
 //DONE(ADD OPEN WITH TERMINAL FOR TERMINAL APPS)
 //DONE(FIX CHROMIUM BOOKMARKS)
 //DONE(FIX OPERA BOOKMARKS)
+//DONE(ADD MENYY SPECIFIC FAVORITES)
+//DONE(REMOVE RIGHT CLICK MENU FOR BUTTONS, THAT SHOULDN'T HAVE IT!)
 
 
 
@@ -110,6 +108,7 @@ const MenuButtonWidget = Menyy.imports.menuWidget.MenuButtonWidget;
 const placeDisplay = Menyy.imports.managers.placeDisplay;
 const shortcutsDisplay = Menyy.imports.managers.shortcutsDisplay;
 const DragTarget = Menyy.imports.managers.DnD.DragTarget;
+const favoritesManager = Menyy.imports.managers.favoritesManager;
 
 
 
@@ -254,6 +253,7 @@ const ApplicationsMenu = new Lang.Class({
 		this.placesManager = null;																		// Places Manager
 		this.shortcutsManager = null;																	// Right Click and Places shortcuts manager
 		this.commandLineManager = null;																	// Terminal Commands Manager
+		this.favoritesManager = null;																	// Terminal Commands Manager
 		this.searchEntryText = null;																	// Search text that will get entered by user
 		this._searchIconClickedId = 0;																	// 
 		this._searchTimeoutId = 0;																		// Used to make search wait for new input
@@ -262,9 +262,10 @@ const ApplicationsMenu = new Lang.Class({
 		this._activeContainer = null;																	// Destroy me later maybe?
 
 		this.applicationsByCategory = {};																// applications in categories
-		this._allAppsList = {};																// All Apps list
+		this._allAppsList = {};																			// All Apps list
 		this._frequentApps = new Array();																// Frequent Apps List
 		this._favorites = new Array();																	// Favorite Apps List
+		this._localFavorites = new Array();																// Menyy Favorite Apps List
 		this._places = new Array();																		// Places List
 		this._recent = new Array();																		// Recent Files List
 		
@@ -294,6 +295,7 @@ const ApplicationsMenu = new Lang.Class({
 		this._display();																				// 
 		// Load stuff into memory for a minor speed improvement
 		this._loadFavorites();																			// Load Favorites into memory
+		this._loadLocalFavorites();																		// Load Menyy Favorites into memory
 		this._loadFrequent();																			// Load Frequent into memory
 		this._loadHome();																				// Load homescreen applications into memory		
 		/*
@@ -1373,6 +1375,24 @@ const ApplicationsMenu = new Lang.Class({
 				this._favorites.push(app);
 		}
 	},
+	
+	_loadLocalFavorites: function() {
+		this._localFavorites = [];
+		let res = [];
+		if (favoritesManager) {																// if favoritesManager is imported
+			if (!this.favoritesManager) 													// if the manager is not yet present
+				this.favoritesManager = new favoritesManager.favoritesManager();			// create manager
+		} else {																			// if no commandlinedisplay imported
+			this.favoritesManager = null;													// then just ignore this part completely
+		};
+		
+		res = this.favoritesManager.getFavorites();
+		
+		for (var i in res) {
+			let app = res[i];
+			this._localFavorites.push(app);
+		}
+	},
 
 	// Load menu category data for a single category
 	_loadCategory: function(categoryId, dir) {
@@ -1392,6 +1412,7 @@ const ApplicationsMenu = new Lang.Class({
 					this.applicationsByCategory[categoryId].push(app);
 			} else if (nextType == GMenu.TreeItemType.DIRECTORY) {
 				let subdir = iter.get_directory();
+				//global.log("menyy subdir " + subdir);
 				if (!subdir.get_is_nodisplay())
 					this._loadCategory(categoryId, subdir);
 			}
@@ -1410,12 +1431,35 @@ const ApplicationsMenu = new Lang.Class({
 		let iter = root.iter();
 		let nextType;
 		
+		
+		
+		/*
+		 * Menyy Specific Favorite Apps Category
+		 */        
+		let localFavAppCategory = new CategoryButton('local-favorites', _('Favorites'), 'emblem-favorite-symbolic', this);
+		if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.GRID)) {
+			localFavAppCategory.buttonbox.width = this._appGridButtonWidth;
+			gridLayout.pack(localFavAppCategory.actor, column, rownum);
+			column ++;
+			if (column > this._appGridColumns-1) {
+				column = 0;
+				rownum ++;
+			}
+		}
+		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
+			this.appsBox.add_actor(localFavAppCategory.actor);
+		} else {
+			this.categoryBox.add_actor(localFavAppCategory.actor);
+		}
+		
+		
+		
+		
 		/*
 		 * Favorite Apps Category
 		 */        
-		let favAppCategory;
+		let favAppCategory = new CategoryButton('favorites', _('Global Favorites'), 'folder-favorites', this);
 		if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.GRID)) {
-			favAppCategory = new CategoryButton('favorites', _('Favorite Apps'), 'applications-other', this);
 			favAppCategory.buttonbox.width = this._appGridButtonWidth;
 			gridLayout.pack(favAppCategory.actor, column, rownum);
 			column ++;
@@ -1423,8 +1467,6 @@ const ApplicationsMenu = new Lang.Class({
 				column = 0;
 				rownum ++;
 			}
-		} else {
-			favAppCategory = new CategoryButton('favorites', _('Favorite Apps'), 'applications-other', this);
 		}
 		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
 			this.appsBox.add_actor(favAppCategory.actor);
@@ -1436,9 +1478,8 @@ const ApplicationsMenu = new Lang.Class({
 		/*
 		 * All Apps Category
 		 */   
-		let allAppsCategory;
+		let allAppsCategory = new CategoryButton('all', _('All Applications'), 'applications-other', this);
 		if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.GRID)) {
-			allAppsCategory = new CategoryButton('all', _('All Applications'), 'applications-other', this);
 			allAppsCategory.buttonbox.width = this._appGridButtonWidth;
 			gridLayout.pack(allAppsCategory.actor, column, rownum);
 			column ++;
@@ -1446,8 +1487,6 @@ const ApplicationsMenu = new Lang.Class({
 				column = 0;
 				rownum ++;
 			}
-		} else {
-			allAppsCategory = new CategoryButton('all', _('All Applications'), 'applications-other', this);
 		}
 		
 		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
@@ -1457,9 +1496,8 @@ const ApplicationsMenu = new Lang.Class({
 		}
 
 		// Frequent Category
-		let freqAppCategory;
+		let freqAppCategory = new CategoryButton('frequent', _('Frequent Apps'), 'folder-temp', this);
 		if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.GRID)) {
-			freqAppCategory = new CategoryButton('frequent', _('Frequent Apps'), 'applications-other', this);
 			freqAppCategory.buttonbox.width = this._appGridButtonWidth;
 			gridLayout.pack(freqAppCategory.actor, column, rownum);
 			column ++;
@@ -1467,8 +1505,6 @@ const ApplicationsMenu = new Lang.Class({
 				column = 0;
 				rownum ++;
 			}
-		} else {
-			freqAppCategory = new CategoryButton('frequent', _('Frequent Apps'), 'applications-other', this);
 		}
 		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
 			this.appsBox.add_actor(freqAppCategory.actor);
@@ -1477,9 +1513,8 @@ const ApplicationsMenu = new Lang.Class({
 		}
 		
 		// Recent Files Category
-		let recentFilesCategory;
+		let recentFilesCategory = new CategoryButton('recent', _('Recent Files'), 'folder-recent', this);
 		if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.GRID)) {
-			recentFilesCategory = new CategoryButton('recent', _('Recent Files'), 'applications-other', this);
 			recentFilesCategory.buttonbox.width = this._appGridButtonWidth;
 			gridLayout.pack(recentFilesCategory.actor, column, rownum);
 			column ++;
@@ -1487,8 +1522,6 @@ const ApplicationsMenu = new Lang.Class({
 				column = 0;
 				rownum ++;
 			}
-		} else {
-			recentFilesCategory = new CategoryButton('recent', _('Recent Files'), 'applications-other', this);
 		}
 		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
 			this.appsBox.add_actor(recentFilesCategory.actor);
@@ -1497,9 +1530,8 @@ const ApplicationsMenu = new Lang.Class({
 		}
 
 		// Web Bookmarks Category
-		let webBookmarksCategory;
+		let webBookmarksCategory = new CategoryButton('webBookmarks', _('Web Bookmarks'), 'applications-internet', this);
 		if ((this._categoriesViewMode == CategoriesViewMode.COMBINED) && (this._appsViewMode == ApplicationsViewMode.GRID)) {
-			webBookmarksCategory = new CategoryButton('webBookmarks', _('Web Bookmarks'), 'applications-other', this);
 			webBookmarksCategory.buttonbox.width = this._appGridButtonWidth;
 			gridLayout.pack(webBookmarksCategory.actor, column, rownum);
 			column ++;
@@ -1507,15 +1539,14 @@ const ApplicationsMenu = new Lang.Class({
 				column = 0;
 				rownum ++;
 			}
-		} else {
-			webBookmarksCategory = new CategoryButton('webBookmarks', _('Web Bookmarks'), 'applications-other', this);
 		}
-
 		if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
 			this.appsBox.add_actor(webBookmarksCategory.actor);
 		} else {
 			this.categoryBox.add_actor(webBookmarksCategory.actor);
 		}
+		
+		
 		/*
 		 * Real Categories
 		 */
@@ -1887,15 +1918,7 @@ const ApplicationsMenu = new Lang.Class({
 			} else if (typeof category == 'string') { // For custom categories such as "all categories", "recent", "favorites", "webbookmarks" and "shortcuts"
 				this.homeScrollBox.hide();
 				this.appsScrollBox.show();
-				if (category == 'recent') {
-					this._displayButtons(this._listApplications(category), this.appsBox);
-				} else if (category == 'webBookmarks'){
-					this._displayButtons(this._listApplications(category), this.appsBox);
-				} else {
-					this._displayButtons(this._listApplications(category), this.appsBox);
-				}
-				this.homeScrollBox.hide();
-				this.appsScrollBox.show();
+				this._displayButtons(this._listApplications(category), this.appsBox);
 				if (this._categoriesViewMode == CategoriesViewMode.COMBINED) {
 					this.backButton.actor.show();
 					this.backToButton.actor.hide();
@@ -1955,6 +1978,10 @@ const ApplicationsMenu = new Lang.Class({
 				applist = this._frequentApps;
 			} else if (category_menu_id == 'favorites') {
 				applist = this._favorites;
+			} else if (category_menu_id == 'local-favorites') {
+				// Temporary solution, until I go through the controller listeners again
+				this._loadLocalFavorites();
+				applist = this._localFavorites;
 			} else if (category_menu_id == 'shortcuts') {
 				// do something once done
 			} else if (category_menu_id == 'recent') {

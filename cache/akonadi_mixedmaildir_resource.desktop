@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = akonadi_mixedmaildir_resource
+Comment = Automatically generated Terminal App
+Terminal = false
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = akonadi_mixedmaildir_resource

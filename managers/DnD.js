@@ -206,8 +206,8 @@ const DragTarget = new Lang.Class({
 			windowType = -1;
 		}
 		
-		global.log("menyy name " + name);
-		global.log("menyy windowType " + windowType);
+		//global.log("menyy name " + name);
+		//global.log("menyy windowType " + windowType);
 		*/
 		
 		

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = plasma-remote-helper
+Comment = Automatically generated Terminal App
+Terminal = true
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = plasma-remote-helper

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name = min12xxw
+Comment = Automatically generated Terminal App
+Terminal = false
+Type = Application
+StartupNotify = True
+Categories = Other
+Exec = min12xxw

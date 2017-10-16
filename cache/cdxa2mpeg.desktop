@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name = cdxa2mpeg
-Comment = Automatically generated Terminal App
-Terminal = false
-Type = Application
-StartupNotify = True
-Categories = Other
-Exec = cdxa2mpeg

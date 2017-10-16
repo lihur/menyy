@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name = mii-tool
-Comment = Automatically generated Terminal App
-Terminal = false
-Type = Application
-StartupNotify = True
-Categories = Other
-Exec = mii-tool

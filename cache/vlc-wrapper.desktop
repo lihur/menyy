@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name = vlc-wrapper
-Comment = Automatically generated Terminal App
-Terminal = false
-Type = Application
-StartupNotify = True
-Categories = Other
-Exec = vlc-wrapper

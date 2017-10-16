@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name = breeze-settings5
-Comment = Automatically generated Terminal App
-Terminal = true
-Type = Application
-StartupNotify = True
-Categories = Other
-Exec = breeze-settings5

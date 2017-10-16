@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name = akonadi_followupreminder_agent
-Comment = Automatically generated Terminal App
-Terminal = false
-Type = Application
-StartupNotify = True
-Categories = Other
-Exec = akonadi_followupreminder_agent

@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name = dh_installgsettings
-Comment = Automatically generated Terminal App
-Terminal = true
-Type = Application
-StartupNotify = True
-Categories = Other
-Exec = dh_installgsettings

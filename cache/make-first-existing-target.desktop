@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name = make-first-existing-target
-Comment = Automatically generated Terminal App
-Terminal = false
-Type = Application
-StartupNotify = True
-Categories = Other
-Exec = make-first-existing-target

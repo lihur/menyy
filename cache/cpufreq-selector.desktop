@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name = cpufreq-selector
-Comment = Automatically generated Terminal App
-Terminal = true
-Type = Application
-StartupNotify = True
-Categories = Other
-Exec = cpufreq-selector

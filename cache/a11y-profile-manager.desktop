@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name = a11y-profile-manager
-Comment = Automatically generated Terminal App
-Terminal = false
-Type = Application
-StartupNotify = True
-Categories = Other
-Exec = a11y-profile-manager

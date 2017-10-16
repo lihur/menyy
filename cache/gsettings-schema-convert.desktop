@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name = gsettings-schema-convert
-Comment = Automatically generated Terminal App
-Terminal = true
-Type = Application
-StartupNotify = True
-Categories = Other
-Exec = gsettings-schema-convert

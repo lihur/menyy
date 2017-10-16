@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name = mimeopen
-Comment = Automatically generated Terminal App
-Terminal = false
-Type = Application
-StartupNotify = True
-Categories = Other
-Exec = mimeopen

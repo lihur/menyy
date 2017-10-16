@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name = install-printerdriver
-Comment = Automatically generated Terminal App
-Terminal = true
-Type = Application
-StartupNotify = True
-Categories = Other
-Exec = install-printerdriver

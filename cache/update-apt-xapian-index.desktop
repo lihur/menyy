@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name = update-apt-xapian-index
-Comment = Automatically generated Terminal App
-Terminal = true
-Type = Application
-StartupNotify = True
-Categories = Other
-Exec = update-apt-xapian-index

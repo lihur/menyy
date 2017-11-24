@@ -1965,7 +1965,8 @@ const ApplicationsMenu = new Lang.Class({
 			} else if (category_menu_id == 4) {			// 4 is recent
 				applist = this._listRecent();
 			} else if (category_menu_id == 5) {			// 5 is Shortcuts
-				// Skip for now
+                this._loadLocalFavorites();
+				applist = this._localFavorites;
 			} else {
 				applist = this._allAppsList;
 			}

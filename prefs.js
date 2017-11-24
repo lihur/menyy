@@ -175,6 +175,7 @@ const BehaviourSettingsPage = new Lang.Class({
         homeViewCombo.append_text(_("Favorites"));
         homeViewCombo.append_text(_("All"));
         homeViewCombo.append_text(_("Recent"));
+         homeViewCombo.append_text(_("Local Favorites"));
         //homeViewCombo.append_text(_("Shortcuts"));
         homeViewCombo.set_active(this.settings.get_enum('default-category'));
         homeViewCombo.connect('changed', Lang.bind (this, function(widget) {

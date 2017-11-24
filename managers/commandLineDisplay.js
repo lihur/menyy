@@ -37,7 +37,8 @@ const terminalCommandInfo = new Lang.Class({
 		this.name = command + " " + variables;
 		this.mime = mime;
 		this.variables = variables;
-		this.icon = Gio.content_type_get_icon(mime);
+        //TODO(make mime as icon, and let terminal be a fallback)
+		this.icon = Gio.content_type_get_icon("utilities-terminal");
 		this.appType = AppType.TERMINAL;
 	},
 	
